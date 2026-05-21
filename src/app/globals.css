@@ -4,35 +4,38 @@
 
 @layer base {
   .dark {
-    --background: 225 9% 9%;
-    --foreground: 210 40% 98%;
+    /* Documentação de cores: nomes aproximados e uso */
+    /* Use este arquivo para documentar o propósito das variáveis de cor */
 
-    --card: 228 9% 11%;
-    --card-foreground: 210 40% 98%;
+    --background: 225 9% 9%; /* azul escuro / fundo */
+    --foreground: 210 40% 98%; /* texto claro (quase branco) */
 
-    --popover: 228 9% 11%;
-    --popover-foreground: 210 40% 98%;
+    --card: 228 9% 11%; /* fundo do card (muito escuro) */
+    --card-foreground: 210 40% 98%; /* texto do card */
 
-    --primary: 252 100% 69%;
-    --primary-foreground: 0 0% 100%;
+    --popover: 228 9% 11%; /* fundo de popover (escuro) */
+    --popover-foreground: 210 40% 98%; /* texto do popover */
 
-    --secondary: 228 6% 16%;
-    --secondary-foreground: 210 40% 98%;
+    --primary: 252 100% 69%; /* roxo / cor primária */
+    --primary-foreground: 0 0% 100%; /* texto primário (branco) */
 
-    --muted: 228 6% 16%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --secondary: 228 6% 16%; /* cinza escuro / secundária */
+    --secondary-foreground: 210 40% 98%; /* texto secundário */
 
-    --accent: 228 6% 16%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 228 6% 16%; /* tom muted para elementos menos importantes */
+    --muted-foreground: 215 20.2% 65.1%; /* texto muted (cinza claro) */
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 228 6% 16%; /* cor de destaque (similar ao secondary) */
+    --accent-foreground: 210 40% 98%; /* texto do accent */
 
-    --border: 228 6% 16%;
-    --input: 228 6% 16%;
-    --ring: 212.7 26.8% 83.9%;
+    --destructive: 0 84% 60%; /* vermelho / ações destrutivas */
+    --destructive-foreground: 210 40% 98%; /* texto sobre destructive */
 
-    --radius: 0.5rem;
+    --border: 228 6% 16%; /* cor das bordas */
+    --input: 228 6% 16%; /* fundo de inputs */
+    --ring: 212.7 26.8% 83.9%; /* ring / foco (claro) */
+
+    --radius: 0.5rem; /* radius global */
   }
 }
 
