@@ -49,3 +49,15 @@ model Booking {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }
+
+// Modelo de avaliação (comentado por enquanto, pode ser implementado posteriormente)
+// model Rating {
+//   id        String            @id @default(uuid())
+//   userId    String
+//   user      User              @relation(fields: [userId], references: [id])
+//   barbershopId String
+//   barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+//   date      DateTime
+//   createdAt DateTime          @default(now())
+//   updatedAt DateTime          @updatedAt
+// } 
