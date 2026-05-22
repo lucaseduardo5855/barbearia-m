@@ -1,7 +1,7 @@
 import { Input } from "./_components/ui/input"
 import Header from "./_components/header"
 import { Button } from "./_components/ui/button"
-import { SearchIcon } from "lucide-react"
+import { EyeIcon, FootprintsIcon, SearchIcon } from "lucide-react"
 import { Badge } from "./_components/ui/badge"
 import Image from "next/image"
 import { Card, CardContent } from "./_components/ui/card"
@@ -31,6 +31,79 @@ const Home = async () => {
           <Input placeholder="Faça sua Busca..." />
           <Button size="icon">
             <SearchIcon />
+          </Button>
+        </div>
+
+        {/* Busca Rapida */}
+        <div className="mt-6 flex justify-center gap-3 overflow-x-scroll [&::-webkit-scrollbar]:hidden">
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/tesoura.png"
+              alt="Ícone de tesoura"
+              width={16}
+              height={16}
+            />
+            Cabelo
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/barba.png"
+              alt="Ícone de barba"
+              width={16}
+              height={16}
+            />
+            Barba
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/navalha.png"
+              alt="Ícone de navalha"
+              width={16}
+              height={16}
+            />
+            Acabamento
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/navalha.png"
+              alt="Ícone de navalha"
+              width={16}
+              height={16}
+            />
+            Cabelo + Barba
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <FootprintsIcon size={16} />
+            Pézinho
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <EyeIcon className="text-gray-400" size={16} />
+            Sobrancelha
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/navalha.png"
+              alt="Ícone de navalha"
+              width={16}
+              height={16}
+            />
+            Sombrancelha
+          </Button>
+
+          <Button className="gap-2" variant="secondary">
+            <Image
+              src="/navalha.png"
+              alt="Ícone de navalha"
+              width={16}
+              height={16}
+            />
+            Platinado
           </Button>
         </div>
 
@@ -93,7 +166,7 @@ const Home = async () => {
       </div>
 
       <footer>
-        <Card className="mt-10 rounded-tr-2xl px-2 py-6">
+        <Card className="mt-10 px-2 py-6">
           <CardContent>
             <p className="text-sm text-gray-400">
               © 2026 Copyright <span className="font-bold">Barberia-M</span>
