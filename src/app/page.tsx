@@ -1,13 +1,13 @@
 import { Input } from "./_components/ui/input"
 import Header from "./_components/header"
 import { Button } from "./_components/ui/button"
-import { EyeIcon, FootprintsIcon, SearchIcon } from "lucide-react"
-import { Badge } from "./_components/ui/badge"
+import { FootprintsIcon, SearchIcon } from "lucide-react"
 import Image from "next/image"
 import { Card, CardContent } from "./_components/ui/card"
-import { Avatar, AvatarImage } from "./_components/ui/avatar"
 import { db } from "@/lib/prisma"
 import BarbershopItem from "./_components/barbershop-item"
+import quickSearchOptions from "./_constants/search"
+import BookingItem from "./_components/booking-item"
 
 const Home = async () => {
   //chamar bd
@@ -34,77 +34,19 @@ const Home = async () => {
           </Button>
         </div>
 
-        {/* Busca Rapida */}
-        <div className="mt-6 flex justify-center gap-3 overflow-x-scroll [&::-webkit-scrollbar]:hidden">
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/tesoura.png"
-              alt="Ícone de tesoura"
-              width={16}
-              height={16}
-            />
-            Cabelo
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/barba.png"
-              alt="Ícone de barba"
-              width={16}
-              height={16}
-            />
-            Barba
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/navalha.png"
-              alt="Ícone de navalha"
-              width={16}
-              height={16}
-            />
-            Acabamento
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/navalha.png"
-              alt="Ícone de navalha"
-              width={16}
-              height={16}
-            />
-            Cabelo + Barba
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <FootprintsIcon size={16} />
-            Pézinho
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <EyeIcon className="text-gray-400" size={16} />
-            Sobrancelha
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/navalha.png"
-              alt="Ícone de navalha"
-              width={16}
-              height={16}
-            />
-            Sombrancelha
-          </Button>
-
-          <Button className="gap-2" variant="secondary">
-            <Image
-              src="/navalha.png"
-              alt="Ícone de navalha"
-              width={16}
-              height={16}
-            />
-            Platinado
-          </Button>
+        {/* Busca Rápida */}
+        <div className="mt-6 flex gap-3 overflow-x-scroll [&::-webkit-scrollbar]:hidden">
+          {quickSearchOptions.map((option) => (
+            <Button className="gap-2" variant="secondary" key={option.title}>
+              <Image
+                src={option.imageUrl}
+                width={16}
+                height={16}
+                alt={option.title}
+              />
+              {option.title}
+            </Button>
+          ))}
         </div>
 
         {/* Imagem */}
@@ -117,33 +59,8 @@ const Home = async () => {
           />
         </div>
 
-        {/* Agendamento */}
-        <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
-          Agendamentos
-        </h2>
-        <Card>
-          <CardContent className="flex justify-between p-0">
-            {/* Esquerda */}
-            <div className="flex flex-col gap-2 p-5 py-5">
-              <Badge className="rounded-full">Confirmado</Badge>
-              <h3 className="font-semibold">Corte de Cabelo</h3>
-
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src="https://utfs.io/f/c97a2dc9-cf62-468b-a851-bfd2bdde775f-16p.png" />
-                </Avatar>
-                <p className="text-sm">Barbearia do Minhoca</p>
-              </div>
-            </div>
-
-            {/* Direita */}
-            <div className="flex flex-col items-center justify-center border-l-2 border-solid px-5">
-              <p className="text-sm">Maio</p>
-              <p className="text-2xl">20</p>
-              <p className="text-sm">20:00</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Agendamentos */}
+        <BookingItem />
 
         <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
           Recomendados
