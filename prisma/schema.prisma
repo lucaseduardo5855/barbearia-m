@@ -2,11 +2,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Configuração do datasource para PostgreSQL, utilizando a variável de ambiente DATABASE_URL para a conexão com o banco de dados.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// Modelo de usuário
 model User {
   id        String    @id @default(uuid())
   email     String
@@ -16,6 +18,7 @@ model User {
   bookings  Booking[] //Relação com as reservas feitas pelo usuário
 }
 
+// Modelo de barbearia
 model Barbershop {
   id          String              @id @default(uuid())
   name        String
@@ -28,6 +31,7 @@ model Barbershop {
   services    BarbershopService[] //Relação com os serviços oferecidos pela barbearia
 }
 
+// Modelo de serviço oferecido pela barbearia
 model BarbershopService {
   id           String     @id @default(uuid())
   name         String
@@ -39,6 +43,7 @@ model BarbershopService {
   bookings     Booking[] //Relação com as reservas feitas para este serviço
 }
 
+// Modelo de reserva de serviço pela barbearia
 model Booking {
   id        String            @id @default(uuid())
   userId    String
