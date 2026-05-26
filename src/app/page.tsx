@@ -1,7 +1,7 @@
 import { Input } from "./_components/ui/input"
 import Header from "./_components/header"
 import { Button } from "./_components/ui/button"
-import { FootprintsIcon, SearchIcon } from "lucide-react"
+import { SearchIcon } from "lucide-react"
 import Image from "next/image"
 import { Card, CardContent } from "./_components/ui/card"
 import { db } from "@/lib/prisma"
@@ -81,16 +81,6 @@ const Home = async () => {
           ))}
         </div>
       </div>
-
-      <footer>
-        <Card className="mt-10 px-2 py-6">
-          <CardContent>
-            <p className="text-sm text-gray-400">
-              © 2026 Copyright <span className="font-bold">Barberia-M</span>
-            </p>
-          </CardContent>
-        </Card>
-      </footer>
     </div>
   )
 }
