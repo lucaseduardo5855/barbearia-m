@@ -1,18 +1,11 @@
-"use client"
-
 import Image from "next/image"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
-import { CalendarIcon, HomeIcon, LogOutIcon, MenuIcon } from "lucide-react"
-import { useState } from "react"
-import quickSearchOptions from "../_constants/search"
-import { Avatar, AvatarImage } from "./ui/avatar"
-import Link from "next/link"
+import { MenuIcon } from "lucide-react"
+import { Sheet, SheetTrigger } from "@/components/ui/sheet"
 import SidebarSheet from "./sidebar-sheet"
 
 const Header = () => {
-  const [open, setOpen] = useState(false)
-
   return (
     <Card>
       <CardContent className="flex flex-row items-center justify-between p-5">
@@ -22,19 +15,21 @@ const Header = () => {
           height={18}
           width={120}
         />
+
         {/* Menu Hamburger para dispositivos móveis */}
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={() => setOpen((v) => !v)}
-        >
-          <MenuIcon size={18} className="text-foreground" />
-        </Button>
-        <SidebarSheet open={open} onClose={() => setOpen(false)} />
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button size="icon" variant="outline">
+              <MenuIcon size={18} className="text-foreground" />
+            </Button>
+          </SheetTrigger>
+
+          {/* O componente filho que criamos */}
+          <SidebarSheet />
+        </Sheet>
       </CardContent>
     </Card>
   )
 }
 
-//composition pattern
 export default Header
