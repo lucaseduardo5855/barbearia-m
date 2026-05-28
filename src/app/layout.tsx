@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Toaster } from "sonner"
 import { Card, CardContent } from "./_components/ui/card"
 import Footer from "./_components/footer"
+import AuthProvider from "./_providers/auth"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,10 +37,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children} {/* Pagina da barbearia */}
-        <Toaster />
-        {/* Footer */}
-        <Footer />
+        <AuthProvider>
+          {children} {/* Pagina da barbearia */}
+          <Toaster />
+          {/* Footer */}
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )
