@@ -34,7 +34,8 @@ const Search = ({ initialValue = "" }: SearchProps) => {
   const router = useRouter()
 
   const onSubmit = (data: z.infer<typeof forSchema>) => {
-    router.push(`/barbershops?search=${data.search}`) // Redireciona para a página de barbearias com o termo de busca como query
+    const q = encodeURIComponent(data.search)
+    router.push(`/barbershops?search=${q}`)
   }
 
   return (

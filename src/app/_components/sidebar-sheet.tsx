@@ -106,14 +106,16 @@ const SidebarSheet = () => {
       {/* Botoes do Menu - Opções Rápidas */}
       <div className="flex flex-col gap-4 border-b border-solid py-5">
         {quickSearchOptions.map((option) => (
-          <SheetClose key={option.title} asChild>
-            <Button className="justify-start gap-2" variant="ghost" asChild>
-              <Link href={`/barbershops?service=${option.title}`}>
+          <SheetClose asChild key={option.title}>
+            <Button variant="ghost" asChild className="justify-start gap-2">
+              <Link
+                href={`/barbershops?service=${encodeURIComponent(option.title)}`}
+              >
                 <Image
-                  alt={option.title}
+                  alt={`Ícone de ${option.title}`}
                   src={option.imageUrl}
-                  height={18}
                   width={18}
+                  height={18}
                 />
                 {option.title}
               </Link>
