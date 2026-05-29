@@ -38,11 +38,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children} {/* Pagina da barbearia */}
-          <Toaster />
-          {/* Footer */}
-          <Footer />
+          <div className="flex h-full flex-col">
+            <div className="flex-1">{children}</div>
+            <div className="mt-10">
+              <Footer />
+            </div>
+          </div>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   )
