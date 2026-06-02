@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { signIn, useSession, signOut } from "next-auth/react"
+import SignInDiaLog from "./sign-in-dialong"
 
 const SidebarSheet = () => {
   const { data } = useSession() // Hook para obter os dados da sessão do usuário o data vai conter as informações do usuário logado, como nome, email e imagem de perfil
@@ -57,26 +58,7 @@ const SidebarSheet = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="w-[90%]">
-                <DialogHeader>
-                  <DialogTitle>Faça login na plataforma</DialogTitle>
-                  <DialogDescription>
-                    Conecte-se usando sua conta do Google.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <Button
-                  variant="outline"
-                  className="gap-2 font-bold"
-                  onClick={handleLoginWithGoogleClick}
-                >
-                  <Image
-                    alt="Fazer login com o Google"
-                    src="/Google.svg"
-                    width={18}
-                    height={18}
-                  />
-                  Google
-                </Button>
+                <SignInDiaLog />
               </DialogContent>
             </Dialog>
           </>
