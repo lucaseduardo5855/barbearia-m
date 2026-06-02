@@ -21,10 +21,13 @@ const Home = async () => {
   }) //pega as barbearias populares
 
   // Busca as reservas do usuário autenticado, incluindo os dados do serviço e da barbearia
-  const bookings = session?.user
+  const confirmedBookings = session?.user
     ? await db.booking.findMany({
         where: {
           userId: (session.user as any).id,
+          date: {
+            gte: new Date(),
+          },
         },
         include: {
           service: {
@@ -32,6 +35,9 @@ const Home = async () => {
               barbershop: true,
             },
           },
+        },
+        orderBy: {
+          date: "asc",
         },
       })
     : []
@@ -89,7 +95,7 @@ const Home = async () => {
 
         {/* Agendamentos */}
         <div className="mt-3 flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-          {bookings.map((booking) => (
+          {confirmedBookings.map((booking) => (
             <BookingItem key={booking.id} booking={booking} />
           ))}
         </div>
