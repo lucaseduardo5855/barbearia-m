@@ -123,7 +123,6 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
       }) // Cria um novo objeto Date com a data selecionada e o horário selecionado
       await createBooking({
         serviceId: service.id,
-        userId: (data?.user as any).id,
         date: newDate,
       })
       handleBookingSheetOpenChange() // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso
