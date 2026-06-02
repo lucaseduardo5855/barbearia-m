@@ -1,7 +1,6 @@
 "use server"
 
 import { db } from "@/lib/prisma"
-import { User } from "lucide-react"
 import { getServerSession } from "next-auth"
 import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate"
 import { authOptions } from "../_lib/auth"

@@ -12,14 +12,7 @@ import { AvatarImage, Avatar } from "./ui/avatar"
 import quickSearchOptions from "../_constants/search"
 import Image from "next/image"
 import Link from "next/link"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { signIn, useSession, signOut } from "next-auth/react"
 import SignInDiaLog from "./sign-in-dialong"
 
@@ -77,7 +70,7 @@ const SidebarSheet = () => {
         </SheetClose>
         <SheetClose asChild>
           <Button asChild className="justify-start gap-2" variant="ghost">
-            <Link href="/appointments">
+            <Link href="/bookings">
               <CalendarIcon size={18} />
               Agendamentos
             </Link>
