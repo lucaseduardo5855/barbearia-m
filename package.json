@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky || true"
+    "prepare": "husky && prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/migrations/seed.ts"
