@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 
 import { Badge } from "./ui/badge"
@@ -8,13 +10,32 @@ import { format, isFuture } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import Image from "next/image"
 import PhoneItem from "./phone-item"
+import { Button } from "./ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { deleteBooking } from "../_actions/delete-booking"
+import error from "next/error"
+import { toast } from "sonner"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 //Puxa o service para utilizarmos dentro de outros componentes
 interface BookingItemProps {
@@ -29,16 +50,39 @@ interface BookingItemProps {
   }>
 }
 
+//Todo receber agendamento como prop
 const BookingItem = ({ booking }: BookingItemProps) => {
+  const [isShetOpen, setIsShetOpen] = useState(false)
+
   const {
     service: { barbershop },
   } = booking
 
   const isConfirmed = isFuture(booking.date)
 
+  const router = useRouter()
+
+  //Cancelamento da reserva
+  const handleCancelBookingClick = async () => {
+    try {
+      await deleteBooking(booking.id)
+      setIsShetOpen(false) //fecha o sheet
+      toast.success("Reserva cancelada com sucesso")
+      router.refresh()
+    } catch (e) {
+      console.log(e)
+      toast.error("Erro ao cancelar reserva. Tente novamente.")
+    }
+  }
+
+  //Lida com alteração se foi aberta ou fechada apos o cancelamento
+  const handleSheetOpenChange = (isOpen: boolean) => {
+    setIsShetOpen(isOpen)
+  }
+
   return (
     <>
-      <Sheet>
+      <Sheet open={isShetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetTrigger className="w-full">
           <Card className="min-w-[90%]">
             <CardContent className="flex justify-between p-0">
@@ -145,7 +189,48 @@ const BookingItem = ({ booking }: BookingItemProps) => {
               <PhoneItem key={index} phone={phone} />
             ))}
           </div>
-          telefone
+
+          <SheetFooter className="mt-6">
+            <div className="flex items-center gap-3">
+              <SheetClose asChild>
+                <Button variant="outline" className="flex-1">
+                  Voltar
+                </Button>
+              </SheetClose>
+
+              {isConfirmed && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="flex-1">
+                      Cancelar Reserva
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="w-[90%]">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Você quer cancelar sua reserva?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja fazer o cancelamento? Essa ação é
+                        irreversível.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button
+                          variant="destructive"
+                          onClick={handleCancelBookingClick}
+                        >
+                          Confirmar
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
     </>
