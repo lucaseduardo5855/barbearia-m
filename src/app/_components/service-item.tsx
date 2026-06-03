@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/sheet"
 import { Calendar } from "@/components/ui/calendar"
 import { ptBR } from "date-fns/locale"
-import { useState, useRef, useEffect } from "react"
-import { format, set, startOfDay } from "date-fns"
+import { useState, useRef, useEffect, useMemo } from "react"
+import { format, getTime, isPast, isToday, set, startOfDay } from "date-fns"
 import { useSession } from "next-auth/react"
 import { createBooking } from "../_actions/create-booking"
 import { toast } from "sonner"
@@ -41,12 +41,26 @@ const TIME_LIST = [
   "19:00",
 ]
 
+interface GetTimeListProps {
+  bookings: Booking[]
+  selectDay: Date
+}
+
 // Função para gerar a lista de horários disponíveis com base nas reservas (bookings) do dia selecionado
-const getTimeList = (bookings: Booking[]) => {
+const getTimeList = ({ bookings, selectDay }: GetTimeListProps) => {
   const timelist = TIME_LIST.filter((time) => {
     const hour = Number(time.split(":")[0])
     const minute = Number(time.split(":")[1])
 
+    //Bloqueio de horarios anteriores do atual
+    const timeIsOnThePast = isPast(
+      set(new Date(), { hours: hour, minutes: minute }),
+    )
+    if (timeIsOnThePast && isToday(selectDay)) {
+      return false
+    }
+
+    //Possui reserva no horario atual
     const hasBookingOnCurrentTime = bookings.some(
       (booking) =>
         booking.date.getHours() === hour &&
@@ -126,12 +140,21 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
         date: newDate,
       })
       handleBookingSheetOpenChange() // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso
-      toast.success("Reserva criada com sucesso!")
+      toast.success("Reserva realizada com sucesso!")
     } catch (error) {
       console.log(error)
       toast.error("erro ao criar reserva!")
     }
   }
+
+  // Memoriza a lista de horários (cache) para evitar recálculos pesados. Só executa novamente se o dia ou as reservas mudarem.
+  const timeList = useMemo(() => {
+    if (!selectDay) return []
+    return getTimeList({
+      bookings: dayBookings,
+      selectDay,
+    })
+  }, [dayBookings, selectDay])
 
   // refs para scroll por drag
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -255,16 +278,24 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                       }}
                       className="flex snap-x snap-mandatory gap-3 overflow-x-auto border-b border-solid p-5 px-5 [&::-webkit-scrollbar]:hidden"
                     >
-                      {getTimeList(dayBookings).map((time) => (
-                        <Button
-                          key={time}
-                          variant={selectTime === time ? "default" : "outline"}
-                          className="shrink-0 snap-center rounded-full"
-                          onClick={() => handleTimeSelect(time)}
-                        >
-                          {time}
-                        </Button>
-                      ))}
+                      {timeList.length > 0 ? (
+                        timeList.map((time) => (
+                          <Button
+                            key={time}
+                            variant={
+                              selectTime === time ? "default" : "outline"
+                            }
+                            className="shrink-0 snap-center rounded-full"
+                            onClick={() => handleTimeSelect(time)}
+                          >
+                            {time}
+                          </Button>
+                        ))
+                      ) : (
+                        <p className="text-xs">
+                          Não há horários disponíveis para este dia
+                        </p>
+                      )}
                     </div>
                   )}
 

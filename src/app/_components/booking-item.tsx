@@ -32,7 +32,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { deleteBooking } from "../_actions/delete-booking"
-import error from "next/error"
 import { toast } from "sonner"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -204,6 +203,7 @@ const BookingItem = ({ booking }: BookingItemProps) => {
                       Cancelar Reserva
                     </Button>
                   </AlertDialogTrigger>
+
                   <AlertDialogContent className="w-[90%]">
                     <AlertDialogHeader>
                       <AlertDialogTitle>
