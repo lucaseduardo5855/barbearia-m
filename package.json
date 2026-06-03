@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky || true",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/migrations/seed.ts"
