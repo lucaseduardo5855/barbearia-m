@@ -68,7 +68,6 @@ const BookingItem = ({ booking }: BookingItemProps) => {
       await deleteBooking(booking.id)
       setIsShetOpen(false) //fecha o sheet
       toast.success("Reserva cancelada com sucesso")
-      router.refresh()
     } catch (e) {
       console.log(e)
       toast.error("Erro ao cancelar reserva. Tente novamente.")
@@ -120,7 +119,7 @@ const BookingItem = ({ booking }: BookingItemProps) => {
           </Card>
         </SheetTrigger>
 
-        <SheetContent className="w-[90%]">
+        <SheetContent>
           <SheetHeader>
             <SheetTitle className="text-left">
               Informações da Reserva
