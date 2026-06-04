@@ -10,7 +10,7 @@ import Search from "./_components/search"
 import { getServerSession } from "next-auth"
 import { authOptions } from "./_lib/auth"
 import { format } from "date-fns"
-import { de, ptBR } from "date-fns/locale"
+import { ptBR } from "date-fns/locale"
 
 const Home = async () => {
   const session = await getServerSession(authOptions)

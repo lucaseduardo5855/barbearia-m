@@ -35,6 +35,7 @@ import { deleteBooking } from "../_actions/delete-booking"
 import { toast } from "sonner"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import BookingSummary from "./booking-summary"
 
 //Puxa o service para utilizarmos dentro de outros componentes
 interface BookingItemProps {
@@ -151,6 +152,15 @@ const BookingItem = ({ booking }: BookingItemProps) => {
             >
               {isConfirmed ? "Confirmado" : "Finalizado"}
             </Badge>
+
+            {/*Quadrado de agendamento */}
+            <div className="mb-6 mt-3">
+              <BookingSummary
+                barbershop={barbershop}
+                service={booking.service}
+                selectDay={booking.date}
+              />
+            </div>
 
             <Card className="mb-3 mt-3">
               <CardContent className="space-y-3 p-3">

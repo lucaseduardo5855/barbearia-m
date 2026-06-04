@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import { getBookings } from "../_actions/get-bookins"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import SignInDiaLog from "./sign-in-dialong"
+import BookingSummary from "./booking-summary"
 
 interface ServiceItemProps {
   service: BarbershopService
@@ -104,6 +105,17 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
     fetch()
   }, [selectDay, service.id])
 
+  // Junta a data (dia) e o horário (string) selecionados em um único objeto Date completo,
+  // recriando esse valor automaticamente sempre que o usuário trocar o dia ou a hora.
+  const selectDate = useMemo(() => {
+    if (!selectDay || !selectTime) return
+
+    return set(selectDay, {
+      hours: Number(selectTime.split(":")[0]),
+      minutes: Number(selectTime.split(":")[1]),
+    })
+  }, [selectDay, selectTime])
+
   //
   const handleBookingClick = () => {
     if (data?.user) {
@@ -128,16 +140,11 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
   // Função para lidar com a criação da reserva (booking) quando o usuário confirmar a seleção de data e horário
   const handleCreateBooking = async () => {
     try {
-      if (!selectDay || !selectTime) return
-      const hours = selectTime.split(":")[0] // Converte o horário selecionado (ex: "14:00") em um array de números [14, 0] para facilitar a criação do objeto Date
-      const minute = selectTime.split(":")[1]
-      const newDate = set(selectDay, {
-        hours: Number(hours),
-        minutes: Number(minute),
-      }) // Cria um novo objeto Date com a data selecionada e o horário selecionado
+      if (!selectDate) return
+
       await createBooking({
         serviceId: service.id,
-        date: newDate,
+        date: selectDate,
       })
       handleBookingSheetOpenChange() // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso
       toast.success("Reserva realizada com sucesso!")
@@ -247,7 +254,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                 </Button>
 
                 <SheetContent className="max-h-[80vh] w-[420px] overflow-y-auto md:w-[520px] [&::-webkit-scrollbar]:hidden">
-                  <SheetHeader className="px-0">
+                  <SheetHeader className="p-5 px-0">
                     <SheetTitle>Fazer Reserva</SheetTitle>
                   </SheetHeader>
 
@@ -299,45 +306,15 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                     </div>
                   )}
 
-                  {selectTime &&
-                    selectDay && ( // Se um horário foi selecionado, exibe o resumo da reserva
-                      <div className="p-5">
-                        <Card className="bg-background">
-                          <CardContent className="space-y-3 p-3">
-                            <div className="flex items-center justify-between">
-                              <h2 className="font-bold">{service.name}</h2>
-                              <p className="text-sm font-semibold">
-                                {Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                }).format(Number(service.price))}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <h2 className="text-sm text-gray-400">Data</h2>
-                              <p className="text-sm">
-                                {format(selectDay, "d 'de' MMMM", {
-                                  locale: ptBR,
-                                })}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <h2 className="text-sm text-gray-400">Horário</h2>
-                              <p className="text-sm">{selectTime}</p>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <h2 className="text-sm text-gray-400">
-                                Barbearia
-                              </h2>
-                              <p className="text-sm">{barberShop.name}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    )}
+                  {selectDate && ( // Se um horário foi selecionado, exibe o resumo da reserva
+                    <div className="p-5">
+                      <BookingSummary
+                        barbershop={barberShop}
+                        service={service}
+                        selectDay={selectDate}
+                      />
+                    </div>
+                  )}
                   <SheetFooter className="-mt-5 px-5">
                     <Button
                       onClick={handleCreateBooking}
