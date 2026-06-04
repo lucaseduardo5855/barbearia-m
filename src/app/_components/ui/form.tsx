@@ -5,10 +5,11 @@ import { useController } from "react-hook-form"
 
 type FormProps = React.HTMLAttributes<HTMLDivElement> & {
   children?: React.ReactNode
+  form?: any
 }
 
 export function Form(props: FormProps & any) {
-  const { children, ...rest } = props
+  const { children, form, ...rest } = props
   return <div {...rest}>{children}</div>
 }
 

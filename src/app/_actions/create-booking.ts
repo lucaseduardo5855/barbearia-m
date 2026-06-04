@@ -16,9 +16,27 @@ export const createBooking = async (params: CreateBookingParams) => {
   if (!user) {
     throw new Error("Usuário não autenticado!")
   }
+  // validações
+  if (!params.serviceId) {
+    throw new Error("Serviço inválido")
+  }
+
+  const service = await db.barbershopService.findUnique({
+    where: { id: params.serviceId },
+  })
+
+  if (!service) {
+    throw new Error("Serviço não encontrado para agendamento")
+  }
+
+  if (new Date(params.date) <= new Date()) {
+    throw new Error("Não é possível agendar em data passada")
+  }
+
   await db.booking.create({
     data: { ...params, userId: (user.user as any).id },
   })
-  revalidatePath("/barbershop/[id]")
+  // revalidar a página da barbearia específica para atualizar SSR
+  revalidatePath(`/barbershops/${service.barbershopId}`)
   revalidatePath("/bookings")
 }
