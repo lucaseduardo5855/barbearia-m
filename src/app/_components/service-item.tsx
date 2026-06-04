@@ -246,7 +246,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                   Reservar
                 </Button>
 
-                <SheetContent className="max-h-[80vh] w-[420px] md:w-[520px]">
+                <SheetContent className="max-h-[80vh] w-[420px] overflow-y-auto md:w-[520px] [&::-webkit-scrollbar]:hidden">
                   <SheetHeader className="px-0">
                     <SheetTitle>Fazer Reserva</SheetTitle>
                   </SheetHeader>
@@ -302,7 +302,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                   {selectTime &&
                     selectDay && ( // Se um horário foi selecionado, exibe o resumo da reserva
                       <div className="p-5">
-                        <Card>
+                        <Card className="bg-background">
                           <CardContent className="space-y-3 p-3">
                             <div className="flex items-center justify-between">
                               <h2 className="font-bold">{service.name}</h2>
