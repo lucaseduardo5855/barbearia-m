@@ -1,48 +1,30 @@
-import { Input } from "./_components/ui/input"
-import Header from "./_components/header"
-import { Button } from "./_components/ui/button"
-import Image from "next/image"
-import { db } from "@/lib/prisma"
-import BarbershopItem from "./_components/barbershop-item"
-import BookingItem from "./_components/booking-item"
-import quickSearchOptions from "./_constants/search"
-import Search from "./_components/search"
-import { getServerSession } from "next-auth"
-import { authOptions } from "./_lib/auth"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { Input } from "./_components/ui/input";
+import Header from "./_components/header";
+import { Button } from "./_components/ui/button";
+import Image from "next/image";
+import { db } from "@/lib/prisma";
+import BarbershopItem from "./_components/barbershop-item";
+import BookingItem from "./_components/booking-item";
+import quickSearchOptions from "./_constants/search";
+import Search from "./_components/search";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./_lib/auth";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { getConfirmedBookings } from "./_data/get-confirmed-bookings";
 
 const Home = async () => {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
   //chamar bd
-  const barbershops = await db.barbershop.findMany({}) //pega todas as barbearias
+  const barbershops = await db.barbershop.findMany({}); //pega todas as barbearias
   const popularBarbershops = await db.barbershop.findMany({
     orderBy: {
       name: "desc",
     },
-  }) //pega as barbearias populares
+  }); //pega as barbearias populares chamada do banco
 
   // Busca as reservas do usuário autenticado, incluindo os dados do serviço e da barbearia
-  const confirmedBookings = session?.user
-    ? await db.booking.findMany({
-        where: {
-          userId: (session.user as any).id,
-          date: {
-            gte: new Date(),
-          },
-        },
-        include: {
-          service: {
-            include: {
-              barbershop: true,
-            },
-          },
-        },
-        orderBy: {
-          date: "asc",
-        },
-      })
-    : []
+  const confirmedBookings = await getConfirmedBookings();
 
   return (
     <div>
@@ -137,7 +119,7 @@ const Home = async () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
