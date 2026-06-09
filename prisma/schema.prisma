@@ -6,6 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // Modelo de usuário, representando os clientes da barbearia
@@ -89,6 +90,28 @@ model BarbershopService {
   bookings     Booking[] //Relação com as reservas feitas para este serviço
 }
 
+
+//Enums para representar o estado do agendamento do pagamento
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  DONE
+}
+
+//Enum para representar o método de pagamento
+enum PaymentMethod{
+  ON_SITE
+  ONLINE
+}
+
+enum PaymentStatus{
+  PENDING
+  PAID 
+  FAILED
+  REFUNDED
+}
+
 // Modelo de reserva de serviço pela barbearia
 model Booking {
   id        String            @id @default(uuid())
@@ -96,11 +119,19 @@ model Booking {
   serviceId String
   service   BarbershopService @relation(fields: [serviceId], references: [id])
   date      DateTime
+  status    BookingStatus     @default(CONFIRMED)
+  paymentMethod PaymentMethod @default(ON_SITE)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  // Stripe checkout session
+  stripeSessionId String? @unique
+  
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }
+
 
 // Modelo de avaliação (comentado por enquanto, pode ser implementado posteriormente)
 // model Rating {

@@ -1,6 +1,11 @@
 "use client"
 
-import { Barbershop, BarbershopService, Booking } from "@prisma/client"
+import {
+  Barbershop,
+  BarbershopService,
+  Booking,
+  PaymentMethod,
+} from "@prisma/client"
 import Image from "next/image"
 import { Button } from "./ui/button"
 import { Card, CardContent } from "./ui/card"
@@ -92,6 +97,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
 
   //
   const [bookingSheetIsOpen, setBookingSheetIsOpen] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("ON_SITE")
 
   useEffect(() => {
     if (!selectDay) return
@@ -129,6 +135,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
     setSelectDay(undefined)
     setSelectTime(undefined)
     setDayBookings([])
+    setPaymentMethod("ON_SITE")
     setBookingSheetIsOpen(false)
   }
 
@@ -145,6 +152,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
       await createBooking({
         serviceId: service.id,
         date: selectDate,
+        paymentMethod,
       })
       handleBookingSheetOpenChange() // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso
       toast.success("Reserva realizada com sucesso!")
@@ -307,12 +315,43 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                   )}
 
                   {selectDate && ( // Se um horário foi selecionado, exibe o resumo da reserva
-                    <div className="p-5">
+                    <div className="space-y-3 p-5">
                       <BookingSummary
                         barbershop={barberShop}
                         service={service}
                         selectDay={selectDate}
                       />
+
+                      {/* Seletor de Método de Pagamento */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-semibold uppercase text-gray-400">
+                          Método de Pagamento
+                        </h4>
+                        <div className="flex gap-3">
+                          <Button
+                            type="button"
+                            className="flex-1"
+                            variant={
+                              paymentMethod === "ON_SITE"
+                                ? "default"
+                                : "outline"
+                            }
+                            onClick={() => setPaymentMethod("ON_SITE")}
+                          >
+                            Pagar no local
+                          </Button>
+                          <Button
+                            type="button"
+                            className="flex-1"
+                            variant={
+                              paymentMethod === "ONLINE" ? "default" : "outline"
+                            }
+                            onClick={() => setPaymentMethod("ONLINE")}
+                          >
+                            Pagar online (Stripe)
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   )}
                   <SheetFooter className="-mt-5 px-5">
