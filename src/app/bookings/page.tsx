@@ -1,57 +1,26 @@
-import { db } from "@/lib/prisma"
-import Header from "../_components/header"
-import { getServerSession } from "next-auth"
-import { authOptions } from "../_lib/auth"
-import { notFound } from "next/dist/client/components/not-found"
-import BookingItem from "../_components/booking-item"
+import { db } from "@/lib/prisma";
+import Header from "../_components/header";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../_lib/auth";
+import { notFound } from "next/dist/client/components/not-found";
+import BookingItem from "../_components/booking-item";
+import { getConfirmedBookings } from "../_data/get-confirmed-bookings";
+import { getConcluedBookings } from "../_data/get-conclued-bookings";
 
 const Bookings = async () => {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     //TODO - Mostrar popup de login
-    return notFound()
+    return notFound();
   }
 
   //Filtro de agendamentos
   //agendamentos do user logado, agendamentos confirmados
-  const confirmedBookings = await db.booking.findMany({
-    where: {
-      userId: (session?.user as any).id,
-      date: {
-        gte: new Date(),
-      },
-    },
-    include: {
-      service: {
-        include: {
-          barbershop: true,
-        },
-      },
-    },
-    orderBy: {
-      date: "asc",
-    },
-  })
+  const confirmedBookings = await getConfirmedBookings();
+
   //agendamentos ja finalizados
-  const concluedBookings = await db.booking.findMany({
-    where: {
-      userId: (session?.user as any).id,
-      date: {
-        lt: new Date(),
-      },
-    },
-    include: {
-      service: {
-        include: {
-          barbershop: true,
-        },
-      },
-    },
-    orderBy: {
-      date: "asc",
-    },
-  })
+  const concluedBookings = await getConcluedBookings();
 
   return (
     <>
@@ -81,7 +50,7 @@ const Bookings = async () => {
             <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
               Finalizados
             </h2>
-            {concluedBookings.map((booking) => (
+            {concluedBookings.map((booking: any) => (
               <BookingItem
                 key={booking.id}
                 booking={JSON.parse(JSON.stringify(booking))}
@@ -91,7 +60,7 @@ const Bookings = async () => {
         )}
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Bookings
+export default Bookings;
