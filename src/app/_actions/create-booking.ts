@@ -4,10 +4,12 @@ import { db } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate"
 import { authOptions } from "../_lib/auth"
+import { PaymentMethod } from "@prisma/client"
 
 interface CreateBookingParams {
   serviceId: string
   date: Date
+  paymentMethod?: PaymentMethod
 }
 
 // Função para criar uma nova reserva (booking) no banco de dados
@@ -34,7 +36,15 @@ export const createBooking = async (params: CreateBookingParams) => {
   }
 
   await db.booking.create({
-    data: { ...params, userId: (user.user as any).id },
+    data: {
+      serviceId: params.serviceId,
+      date: params.date,
+      userId: (user.user as any).id,
+      paymentMethod: params.paymentMethod || "ON_SITE",
+      // Se for pagamento ONLINE, criamos com status PENDING até que o Stripe confirme.
+      // Se for ON_SITE (no local), criamos como CONFIRMED direto.
+      status: params.paymentMethod === "ONLINE" ? "PENDING" : "CONFIRMED",
+    },
   })
   // revalidar a página da barbearia específica para atualizar SSR
   revalidatePath(`/barbershops/${service.barbershopId}`)
