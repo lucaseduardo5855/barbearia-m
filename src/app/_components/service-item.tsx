@@ -16,6 +16,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { createStripeCheckout } from "../_actions/create-stripe-checkout"
 import { Calendar } from "@/components/ui/calendar"
 import { ptBR } from "date-fns/locale"
 import { useState, useRef, useEffect, useMemo } from "react"
@@ -149,12 +150,31 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
     try {
       if (!selectDate) return
 
+      // cria a reserva no banco de dados primeiro
       await createBooking({
         serviceId: service.id,
         date: selectDate,
         paymentMethod,
       })
-      handleBookingSheetOpenChange() // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso
+
+      // se a forma de pagamento for online, cria um checkout no stripe e redireciona
+      if (paymentMethod === "ONLINE") {
+        const checkoutUrl = await createStripeCheckout({
+          products: [service],
+        })
+
+        // se o checkout for criado com sucesso, redireciona o usuário para a página de pagamento
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl
+          return
+        }
+
+        toast.error("Erro ao gerar link de pagamento!")
+        return
+      }
+
+      // Limpa os estados e fecha a sheet de reserva após criar a reserva com sucesso (pagamento no local)
+      handleBookingSheetOpenChange()
       toast.success("Reserva realizada com sucesso!")
     } catch (error) {
       console.log(error)
@@ -291,7 +311,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                             e.deltaY
                         }
                       }}
-                      className="flex snap-x snap-mandatory gap-3 overflow-x-auto border-b border-solid p-5 px-5 [&::-webkit-scrollbar]:hidden"
+                      className="grid grid-cols-4 gap-3 border-b border-solid p-5"
                     >
                       {timeList.length > 0 ? (
                         timeList.map((time) => (
