@@ -122,10 +122,10 @@ const Home = async () => {
   )
 }
 
-console.log("Variáveis carregadas:", {
-  DATABASE_URL: !!process.env.DATABASE_URL,
-  NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
-  STRIPE_PUBLIC_KEY: !!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY,
-})
+if (!process.env.DATABASE_URL || !process.env.NEXTAUTH_SECRET) {
+  throw new Error(
+    `CONFIGURAÇÃO FALTANDO: DB=${!!process.env.DATABASE_URL}, AUTH=${!!process.env.NEXTAUTH_SECRET}`,
+  )
+}
 
 export default Home
