@@ -1,4 +1,5 @@
 import { db } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
@@ -38,5 +39,6 @@ export async function POST(request: NextRequest) {
       },
     })
   }
+  revalidatePath("")
   return NextResponse.json({ success: true }, { status: 200 })
 }
