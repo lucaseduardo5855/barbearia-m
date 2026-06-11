@@ -14,4 +14,8 @@ if (process.env.NODE_ENV === "production") {
   prisma = global.cachedPrisma
 }
 
+if (!process.env.DATABASE_URL) {
+  console.error("ERRO CRÍTICO: DATABASE_URL não encontrada no servidor!")
+}
+
 export const db = prisma
