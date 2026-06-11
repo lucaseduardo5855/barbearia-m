@@ -1,46 +1,103 @@
-# Part 0
-- [x] Setup do banco
-- [x] Seeding do banco (inserir dados)
-- [X] introudção ao Next.js
-- [X] Tailwind e Shadcn
-- [X] Git Hooks
+# 💈 Barber-M
 
-# Part 1
+Barber-M é um sistema moderno de agendamentos online para barbearias, construído com foco em alta performance, usabilidade premium e fluxos completos de pagamento integrados.
 
+O sistema permite que clientes encontrem barbearias, visualizem serviços e preços, agendem horários de forma inteligente com verificação de disponibilidade em tempo real e realizem pagamentos online via cartão de crédito ou optem por pagar no local.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
 
-## Getting Started
+## 🚀 Funcionalidades Principais
 
-First, run the development server:
+- **Visualização de Barbearias**: Pesquisa e listagem dinâmica de barbearias, seus endereços, fotos, descrições e contatos.
+- **Painel de Agendamentos**:
+  - Exibição organizada de agendamentos **Confirmados**.
+  - Seção inteligente e colapsável para agendamentos **Finalizados** (com botão interativo de expandir/ocultar para evitar listas muito longas).
+- **Agendamento Inteligente**:
+  - Seleção dinâmica de data e horários disponíveis.
+  - Prevenção de conflito de horários (bloqueando horários já reservados por outros usuários no banco de dados).
+- **Autenticação Segura**: Login social completo usando NextAuth.js (com suporte ao Google).
+- **Integração com Stripe**:
+  - Possibilidade de agendamento gratuito com pagamento no local ou pagamento online por cartão de crédito.
+  - Redirecionamento automático e seguro para a página de checkout do Stripe.
+  - **Webhook Seguro**: Atualização automática do status do agendamento (`Confirmado`) e pagamento (`Pago`) assim que a transação é processada no Stripe.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Core**: [Next.js 14](https://nextjs.org/) (App Router) & [React 18](https://react.dev/)
+- **Estilização**: [Tailwind CSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/) (Componentes acessíveis com Radix)
+- **Banco de Dados & ORM**: [Prisma ORM](https://www.prisma.io/) & [PostgreSQL](https://www.postgresql.org/) (Neon DB)
+- **Autenticação**: [NextAuth.js](https://next-auth.js.org/)
+- **Pagamentos**: [Stripe SDK](https://stripe.com/) & Stripe Webhooks
+- **Datas**: [date-fns](https://date-fns.org/)
+- **Ferramentas de Qualidade**: Prettier, ESLint, Git Hooks com Husky
+
+---
+
+## ⚙️ Variáveis de Ambiente (`.env`)
+
+Crie um arquivo `.env` na raiz do seu projeto contendo as seguintes variáveis:
+
+```env
+# Conexão com o Banco de Dados (Direct URL para migrações no Neon DB)
+DATABASE_URL="sua_string_de_conexao_pooler_postgres"
+DIRECT_URL="sua_string_de_conexao_direta_postgres"
+
+# NextAuth Configuração
+NEXTAUTH_SECRET="seu_segredo_para_gerar_tokens"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Credenciais de Login Social (Google Cloud Console)
+GOOGLE_CLIENT_ID="seu_google_client_id"
+GOOGLE_CLIENT_SECRET="seu_google_client_secret"
+
+# Stripe Configurações
+STRIPE_SECRET_KEY="sua_chave_secreta_do_stripe"
+STRIPE_WEBHOOK_SECRET="seu_segredo_de_webhook_do_stripe"
+
+# URL Base da Aplicação
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 💻 Como Iniciar o Projeto Localmente
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Clonar e Instalar Dependências
+```bash
+git clone https://github.com/lucaseduardo5855/barbearia-m.git
+cd barbearia-m
+npm install
+```
 
-## Learn More
+### 2. Configurar o Banco de Dados (Prisma)
+Gere o cliente do Prisma e rode as migrações para criar as tabelas no seu PostgreSQL:
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+*(Opcional)* Se quiser popular seu banco de dados com barbearias e serviços fictícios para teste, rode o seed:
+```bash
+npx prisma db seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Rodar o Servidor de Desenvolvimento
+```bash
+npm run dev
+```
+Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Rodar o Stripe Webhook Localmente (Para testar pagamentos)
+Instale a [Stripe CLI](https://stripe.com/docs/stripe-cli) e execute o comando abaixo para encaminhar os eventos do Stripe para a sua API local:
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+Copie a chave de webhook gerada no terminal (`whsec_...`) e salve-a na variável `STRIPE_WEBHOOK_SECRET` no seu arquivo `.env`.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📄 Licença
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este projeto é desenvolvido para fins de estudo e portfólio. Sinta-se livre para clonar e brincar!
