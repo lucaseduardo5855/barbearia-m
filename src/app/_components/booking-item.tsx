@@ -58,7 +58,8 @@ const BookingItem = ({ booking }: BookingItemProps) => {
     service: { barbershop },
   } = booking
 
-  const isConfirmed = isFuture(booking.date)
+  const isFutureBooking = isFuture(booking.date)
+  const isConfirmed = isFutureBooking && booking.status !== "CANCELLED"
 
   const router = useRouter()
 
@@ -87,19 +88,39 @@ const BookingItem = ({ booking }: BookingItemProps) => {
             <CardContent className="flex justify-between p-0">
               {/* Esquerda */}
               <div className="flex flex-col gap-2 p-5 py-5">
-                <Badge
-                  className="rounded-full"
-                  variant={isConfirmed ? "default" : "secondary"}
-                >
-                  {isConfirmed ? "Confirmado" : "Finalizado"}
-                </Badge>
-                <h3 className="font-semibold">{booking.service.name}</h3>
+                <div className="flex items-center gap-2">
+                  {/* 1. Status Principal do Agendamento */}
+                  <Badge
+                    className="w-fit rounded-full"
+                    variant={!isFutureBooking ? "secondary" : "default"}
+                  >
+                    {!isFutureBooking ? "Finalizado" : "Confirmado"}
+                  </Badge>
+
+                  {/* 2. Status do Pagamento (Apenas para agendamentos futuros) */}
+                  {isFutureBooking && (
+                    <Badge className="w-fit rounded-full" variant="outline">
+                      {booking.paymentMethod === "ONLINE"
+                        ? booking.paymentStatus === "PAID"
+                          ? "Pago Online"
+                          : "Aguardando Pagamento"
+                        : "Pagar no local"}
+                    </Badge>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={barbershop.imageUrl} />
                   </Avatar>
-                  <p className="text-sm">{barbershop.name}</p>
+                  <div className="flex flex-col">
+                    {/* 1. Nome da barbearia primeiro */}
+                    <p className="text-xs text-gray-400">{barbershop.name}</p>
+                    {/* 2. Nome do serviço embaixo */}
+                    <h3 className="text-sm font-semibold">
+                      {booking.service.name}
+                    </h3>
+                  </div>
                 </div>
               </div>
 

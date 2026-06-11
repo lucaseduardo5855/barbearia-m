@@ -20,15 +20,23 @@ export async function POST(request: NextRequest) {
   const event = Stripe.webhooks.constructEvent(text, signature, webhookSecret)
 
   const paymentIsSucessful = event.type === "checkout.session.completed"
+
   if (paymentIsSucessful) {
+    const bookingId = event.data.object.metadata?.bookingId
+
+    if (!bookingId) {
+      return NextResponse.json({ received: true }, { status: 400 })
+    }
     //Atualizar o meu pedido
-    db.booking.update({
+    await db.booking.update({
       where: {
-        id: event.data.object.metadata?.bookingId,
+        id: bookingId,
       },
       data: {
         status: "CONFIRMED",
+        paymentStatus: "PAID",
       },
     })
   }
+  return NextResponse.json({ success: true }, { status: 200 })
 }

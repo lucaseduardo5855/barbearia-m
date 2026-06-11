@@ -35,7 +35,7 @@ export const createBooking = async (params: CreateBookingParams) => {
     throw new Error("Não é possível agendar em data passada")
   }
 
-  await db.booking.create({
+  const booking = await db.booking.create({
     data: {
       serviceId: params.serviceId,
       date: params.date,
@@ -49,4 +49,6 @@ export const createBooking = async (params: CreateBookingParams) => {
   // revalidar a página da barbearia específica para atualizar SSR
   revalidatePath(`/barbershops/${service.barbershopId}`)
   revalidatePath("/bookings")
+
+  return booking
 }

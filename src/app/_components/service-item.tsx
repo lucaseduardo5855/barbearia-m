@@ -151,7 +151,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
       if (!selectDate) return
 
       // cria a reserva no banco de dados primeiro
-      await createBooking({
+      const booking = await createBooking({
         serviceId: service.id,
         date: selectDate,
         paymentMethod,
@@ -161,6 +161,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
       if (paymentMethod === "ONLINE") {
         const checkoutUrl = await createStripeCheckout({
           products: [service],
+          bookingId: booking.id,
         })
 
         // se o checkout for criado com sucesso, redireciona o usuário para a página de pagamento
