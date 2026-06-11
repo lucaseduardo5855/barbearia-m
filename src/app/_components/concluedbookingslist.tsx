@@ -4,13 +4,7 @@ import { useState } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "./ui/button"
 import BookingItem from "./booking-item"
-import {
-  BookingStatus,
-  PaymentMethod,
-  PaymentStatus,
-  Prisma,
-} from "@prisma/client"
-import { GetResult } from "@prisma/client/runtime"
+import { Prisma } from "@prisma/client"
 
 interface ConcluedBookingsListProps {
   bookings: Prisma.BookingGetPayload<{
