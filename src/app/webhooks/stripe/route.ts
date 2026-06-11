@@ -20,25 +20,50 @@ export async function POST(request: NextRequest) {
   const text = await request.text()
   const event = Stripe.webhooks.constructEvent(text, signature, webhookSecret)
 
-  const paymentIsSucessful = event.type === "checkout.session.completed"
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const bookingId = event.data.object.metadata?.bookingId
 
-  if (paymentIsSucessful) {
-    const bookingId = event.data.object.metadata?.bookingId
+      if (!bookingId) {
+        return NextResponse.json({ received: true }, { status: 400 })
+      }
 
-    if (!bookingId) {
-      return NextResponse.json({ received: true }, { status: 400 })
+      // Atualizar o agendamento para CONFIRMED e PAID
+      await db.booking.update({
+        where: {
+          id: bookingId,
+        },
+        data: {
+          status: "CONFIRMED",
+          paymentStatus: "PAID",
+        },
+      })
+
+      revalidatePath("/bookings")
+      break
     }
-    //Atualizar o meu pedido
-    await db.booking.update({
-      where: {
-        id: bookingId,
-      },
-      data: {
-        status: "CONFIRMED",
-        paymentStatus: "PAID",
-      },
-    })
+
+    case "checkout.session.async_payment_failed": {
+      const bookingId = event.data.object.metadata?.bookingId
+      if (!bookingId) {
+        return NextResponse.json({ received: true }, { status: 400 })
+      }
+
+      // Atualizar o agendamento para CANCELLED e FAILED
+      await db.booking.update({
+        where: {
+          id: bookingId,
+        },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "FAILED",
+        },
+      })
+
+      revalidatePath("/bookings")
+      break
+    }
   }
-  revalidatePath("")
-  return NextResponse.json({ success: true }, { status: 200 })
+
+  return NextResponse.json({ received: true }, { status: 200 })
 }
