@@ -122,10 +122,4 @@ const Home = async () => {
   )
 }
 
-if (!process.env.DATABASE_URL || !process.env.NEXTAUTH_SECRET) {
-  throw new Error(
-    `CONFIGURAÇÃO FALTANDO: DB=${!!process.env.DATABASE_URL}, AUTH=${!!process.env.NEXTAUTH_SECRET}`,
-  )
-}
-
 export default Home
