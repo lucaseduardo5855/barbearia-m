@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   }
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   if (!webhookSecret) {
-    throw new Error("missing webhook secret, handle it please")
+    return new Response("Webhook secret não configurado", { status: 400 })
   }
 
   const text = await request.text()
