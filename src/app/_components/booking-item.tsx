@@ -99,7 +99,16 @@ const BookingItem = ({ booking }: BookingItemProps) => {
 
                   {/* 2. Status do Pagamento (Apenas para agendamentos futuros) */}
                   {isFutureBooking && (
-                    <Badge className="w-fit rounded-full" variant="outline">
+                    <Badge
+                      className={`w-fit rounded-full ${
+                        booking.paymentMethod === "ONLINE"
+                          ? booking.paymentStatus === "PAID"
+                            ? "bg-green-500/20 text-green-500 border-none hover:bg-green-500/20"
+                            : "bg-yellow-500/20 text-yellow-500 border-none hover:bg-yellow-500/20"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary"
+                      }`}
+                      variant="outline"
+                    >
                       {booking.paymentMethod === "ONLINE"
                         ? booking.paymentStatus === "PAID"
                           ? "Pago Online"
