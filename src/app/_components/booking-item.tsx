@@ -88,7 +88,7 @@ const BookingItem = ({ booking }: BookingItemProps) => {
             <CardContent className="flex justify-between p-0">
               {/* Esquerda */}
               <div className="flex flex-col gap-2 p-5 py-5">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start gap-1">
                   {/* 1. Status Principal do Agendamento */}
                   <Badge
                     className="w-fit rounded-full"
@@ -100,18 +100,17 @@ const BookingItem = ({ booking }: BookingItemProps) => {
                   {/* 2. Status do Pagamento (Apenas para agendamentos futuros) */}
                   {isFutureBooking && (
                     <Badge
-                      className={`w-fit rounded-full ${
-                        booking.paymentMethod === "ONLINE"
-                          ? booking.paymentStatus === "PAID"
-                            ? "bg-green-500/20 text-green-500 border-none hover:bg-green-500/20"
-                            : "bg-yellow-500/20 text-yellow-500 border-none hover:bg-yellow-500/20"
-                          : "bg-secondary text-secondary-foreground hover:bg-secondary"
-                      }`}
+                      className={`w-fit rounded-full ${booking.paymentMethod === "ONLINE"
+                        ? booking.paymentStatus === "PAID"
+                          ? "bg-green-500/20 text-green-500 border-none hover:bg-green-500/20"
+                          : "bg-yellow-500/20 text-yellow-500 border-none hover:bg-yellow-500/20"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary"
+                        }`}
                       variant="outline"
                     >
                       {booking.paymentMethod === "ONLINE"
                         ? booking.paymentStatus === "PAID"
-                          ? "Pago Online"
+                          ? "Pagamento confirmado"
                           : "Aguardando Pagamento"
                         : "Pagar no local"}
                     </Badge>
