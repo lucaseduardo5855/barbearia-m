@@ -87,12 +87,14 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
                         <span>{barbershop.address}</span>
                     </div>
 
-                    <div className="flex justify-center pt-1">
-                        <a href="https://www.instagram.com/barbeariadominhoca_/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
-                            <InstagramIcon className="w-4 h-4" />
-                            <span>Siga-nos no Instagram</span>
-                        </a>
-                    </div>
+                    {barbershop.instagramUrl && (
+                        <div className="flex justify-center pt-1">
+                            <a href={barbershop.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
+                                <InstagramIcon className="w-4 h-4" />
+                                <span>Siga-nos no Instagram</span>
+                            </a>
+                        </div>
+                    )}
                 </div>
 
                 {/* 5. Os dois botões principais que direcionam para o agendamento e reservas */}
