@@ -62,7 +62,7 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Banner Superior da Barbearia (se houver, senão usa imagem padrão) */}
-            <div className="relative w-full h-[200px] bg-muted">
+            <div className="relative w-full h-[200px] bg-muted ">
                 {bannerUrl ? (
                     <Image
                         src={bannerUrl}
@@ -80,7 +80,7 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
             {/* Conteúdo Principal */}
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6 max-w-md mx-auto">
                 {/* Logo/Imagem da Barbearia */}
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary -mt-16 bg-background">
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary mt-3 bg-background">
                     {imageUrl && (
                         <Image
                             src={imageUrl}

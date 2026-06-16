@@ -45,13 +45,15 @@ interface BookingItemProps {
         include: {
           barbershop: true
         }
-      }
+      },
+      barber: true
     }
   }>
+  hideBarberShopInfo?: boolean
 }
 
 //Todo receber agendamento como prop
-const BookingItem = ({ booking }: BookingItemProps) => {
+const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) => {
   const [isShetOpen, setIsShetOpen] = useState(false)
 
   const {
@@ -116,19 +118,34 @@ const BookingItem = ({ booking }: BookingItemProps) => {
                     </Badge>
                   )}
                 </div>
+                <div className="flex flex-col gap-1.5 items-start text-left">
+                  {/* Se hideBarberShopInfo for falso, exibe a logo e o nome da barbearia */}
+                  {!hideBarberShopInfo && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={barbershop.imageUrl} />
+                      </Avatar>
+                      <p className="text-xs text-gray-400">{barbershop.name}</p>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={barbershop.imageUrl} />
-                  </Avatar>
+                  {/* Nome do Serviço em destaque */}
                   <div className="flex flex-col">
-                    {/* 1. Nome da barbearia primeiro */}
-                    <p className="text-xs text-gray-400">{barbershop.name}</p>
-                    {/* 2. Nome do serviço embaixo */}
-                    <h3 className="text-sm font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Serviço</span>
+                    <h3 className="text-sm font-semibold text-white">
                       {booking.service.name}
                     </h3>
                   </div>
+
+                  {/* Nome do Barbeiro (se houver algum associado) */}
+                  {booking.barber && (
+                    <div className="flex flex-col mt-0.5">
+                      <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Profissional</span>
+                      <p className="text-xs text-gray-300">
+                        {booking.barber.name}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -148,100 +165,100 @@ const BookingItem = ({ booking }: BookingItemProps) => {
           </Card>
         </SheetTrigger>
 
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle className="text-left">
-              Informações da Reserva
-            </SheetTitle>
-          </SheetHeader>
-          <div className="relative mx-4 mt-6 flex h-[180px] items-end rounded-xl">
-            <Image
-              alt={`Mapa da Barbearia ${barbershop.name}`}
-              src="/map.png"
-              fill
-              className="rounded-xl object-cover"
-            />
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="text-left">
+                  Informações da Reserva
+                </SheetTitle>
+              </SheetHeader>
+              <div className="relative mx-4 mt-6 flex h-[180px] items-end rounded-xl">
+                <Image
+                  alt={`Mapa da Barbearia ${barbershop.name}`}
+                  src="/map.png"
+                  fill
+                  className="rounded-xl object-cover"
+                />
 
-            <Card className="z-50 mx-5 mb-3 w-full rounded-xl">
-              <CardContent className="flex items-center gap-3 px-5 py-3">
-                <Avatar>
-                  <AvatarImage src={barbershop.imageUrl} />
-                </Avatar>
-                <div>
-                  <h3 className="font-bold">{barbershop.name}</h3>
-                  <p className="text-xs">{barbershop.address}</p>
+                <Card className="z-50 mx-5 mb-3 w-full rounded-xl">
+                  <CardContent className="flex items-center gap-3 px-5 py-3">
+                    <Avatar>
+                      <AvatarImage src={barbershop.imageUrl} />
+                    </Avatar>
+                    <div>
+                      <h3 className="font-bold">{barbershop.name}</h3>
+                      <p className="text-xs">{barbershop.address}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="mt-6 p-3">
+                <Badge
+                  className="rounded-full"
+                  variant={isConfirmed ? "default" : "secondary"}
+                >
+                  {isConfirmed ? "Confirmado" : "Finalizado"}
+                </Badge>
+
+                {/*Quadrado de agendamento */}
+                <div className="mb-6 mt-3">
+                  <BookingSummary
+                    barbershop={barbershop}
+                    service={booking.service}
+                    selectDay={booking.date}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="mt-6 p-3">
-            <Badge
-              className="rounded-full"
-              variant={isConfirmed ? "default" : "secondary"}
-            >
-              {isConfirmed ? "Confirmado" : "Finalizado"}
-            </Badge>
 
-            {/*Quadrado de agendamento */}
-            <div className="mb-6 mt-3">
-              <BookingSummary
-                barbershop={barbershop}
-                service={booking.service}
-                selectDay={booking.date}
-              />
-            </div>
+                {barbershop.phones.map((phone, index) => (
+                  <PhoneItem key={index} phone={phone} />
+                ))}
+              </div>
 
-            {barbershop.phones.map((phone, index) => (
-              <PhoneItem key={index} phone={phone} />
-            ))}
-          </div>
-
-          <SheetFooter className="mt-6">
-            <div className="flex items-center gap-3">
-              <SheetClose asChild>
-                <Button variant="outline" className="flex-1">
-                  Voltar
-                </Button>
-              </SheetClose>
-
-              {isConfirmed && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex-1">
-                      Cancelar Reserva
+              <SheetFooter className="mt-6">
+                <div className="flex items-center gap-3">
+                  <SheetClose asChild>
+                    <Button variant="outline" className="flex-1">
+                      Voltar
                     </Button>
-                  </AlertDialogTrigger>
+                  </SheetClose>
 
-                  <AlertDialogContent className="w-[90%]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Você quer cancelar sua reserva?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja fazer o cancelamento? Essa ação é
-                        irreversível.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction asChild>
-                        <Button
-                          variant="destructive"
-                          onClick={handleCancelBookingClick}
-                        >
-                          Confirmar
+                  {isConfirmed && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="flex-1">
+                          Cancelar Reserva
                         </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    </>
-  )
+                      </AlertDialogTrigger>
+
+                      <AlertDialogContent className="w-[90%]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Você quer cancelar sua reserva?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja fazer o cancelamento? Essa ação é
+                            irreversível.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction asChild>
+                            <Button
+                              variant="destructive"
+                              onClick={handleCancelBookingClick}
+                            >
+                              Confirmar
+                            </Button>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </>
+        )
 }
 
-export default BookingItem
+        export default BookingItem

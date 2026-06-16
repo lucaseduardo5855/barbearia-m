@@ -16,10 +16,12 @@ interface ConcluedBookingsListProps {
       }
     }
   }>[]
+  hideBarberShopInfo?: boolean  
 }
 
 export default function ConcluedBookingsList({
   bookings,
+  hideBarberShopInfo,
 }: ConcluedBookingsListProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -46,7 +48,7 @@ export default function ConcluedBookingsList({
       {isOpen && (
         <div className="animate-in fade-in slide-in-from-top-2 mt-4 space-y-3 duration-300">
           {bookings.map((booking) => (
-            <BookingItem key={booking.id} booking={booking} />
+            <BookingItem key={booking.id} booking={booking} hideBarberShopInfo={hideBarberShopInfo} />
           ))}
         </div>
       )}
