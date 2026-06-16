@@ -3,6 +3,28 @@ import { notFound } from "next/navigation"
 import { Button } from "@/app/_components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
+import { MapPinIcon } from "lucide-react"
+
+// Ícone do Instagram customizado (já que a versão do lucide-react do projeto não exporta ícones de marcas)
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        {...props}
+    >
+        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+)
+
 
 // 1. Definimos a interface dos parâmetros que vêm da URL
 interface BarbershopPageProps {
@@ -56,11 +78,21 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
                 </div>
 
                 {/* Nome e Mensagem de Boas-Vindas */}
-                <div className="space-y-2">
-                    <h1 className="text-2xl font-bold">{barbershop.name}</h1>
-                    <p className="text-sm text-muted-foreground">
-                        {barbershop.welcomeMessage || "Bem-vindo ao nosso sistema de agendamentos!"}
-                    </p>
+                <div className="space-y-3">
+                    <h1 className="text-2xl font-semibold">{barbershop.name}</h1>
+                    <p className="text-sm text-muted-foreground">{barbershop.welcomeMessage || "Bem- vindo ao nosso sistema de agendamentos!"}</p>
+
+                    <div className="flex items-center gap-1 text-sm text-gray-400 justify-center">
+                        <MapPinIcon className="w-3.5 h-3.5" />
+                        <span>{barbershop.address}</span>
+                    </div>
+
+                    <div className="flex justify-center pt-1">
+                        <a href="https://www.instagram.com/barbeariadominhoca_/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
+                            <InstagramIcon className="w-4 h-4" />
+                            <span>Siga-nos no Instagram</span>
+                        </a>
+                    </div>
                 </div>
 
                 {/* 5. Os dois botões principais que direcionam para o agendamento e reservas */}
