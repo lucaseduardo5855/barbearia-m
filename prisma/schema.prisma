@@ -68,15 +68,28 @@ model VerificationToken {
 
 // Modelo de barbearia
 model Barbershop {
-  id          String              @id @default(uuid())
-  name        String
-  address     String
-  phones      String[]
-  description String
-  imageUrl    String
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  services    BarbershopService[] //Relação com os serviços oferecidos pela barbearia
+  id             String              @id @default(uuid())
+  name           String
+  address        String
+  slug           String?             @unique
+  phones         String[]
+  description    String
+  welcomeMessage String?
+  bannerUrl      String?
+  imageUrl       String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  services       BarbershopService[] //Relação com os serviços oferecidos pela barbearia
+  barbers        Barber[]
+}
+
+model Barber {
+  id           String     @id @default(uuid())
+  name         String
+  imageUrl     String
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  bookings     Booking[]
 }
 
 // Modelo de serviço oferecido pela barbearia
@@ -116,14 +129,16 @@ enum PaymentStatus{
 
 // Modelo de reserva de serviço pela barbearia
 model Booking {
-  id        String            @id @default(uuid())
-  userId    String
-  serviceId String
-  service   BarbershopService @relation(fields: [serviceId], references: [id])
-  date      DateTime
-  status    BookingStatus     @default(CONFIRMED)
-  paymentMethod PaymentMethod @default(ON_SITE)
-  paymentStatus PaymentStatus @default(PENDING)
+  id            String            @id @default(uuid())
+  userId        String
+  serviceId     String
+  service       BarbershopService @relation(fields: [serviceId], references: [id])
+  barberId      String?
+  barber        Barber?           @relation(fields: [barberId], references: [id])
+  date          DateTime
+  status        BookingStatus     @default(CONFIRMED)
+  paymentMethod PaymentMethod     @default(ON_SITE)
+  paymentStatus PaymentStatus     @default(PENDING)
 
   // Stripe checkout session
   stripeSessionId String? @unique
