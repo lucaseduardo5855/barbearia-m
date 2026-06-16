@@ -47,13 +47,25 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
         return notFound()
     }
 
+    // Garante que os caminhos das imagens locais comecem com "/" para o next/image não quebrar
+    const formatImageUrl = (url: string | null) => {
+        if (!url) return null
+        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
+            return url
+        }
+        return `/${url}`
+    }
+
+    const imageUrl = formatImageUrl(barbershop.imageUrl) || ""
+    const bannerUrl = formatImageUrl(barbershop.bannerUrl)
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Banner Superior da Barbearia (se houver, senão usa imagem padrão) */}
             <div className="relative w-full h-[200px] bg-muted">
-                {barbershop.bannerUrl ? (
+                {bannerUrl ? (
                     <Image
-                        src={barbershop.bannerUrl}
+                        src={bannerUrl}
                         alt={`Banner de ${barbershop.name}`}
                         fill
                         className="object-cover"
@@ -69,12 +81,14 @@ export default async function BarbershopPage({ params }: BarbershopPageProps) {
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6 max-w-md mx-auto">
                 {/* Logo/Imagem da Barbearia */}
                 <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary -mt-16 bg-background">
-                    <Image
-                        src={barbershop.imageUrl}
-                        alt={barbershop.name}
-                        fill
-                        className="object-cover"
-                    />
+                    {imageUrl && (
+                        <Image
+                            src={imageUrl}
+                            alt={barbershop.name}
+                            fill
+                            className="object-cover"
+                        />
+                    )}
                 </div>
 
                 {/* Nome e Mensagem de Boas-Vindas */}
