@@ -32,8 +32,8 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
             {/* Indicador de Progresso & Botão Voltar */}
             {step > 1 && (
                 <div className="flex items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={handleBack}>
-                        <ChevronLeftIcon className="h-6 w-6" />
+                    <Button variant="outline" size="icon" className="h-10 w-10 hover:bg-secondary transition-all" onClick={handleBack}>
+                        <ChevronLeftIcon className="h-5 w-5 text-white" />
                     </Button>
                 </div>
             )}

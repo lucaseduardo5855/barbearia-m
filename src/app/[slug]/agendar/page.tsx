@@ -33,7 +33,7 @@ export default async function AgendarPage({ params }: AgendarPageProps) {
             <Header />
             <div className="flex-1 p-5 max-w-md mx-auto w-full">
                 {/* Título da tela */}
-                <h1 className="text-xl font-bold mb-6 flex justify-center text-primary">Novo Agendamento</h1>
+                <h1 className="text-xl font-bold mb-6 flex justify-center text-primary mt-10">Novo Agendamento</h1>
 
                 {/* Aqui chamaremos o fluxo interativo, passando os dados do banco */}
                 <BookingFlow barbershop={JSON.parse(JSON.stringify(barbershop))} />
