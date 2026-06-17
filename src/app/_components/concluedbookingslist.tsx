@@ -14,6 +14,7 @@ interface ConcluedBookingsListProps {
           barbershop: true
         }
       }
+      barber: true
     }
   }>[]
   hideBarberShopInfo?: boolean  
