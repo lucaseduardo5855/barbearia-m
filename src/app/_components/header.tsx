@@ -8,13 +8,18 @@ import { MenuIcon } from "lucide-react"
 import { Sheet, SheetTrigger } from "@/components/ui/sheet"
 import SidebarSheet from "./sidebar-sheet"
 import Search from "./search"
+import { useParams } from "next/navigation"
 
 const Header = () => {
+  const params = useParams()
+  const slug = params?.slug
+  const homeUrl = slug ? `/${slug}` : "/"
+
   return (
     <header>
       <Card>
         <CardContent className="flex flex-row items-center justify-between p-5">
-          <Link href="/">
+          <Link href={homeUrl}>
             <Image
               src="/logo.png"
               alt="Logo da barbearia"
