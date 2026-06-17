@@ -10,6 +10,7 @@ interface CreateBookingParams {
   serviceId: string
   date: Date
   paymentMethod?: PaymentMethod
+  barberId?: string | null // <-- Permite string ou null opcionalmente
 }
 
 // Função para criar uma nova reserva (booking) no banco de dados
@@ -40,6 +41,7 @@ export const createBooking = async (params: CreateBookingParams) => {
       serviceId: params.serviceId,
       date: params.date,
       userId: (user.user as any).id,
+      barberId: params.barberId || null,
       paymentMethod: params.paymentMethod || "ON_SITE",
       // Se for pagamento ONLINE, criamos com status PENDING até que o Stripe confirme.
       // Se for ON_SITE (no local), criamos como CONFIRMED direto.
