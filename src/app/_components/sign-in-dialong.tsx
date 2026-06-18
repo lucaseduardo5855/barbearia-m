@@ -11,12 +11,18 @@ import { Input } from "./ui/input"
 import { signIn } from "next-auth/react"
 import Image from "next/image"
 import { toast } from "sonner"
-import { generateOtpAction } from "../_actions/otp"
+import { signUpAction } from "../_actions/auth-actions"
 
 const SignInDiaLog = () => {
-  const [step, setStep] = useState<1 | 2>(1)
+  // Estado para controlar se está na tela de "login" ou "cadastro"
+  const [mode, setMode] = useState<"login" | "register">("login")
+  
+  // Estados para os campos
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [code, setCode] = useState("")
+  const [password, setPassword] = useState("")
+  
   const [loading, setLoading] = useState(false)
 
   // Formata o número de telefone brasileiro: (XX) XXXXX-XXXX
@@ -34,79 +40,177 @@ const SignInDiaLog = () => {
     setPhone(formatted)
   }
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  // 1. Lógica do Envio de Cadastro (Sign Up)
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const cleanPhone = phone.replace(/\D/g, "")
 
-    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-      toast.error("Insira um número de telefone válido com DDD.")
+    if (!name || !email || !phone || !password) {
+      toast.error("Todos os campos devem ser preenchidos para se cadastrar.")
       return
     }
 
     try {
       setLoading(true)
-      await generateOtpAction(cleanPhone)
-      toast.success("Código enviado! Verifique o console do servidor.")
-      setStep(2)
+      const res = await signUpAction({
+        name,
+        email,
+        phone,
+        password,
+      })
+
+      if (res.success) {
+        toast.success("Cadastro realizado com sucesso! Agora você pode fazer login.")
+        // Limpa campos e muda para o modo login
+        setPassword("")
+        setMode("login")
+      }
     } catch (error: any) {
       console.error(error)
-      toast.error(error.message || "Erro ao enviar código. Tente novamente.")
+      toast.error(error.message || "Erro ao efetuar o cadastro. Verifique os dados.")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  // 2. Lógica do Envio de Login (Sign In)
+  const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (code.length !== 6) {
-      toast.error("O código de verificação deve ter 6 dígitos.")
+    if (!email || !password) {
+      toast.error("Preencha o e-mail e a senha.")
       return
     }
 
     try {
       setLoading(true)
       const res = await signIn("credentials", {
-        phone,
-        code,
+        email,
+        password,
         redirect: false,
       })
 
       if (res?.error) {
-        toast.error("Código incorreto ou expirado. Tente novamente.")
+        toast.error("Credenciais incorretas ou inválidas. Tente novamente.")
         return
       }
 
-      toast.success("Login realizado com sucesso!")
-      // O NextAuth atualiza o estado da sessão automaticamente e o Dialog fechará
+      toast.success("Login efetuado com sucesso!")
       window.location.reload()
     } catch (error) {
       console.error(error)
-      toast.error("Erro ao verificar código.")
+      toast.error("Erro inesperado ao realizar login.")
     } finally {
       setLoading(false)
     }
   }
 
   const handleLoginWithGoogleClick = () => signIn("google")
+  const handleLoginWithFacebookClick = () => signIn("facebook")
 
   return (
     <div className="flex flex-col gap-4 py-2">
       <DialogHeader>
         <DialogTitle className="text-left font-bold text-xl">
-          {step === 1 ? "Faça login na plataforma" : "Digite o código enviado"}
+          {mode === "login" ? "Faça login na plataforma" : "Crie a sua conta"}
         </DialogTitle>
         <DialogDescription className="text-left">
-          {step === 1
-            ? "Escolha como deseja se conectar para agendar seus serviços."
-            : `Enviamos um código de 6 dígitos para o número ${phone}.`}
+          {mode === "login"
+            ? "Conecte-se com e-mail e senha ou use redes sociais."
+            : "Insira seus dados abaixo para se cadastrar de forma simples."}
         </DialogDescription>
       </DialogHeader>
 
-      {step === 1 ? (
+      {mode === "login" ? (
+        // FORMULÁRIO DE LOGIN
         <div className="flex flex-col gap-4">
-          {/* Formulário de Login por Telefone */}
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
+          <form onSubmit={handleSignInSubmit} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-xs font-semibold text-gray-400">
+                E-mail
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seuemail@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="bg-secondary border-none"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-xs font-semibold text-gray-400">
+                Senha
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Inserir Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="bg-secondary border-none"
+                required
+              />
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full font-bold">
+              {loading ? "Entrando..." : "Entrar com E-mail"}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <button
+              type="button"
+              className="text-xs text-gray-400 hover:text-white underline font-semibold transition"
+              onClick={() => {
+                setMode("register")
+                setPassword("")
+              }}
+              disabled={loading}
+            >
+              Não possui conta? Cadastre-se gratuitamente
+            </button>
+          </div>
+        </div>
+      ) : (
+        // FORMULÁRIO DE CADASTRO
+        <div className="flex flex-col gap-4">
+          <form onSubmit={handleSignUpSubmit} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="name" className="text-xs font-semibold text-gray-400">
+                Nome Completo
+              </label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Digite seu nome completo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+                className="bg-secondary border-none"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="emailReg" className="text-xs font-semibold text-gray-400">
+                E-mail
+              </label>
+              <Input
+                id="emailReg"
+                type="email"
+                placeholder="seuemail@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="bg-secondary border-none"
+                required
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="phone" className="text-xs font-semibold text-gray-400">
                 Número de Celular
@@ -119,68 +223,88 @@ const SignInDiaLog = () => {
                 onChange={handlePhoneChange}
                 disabled={loading}
                 className="bg-secondary border-none"
+                required
               />
             </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="passwordReg" className="text-xs font-semibold text-gray-400">
+                Crie uma Senha
+              </label>
+              <Input
+                id="passwordReg"
+                type="password"
+                placeholder="No mínimo 6 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="bg-secondary border-none"
+                required
+              />
+            </div>
+
             <Button type="submit" disabled={loading} className="w-full font-bold">
-              {loading ? "Enviando..." : "Receber código via SMS"}
+              {loading ? "Cadastrando..." : "Confirmar e Cadastrar"}
             </Button>
           </form>
 
-          {/* Divisor */}
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-secondary"></div>
-            <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold">ou</span>
-            <div className="flex-grow border-t border-secondary"></div>
-          </div>
-
-          {/* Botão Google */}
-          <Button
-            variant="outline"
-            type="button"
-            className="gap-2 font-bold w-full"
-            onClick={handleLoginWithGoogleClick}
-            disabled={loading}
-          >
-            <Image
-              alt="Fazer login com o Google"
-              src="/Google.svg"
-              width={18}
-              height={18}
-            />
-            Google
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="code" className="text-xs font-semibold text-gray-400">
-              Código de Verificação (6 dígitos)
-            </label>
-            <Input
-              id="code"
-              type="text"
-              maxLength={6}
-              placeholder="Digite os 6 dígitos"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          <div className="text-center">
+            <button
+              type="button"
+              className="text-xs text-gray-400 hover:text-white underline font-semibold transition"
+              onClick={() => {
+                setMode("login")
+                setPassword("")
+              }}
               disabled={loading}
-              className="bg-secondary border-none tracking-widest text-center text-lg font-bold"
-            />
+            >
+              Já tem uma conta? Voltar ao login
+            </button>
           </div>
-          <Button type="submit" disabled={loading} className="w-full font-bold">
-            {loading ? "Verificando..." : "Confirmar e Entrar"}
-          </Button>
-          <Button
-            variant="ghost"
-            type="button"
-            className="w-full text-xs text-gray-400 hover:text-white"
-            onClick={() => setStep(1)}
-            disabled={loading}
-          >
-            Corrigir número de telefone
-          </Button>
-        </form>
+        </div>
       )}
+
+      {/* Divisor */}
+      <div className="relative flex py-2 items-center">
+        <div className="flex-grow border-t border-secondary"></div>
+        <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold">ou conecte-se com</span>
+        <div className="flex-grow border-t border-secondary"></div>
+      </div>
+
+      {/* Botões Sociais em Grade */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          type="button"
+          className="gap-2 font-bold w-full"
+          onClick={handleLoginWithGoogleClick}
+          disabled={loading}
+        >
+          <Image
+            alt="Google logo"
+            src="/Google.svg"
+            width={18}
+            height={18}
+          />
+          Google
+        </Button>
+
+        <Button
+          variant="outline"
+          type="button"
+          className="gap-2 font-bold w-full bg-[#1877F2] text-white hover:bg-[#166fe5] border-none"
+          onClick={handleLoginWithFacebookClick}
+          disabled={loading}
+        >
+          <Image
+            alt="Facebook logo"
+            src="/facebook.svg"
+            width={18}
+            height={18}
+          />
+          Facebook
+        </Button>
+      </div>
     </div>
   )
 }

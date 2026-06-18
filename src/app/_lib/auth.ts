@@ -3,7 +3,9 @@ import { AuthOptions } from "next-auth"
 import { db } from "@/lib/prisma"
 import type { Adapter } from "next-auth/adapters"
 import GoogleProvider from "next-auth/providers/google"
+import FacebookProvider from "next-auth/providers/facebook"
 import CredentialsProvider from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(db) as Adapter,
@@ -15,65 +17,49 @@ export const authOptions: AuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID as string,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET as string,
+    }),
     CredentialsProvider({
       id: "credentials",
       name: "Credentials",
       credentials: {
-        phone: { label: "Phone", type: "text" },
-        code: { label: "Code", type: "text" },
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.code) {
+        if (!credentials?.email || !credentials?.password) {
           return null
         }
 
-        const cleanPhone = credentials.phone.replace(/\D/g, "")
-        const code = credentials.code
-
-        // 1. Busca token ativo no banco de dados
-        const verificationToken = await db.verificationToken.findFirst({
+        // 1. Busca o usuário pelo e-mail
+        const user = await db.user.findUnique({
           where: {
-            identifier: cleanPhone,
-            token: code,
-            expires: {
-              gte: new Date(),
-            },
+            email: credentials.email,
           },
         })
 
-        if (!verificationToken) {
+        // Se o usuário não existe ou não tem senha cadastrada (ex: logou via rede social antes)
+        if (!user || !user.password) {
           return null
         }
 
-        // 2. Deleta o token consumido
-        await db.verificationToken.delete({
-          where: {
-            identifier_token: {
-              identifier: cleanPhone,
-              token: code,
-            },
-          },
-        })
+        // 2. Compara a senha informada com o hash salvo no banco
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
 
-        // 3. Busca ou cria o usuário pelo número de telefone
-        let user = await db.user.findUnique({
-          where: {
-            phone: cleanPhone,
-          },
-        })
-
-        if (!user) {
-          user = await db.user.create({
-            data: {
-              phone: cleanPhone,
-              name: `Cliente - ${cleanPhone.slice(-4)}`,
-            },
-          })
+        if (!isPasswordValid) {
+          return null
         }
 
+        // 3. Retorna o usuário autenticado
         return {
           id: user.id,
           name: user.name,
+          email: user.email,
           phone: user.phone,
         } as any
       },
