@@ -13,7 +13,7 @@ import { createBooking } from "@/app/_actions/create-booking"
 import { createStripeCheckout } from "@/app/_actions/create-stripe-checkout"
 import BookingSummary from "@/app/_components/booking-summary"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { PaymentMethod } from "@prisma/client"
 
 
@@ -26,12 +26,26 @@ interface BookingFlowProps {
 }
 
 export default function BookingFlow({ barbershop }: BookingFlowProps) {
+    const searchParams = useSearchParams()
+    
     // Estados para controlar o passo atual e as escolhas do cliente
     const [step, setStep] = useState(1)
     const [selectedService, setSelectedService] = useState<BarbershopService | null>(null)
     const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null)
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
+
+    // Pré-seleciona o serviço caso seja passado via query param (?serviceId=xxx)
+    useEffect(() => {
+        const serviceId = searchParams.get("serviceId")
+        if (serviceId) {
+            const service = barbershop.services.find(s => s.id === serviceId)
+            if (service) {
+                setSelectedService(service)
+                setStep(2)
+            }
+        }
+    }, [searchParams, barbershop.services])
 
     // Função para voltar um passo atrás no botão "Voltar"
     const handleBack = () => {
