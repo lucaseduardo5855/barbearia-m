@@ -49,7 +49,20 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
 
     // Função para voltar um passo atrás no botão "Voltar"
     const handleBack = () => {
-        if (step > 1) setStep(step - 1)
+        if (step > 1) {
+            setStep(step - 1)
+        } else {
+            const origin = searchParams.get("origin")
+            const barbershopId = searchParams.get("barbershopId")
+            
+            // Se veio do marketplace principal, volta para a página do marketplace da barbearia
+            if (origin === "marketplace" && barbershopId) {
+                router.push(`/barbershops/${barbershopId}`)
+            } else {
+                // Se veio do Instagram, volta para a landing page do inquilino (exclusiva)
+                router.push(`/${barbershop.slug}`)
+            }
+        }
     }
 
     // Lista padrão de horários de atendimento da barbearia
@@ -161,13 +174,11 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
     return (
         <div className="space-y-6">
             {/* Indicador de Progresso & Botão Voltar */}
-            {step > 1 && (
-                <div className="flex items-center justify-between">
-                    <Button variant="outline" size="icon" className="h-10 w-10 hover:bg-secondary transition-all" onClick={handleBack}>
-                        <ChevronLeftIcon className="h-5 w-5 text-white" />
-                    </Button>
-                </div>
-            )}
+            <div className="flex items-center justify-between">
+                <Button variant="outline" size="icon" className="h-10 w-10 hover:bg-secondary transition-all" onClick={handleBack}>
+                    <ChevronLeftIcon className="h-5 w-5 text-white" />
+                </Button>
+            </div>
 
             {/* Renderização Condicional da Etapa Ativa */}
             {step === 1 && (

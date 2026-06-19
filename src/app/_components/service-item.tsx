@@ -22,8 +22,8 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
 
   const handleBookingClick = () => {
     if (data?.user) {
-      // Redireciona diretamente para o fluxo unificado de etapas
-      router.push(`/${barberShop.slug}/agendar?serviceId=${service.id}`)
+      // Redireciona diretamente para o fluxo unificado de etapas, passando a origem
+      router.push(`/${barberShop.slug}/agendar?serviceId=${service.id}&origin=marketplace&barbershopId=${barberShop.id}`)
       return
     }
     setSignInDialogIsOpen(true)
