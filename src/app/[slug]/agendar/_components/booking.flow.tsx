@@ -321,7 +321,7 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                             </div>
                         </div>
                     ) : (
-                        // MISTURA GENDO: LISTA DE DATAS SUGERIDAS (Hoje e os próximos 3 dias)
+                        // LISTA DE DATAS SUGERIDAS (Hoje e os próximos 3 dias)
                         <div className="space-y-6">
                             {[0, 1, 2, 3].map((daysToAdd) => {
                                 const targetDate = new Date()

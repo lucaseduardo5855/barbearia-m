@@ -165,100 +165,100 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
           </Card>
         </SheetTrigger>
 
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle className="text-left">
-                  Informações da Reserva
-                </SheetTitle>
-              </SheetHeader>
-              <div className="relative mx-4 mt-6 flex h-[180px] items-end rounded-xl">
-                <Image
-                  alt={`Mapa da Barbearia ${barbershop.name}`}
-                  src="/map.png"
-                  fill
-                  className="rounded-xl object-cover"
-                />
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle className="text-left">
+              Informações da Reserva
+            </SheetTitle>
+          </SheetHeader>
+          <div className="relative mx-4 mt-6 flex h-[180px] items-end rounded-xl">
+            <Image
+              alt={`Mapa da Barbearia ${barbershop.name}`}
+              src="/map.png"
+              fill
+              className="rounded-xl object-cover"
+            />
 
-                <Card className="z-50 mx-5 mb-3 w-full rounded-xl">
-                  <CardContent className="flex items-center gap-3 px-5 py-3">
-                    <Avatar>
-                      <AvatarImage src={barbershop.imageUrl} />
-                    </Avatar>
-                    <div>
-                      <h3 className="font-bold">{barbershop.name}</h3>
-                      <p className="text-xs">{barbershop.address}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="mt-6 p-3">
-                <Badge
-                  className="rounded-full"
-                  variant={isConfirmed ? "default" : "secondary"}
-                >
-                  {isConfirmed ? "Confirmado" : "Finalizado"}
-                </Badge>
-
-                {/*Quadrado de agendamento */}
-                <div className="mb-6 mt-3">
-                  <BookingSummary
-                    barbershop={barbershop}
-                    service={booking.service}
-                    selectDay={booking.date}
-                  />
+            <Card className="z-50 mx-5 mb-3 w-full rounded-xl">
+              <CardContent className="flex items-center gap-3 px-5 py-3">
+                <Avatar>
+                  <AvatarImage src={barbershop.imageUrl} />
+                </Avatar>
+                <div>
+                  <h3 className="font-bold">{barbershop.name}</h3>
+                  <p className="text-xs">{barbershop.address}</p>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="mt-6 p-3">
+            <Badge
+              className="rounded-full"
+              variant={isConfirmed ? "default" : "secondary"}
+            >
+              {isConfirmed ? "Confirmado" : "Finalizado"}
+            </Badge>
 
-                {barbershop.phones.map((phone, index) => (
-                  <PhoneItem key={index} phone={phone} />
-                ))}
-              </div>
+            {/*Quadrado de agendamento */}
+            <div className="mb-6 mt-3">
+              <BookingSummary
+                barbershop={barbershop}
+                service={booking.service}
+                selectDay={booking.date}
+              />
+            </div>
 
-              <SheetFooter className="mt-6">
-                <div className="flex items-center gap-3">
-                  <SheetClose asChild>
-                    <Button variant="outline" className="flex-1">
-                      Voltar
+            {barbershop.phones.map((phone, index) => (
+              <PhoneItem key={index} phone={phone} />
+            ))}
+          </div>
+
+          <SheetFooter className="mt-6">
+            <div className="flex items-center gap-3 ">
+              <SheetClose asChild>
+                <Button variant="outline" className="flex-1">
+                  Voltar
+                </Button>
+              </SheetClose>
+
+              {isConfirmed && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="flex-1">
+                      Cancelar Reserva
                     </Button>
-                  </SheetClose>
+                  </AlertDialogTrigger>
 
-                  {isConfirmed && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="flex-1">
-                          Cancelar Reserva
+                  <AlertDialogContent className="w-[90%]">
+                    <AlertDialogHeader className="text-center sm:text-center">
+                      <AlertDialogTitle>
+                        Você quer cancelar sua reserva?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja fazer o cancelamento? Essa ação é
+                        irreversível.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-row justify-center gap-3 sm:justify-center">
+                      <AlertDialogCancel className="mt-0">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button
+                          variant="destructive"
+                          onClick={handleCancelBookingClick}
+                        >
+                          Confirmar
                         </Button>
-                      </AlertDialogTrigger>
-
-                      <AlertDialogContent className="w-[90%]">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Você quer cancelar sua reserva?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja fazer o cancelamento? Essa ação é
-                            irreversível.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction asChild>
-                            <Button
-                              variant="destructive"
-                              onClick={handleCancelBookingClick}
-                            >
-                              Confirmar
-                            </Button>
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        </>
-        )
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    </>
+  )
 }
 
-        export default BookingItem
+export default BookingItem
