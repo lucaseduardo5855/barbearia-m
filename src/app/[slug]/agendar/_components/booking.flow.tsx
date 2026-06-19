@@ -244,53 +244,157 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
 
             {step === 3 && (
                 <div className="space-y-6 animate-in fade-in duration-300">
-                    <h2 className="text-lg font-semibold">Selecione Data e Horário</h2>
-
-                    {/* Renderização do Calendário */}
-                    <div className="flex justify-center border-b border-solid border-secondary pb-6">
-                        <div className="w-[300px] bg-card p-3 rounded-xl border border-solid border-secondary">
-                            <Calendar
-                                mode="single"
-                                locale={ptBR}
-                                className="w-full capitalize [&_table]:w-full"
-                                selected={selectedDate}
-                                onSelect={setSelectedDate}
-                                disabled={{ before: startOfDay(new Date()) }} // Impede agendar em datas passadas
-                            />
-                        </div>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">Selecione o Dia e Horário</h2>
+                        
+                        {/* Botão para abrir o seletor de calendário tradicional caso o cliente prefira */}
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-primary text-primary hover:bg-primary/10"
+                            onClick={() => {
+                                // Se já tiver uma data customizada, limpa para voltar à lista sugerida, senão define hoje
+                                if (selectedDate && !isToday(selectedDate)) {
+                                    setSelectedDate(new Date())
+                                    toast.info("Voltando para as datas sugeridas.")
+                                } else {
+                                    // Define uma data de amanhã temporária para abrir o calendário
+                                    const tomorrow = new Date()
+                                    tomorrow.setDate(tomorrow.getDate() + 1)
+                                    setSelectedDate(tomorrow)
+                                    toast.info("Selecione um dia específico no calendário.")
+                                }
+                            }}
+                        >
+                            {selectedDate && !isToday(selectedDate) && selectedDate.getDate() !== new Date().getDate() ? "Ver datas sugeridas" : "Outra data"}
+                        </Button>
                     </div>
 
-                    {/* Renderização do Grid de Horários (Só aparece após selecionar um dia no calendário) */}
-                    {selectedDate && (
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                                Horários Disponíveis
-                            </h3>
-
-                            {availableTimes.length > 0 ? (
-                                <div className="grid grid-cols-4 gap-3">
-                                    {availableTimes.map((time) => (
-                                        <Button
-                                            key={time}
-                                            variant={selectedTime === time ? "default" : "outline"}
-                                            className={`rounded-full py-4 transition-all ${selectedTime === time
-                                                ? "bg-primary text-primary-foreground font-semibold"
-                                                : "hover:border-primary text-gray-300"
-                                                }`}
-                                            onClick={() => {
-                                                setSelectedTime(time) // Guarda o horário selecionado
-                                                setStep(4)            // Avança para o passo 4 (Resumo)
-                                            }}
-                                        >
-                                            {time}
-                                        </Button>
-                                    ))}
+                    {/* SELETOR DE CALENDÁRIO TRADICIONAL (Caso o cliente queira uma data distante específica) */}
+                    {selectedDate && !isToday(selectedDate) && selectedDate.getDate() !== new Date().getDate() ? (
+                        <div className="space-y-6">
+                            <div className="flex justify-center">
+                                <div className="w-[300px] bg-card p-3 rounded-xl border border-solid border-secondary">
+                                    <Calendar
+                                        mode="single"
+                                        locale={ptBR}
+                                        className="w-full capitalize [&_table]:w-full"
+                                        selected={selectedDate}
+                                        onSelect={(date) => {
+                                            setSelectedDate(date)
+                                            setSelectedTime(null)
+                                        }}
+                                        disabled={{ before: startOfDay(new Date()) }}
+                                    />
                                 </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground text-center py-4">
-                                    Não há horários disponíveis para este dia.
-                                </p>
-                            )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Horários para {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                                </h3>
+
+                                {availableTimes.length > 0 ? (
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {availableTimes.map((time) => (
+                                            <Button
+                                                key={time}
+                                                variant={selectedTime === time ? "default" : "outline"}
+                                                className={`rounded-full py-4 transition-all ${selectedTime === time
+                                                    ? "bg-primary text-primary-foreground font-semibold"
+                                                    : "hover:border-primary text-gray-300"
+                                                    }`}
+                                                onClick={() => {
+                                                    setSelectedTime(time)
+                                                    setStep(4)
+                                                }}
+                                            >
+                                                {time}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center py-4">
+                                        Não há horários disponíveis para este dia.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        // MISTURA GENDO: LISTA DE DATAS SUGERIDAS (Hoje e os próximos 3 dias)
+                        <div className="space-y-6">
+                            {[0, 1, 2, 3].map((daysToAdd) => {
+                                const targetDate = new Date()
+                                targetDate.setDate(targetDate.getDate() + daysToAdd)
+
+                                // Filtra os horários livres para este dia específico da lista
+                                const dayTimes = TIME_LIST.filter((time) => {
+                                    const hour = Number(time.split(":")[0])
+                                    const minute = Number(time.split(":")[1])
+
+                                    // Bloqueia se for no passado (se for hoje)
+                                    const timeIsPast = isPast(set(new Date(), { hours: hour, minutes: minute }))
+                                    if (timeIsPast && daysToAdd === 0) {
+                                        return false
+                                    }
+
+                                    // Checa se já possui agendamento no banco
+                                    const hasBooking = dayBookings.some((booking) => {
+                                        const bookingDate = new Date(booking.date)
+                                        return (
+                                            bookingDate.getDate() === targetDate.getDate() &&
+                                            bookingDate.getMonth() === targetDate.getMonth() &&
+                                            bookingDate.getHours() === hour &&
+                                            bookingDate.getMinutes() === minute
+                                        )
+                                    })
+
+                                    return !hasBooking
+                                })
+
+                                return (
+                                    <div 
+                                        key={daysToAdd} 
+                                        className="bg-card p-4 rounded-xl border border-secondary space-y-3"
+                                    >
+                                        {/* Cabeçalho do Dia (Ex: Quinta-feira, 18 de Junho) */}
+                                        <div className="flex justify-between items-center border-b border-secondary/50 pb-2">
+                                            <span className="text-sm font-bold capitalize text-gray-200">
+                                                {format(targetDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                                            </span>
+                                            {daysToAdd === 0 && (
+                                                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">
+                                                    Hoje
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Grade Estilo Grid de Horários Livres (Sem Barra de Rolar) */}
+                                        {dayTimes.length > 0 ? (
+                                            <div className="grid grid-cols-4 gap-2 pt-1">
+                                                {dayTimes.map((time) => (
+                                                    <Button
+                                                        key={time}
+                                                        variant="outline"
+                                                        className="rounded-lg py-2 text-xs hover:border-primary text-gray-300 w-full"
+                                                        onClick={() => {
+                                                            setSelectedDate(targetDate)
+                                                            setSelectedTime(time)
+                                                            setStep(4)
+                                                        }}
+                                                    >
+                                                        {time}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground py-1">
+                                                Nenhum horário disponível para este dia.
+                                            </p>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
                     )}
                 </div>
