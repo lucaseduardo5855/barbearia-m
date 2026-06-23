@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+//test
 
 import { Badge } from "./ui/badge"
 import { Card, CardContent } from "./ui/card"
@@ -239,6 +240,7 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                         irreversível.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+                    
                     <AlertDialogFooter className="flex-row justify-center gap-3 sm:justify-center">
                       <AlertDialogCancel className="mt-0">Cancelar</AlertDialogCancel>
                       <AlertDialogAction asChild>
