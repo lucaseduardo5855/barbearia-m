@@ -437,6 +437,7 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                 barbershop={barbershop}
                                 service={selectedService}
                                 selectDay={selectDate}
+                                barber={selectedBarber}
                             />
                         </div>
                     )}

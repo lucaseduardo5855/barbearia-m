@@ -40,7 +40,7 @@ export const createBooking = async (params: CreateBookingParams) => {
     data: {
       serviceId: params.serviceId,
       date: params.date,
-      userId: (user.user as any).id,
+      userId: user.id || (user.user as any).id,
       barberId: params.barberId || null,
       paymentMethod: params.paymentMethod || "ON_SITE",
       // Se for pagamento ONLINE, criamos com status PENDING até que o Stripe confirme.
