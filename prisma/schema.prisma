@@ -19,6 +19,8 @@ model User {
   image         String?
   phone         String?   @unique
   password      String?
+  role          Role      @default(CLIENT)
+  barbershop    Barbershop?
   bookings      Booking[]
   accounts      Account[]
   sessions      Session[]
@@ -75,6 +77,10 @@ model Barbershop {
   slug           String?             @unique
   welcomeMessage String?
   instagramUrl   String?
+  ownerId        String?             @unique
+  owner          User?               @relation(fields: [ownerId], references: [id])
+  subscriptionActive Boolean         @default(true)
+  trialEndsAt    DateTime?
   barbers        Barber[]
   services       BarbershopService[]
 }
@@ -134,3 +140,9 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
