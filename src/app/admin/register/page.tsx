@@ -7,8 +7,9 @@ import { Button } from "@/app/_components/ui/button"
 import { registerBarbershop } from "@/app/_actions/register-barbershop"
 import { toast } from "sonner"
 import Image from "next/image"
-import { CheckIcon, UserIcon, UsersIcon, BuildingIcon, StoreIcon } from "lucide-react"
+import { CheckIcon, UserIcon, UsersIcon, BuildingIcon, StoreIcon, X } from "lucide-react"
 import ProfileCard from "@/app/_components/profilecard"
+import { UploadButton } from "@/app/_lib/uploadthing"
 
 const fontStyle = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
@@ -130,10 +131,10 @@ export default function RegisterBarbershopPage() {
                   <div key={s.id} className="flex items-center gap-4">
 
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-base border-2 transition-all duration-300 shrink-0 ${isCompleted
-                        ? "bg-white text-[#4f46e5] border-white shadow-lg"
-                        : isActive
-                          ? "bg-white/20 text-white border-white scale-105 shadow-md font-extrabold"
-                          : "bg-transparent text-white/50 border-white/30"
+                      ? "bg-white text-[#4f46e5] border-white shadow-lg"
+                      : isActive
+                        ? "bg-white/20 text-white border-white scale-105 shadow-md font-extrabold"
+                        : "bg-transparent text-white/50 border-white/30"
                       }`}>
                       {isCompleted ? <CheckIcon className="w-5 h-5 stroke-[3.5]" /> : s.id}
                     </div>
@@ -306,25 +307,87 @@ export default function RegisterBarbershopPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">URL do Logo *</label>
-                      <Input
-                        placeholder="Link da imagem da logo"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        required
-                        className="py-5 bg-secondary/20 border-secondary text-sm"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Upload de Logo */}
+                    <div className="space-y-1.5 flex flex-col justify-end">
+                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Logo da Barbearia *</label>
+                      {imageUrl ? (
+                        <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
+                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Logo enviada!</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setImageUrl("")} 
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <UploadButton
+                          endpoint="imageUploader"
+                          onClientUploadComplete={(res) => {
+                            if (res?.[0]) {
+                              setImageUrl(res[0].url)
+                              toast.success("Logo enviada com sucesso!")
+                            }
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast.error(`Erro: ${error.message}`)
+                          }}
+                          content={{
+                            button({ ready }) {
+                              if (ready) return "Enviar Logo"
+                              return "Carregando..."
+                            },
+                            allowedContent: "PNG, JPG (até 4MB)"
+                          }}
+                          appearance={{
+                            button: "bg-primary text-black font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                            allowedContent: "text-[10px] text-gray-400 mt-1 text-center"
+                          }}
+                        />
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">URL do Banner</label>
-                      <Input
-                        placeholder="Link da foto de capa"
-                        value={bannerUrl}
-                        onChange={(e) => setBannerUrl(e.target.value)}
-                        className="py-5 bg-secondary/20 border-secondary text-sm"
-                      />
+
+                    {/* Upload de Banner */}
+                    <div className="space-y-1.5 flex flex-col justify-end">
+                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Banner de Capa</label>
+                      {bannerUrl ? (
+                        <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
+                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Banner enviado!</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setBannerUrl("")} 
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <UploadButton
+                          endpoint="imageUploader"
+                          onClientUploadComplete={(res) => {
+                            if (res?.[0]) {
+                              setBannerUrl(res[0].url)
+                              toast.success("Banner enviado com sucesso!")
+                            }
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast.error(`Erro: ${error.message}`)
+                          }}
+                          content={{
+                            button({ ready }) {
+                              if (ready) return "Enviar Banner"
+                              return "Carregando..."
+                            },
+                            allowedContent: "PNG, JPG (até 4MB)"
+                          }}
+                          appearance={{
+                            button: "bg-[#4f46e5] text-white font-extrabold text-xs py-3 w-full rounded-lg hover:bg-[#5a52e6] transition-all cursor-pointer",
+                            allowedContent: "text-[10px] text-gray-400 mt-1 text-center"
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -500,8 +563,8 @@ export default function RegisterBarbershopPage() {
                           key={day}
                           type="button"
                           className={`p-3 text-xs font-bold rounded-lg border transition-all text-center ${isSelected
-                              ? "bg-primary/20 text-primary border-primary"
-                              : "bg-secondary/15 border-secondary text-gray-400 hover:border-gray-500"
+                            ? "bg-primary/20 text-primary border-primary"
+                            : "bg-secondary/15 border-secondary text-gray-400 hover:border-gray-500"
                             }`}
                           onClick={() => {
                             if (isSelected) {
