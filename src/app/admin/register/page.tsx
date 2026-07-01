@@ -278,7 +278,6 @@ export default function RegisterBarbershopPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Nome da Barbearia *</label>
                     <Input
-                      placeholder="Ex: Barbearia do Minhoca"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
