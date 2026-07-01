@@ -5,28 +5,31 @@ import { Barbershop, BarbershopService, Barber, Booking, User } from "@prisma/cl
 import { Button } from "@/app/_components/ui/button"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Input } from "@/app/_components/ui/input"
-import { 
-  CalendarIcon, 
-  DollarSignIcon, 
-  ScissorsIcon, 
-  UsersIcon, 
-  Share2Icon, 
+import {
+  MenuIcon,
+  XIcon,
+  CalendarIcon,
+  DollarSignIcon,
+  ScissorsIcon,
+  UsersIcon,
+  Share2Icon,
   SettingsIcon,
   PlusIcon,
   Trash2Icon,
   CopyIcon,
   ExternalLinkIcon,
-  CheckCircle2Icon
+  CheckCircle2Icon,
+  Menu
 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { 
-  addServiceAction, 
-  deleteServiceAction, 
-  addBarberAction, 
-  deleteBarberAction, 
-  updateBarbershopConfig 
+import {
+  addServiceAction,
+  deleteServiceAction,
+  addBarberAction,
+  deleteBarberAction,
+  updateBarbershopConfig
 } from "@/app/_actions/admin-actions"
 
 // Define a tipagem estendida dos agendamentos
@@ -47,6 +50,7 @@ interface AdminDashboardClientProps {
 export default function AdminDashboardClient({ barbershop, bookings }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"agenda" | "financeiro" | "servicos" | "equipe" | "marketing" | "config">("agenda")
   const [isLoading, setIsLoading] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // --- Estados do Formulário de Serviço ---
   const [newServiceName, setNewServiceName] = useState("")
@@ -84,7 +88,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
     })
 
     const faturamentoEstimado = monthlyBookings.reduce((sum, b) => sum + Number(b.service.price), 0)
-    
+
     const pagamentosOnline = monthlyBookings
       .filter((b) => b.paymentMethod === "ONLINE" && b.paymentStatus === "PAID")
       .reduce((sum, b) => sum + Number(b.service.price), 0)
@@ -124,8 +128,8 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
 
 
   // --- MARKETING INFO ---
-  const publicBookingUrl = typeof window !== "undefined" 
-    ? `${window.location.origin}/${barbershop.slug}` 
+  const publicBookingUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/${barbershop.slug}`
     : `/${barbershop.slug}`
 
   const handleCopyLink = () => {
@@ -255,9 +259,126 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
 
   return (
     <div className="flex min-h-screen bg-background text-foreground flex-col md:flex-row">
-      
-      {/* Sidebar de Navegação */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-secondary p-5 flex flex-col justify-between shrink-0">
+
+      {/* 📱 Mobile Top Header */}
+      <header className="md:hidden flex items-center justify-between p-4 border-b border-secondary bg-background sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-black text-sm">
+            {barbershop.name.substring(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <h1 className="font-bold text-sm line-clamp-1">{barbershop.name}</h1>
+            <p className="text-[10px] text-primary uppercase font-semibold tracking-wider">Painel Admin</p>
+          </div>
+        </div>
+        
+        {/* Botão de Hambúrguer */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMenuOpen(true)}
+        >
+          <Menu className="w-6 h-6" />
+        </Button>
+      </header>
+
+      {/* 🍔 Menu Drawer Mobile */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden animate-in fade-in duration-200">
+          {/* Fundo escuro com blur */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs" 
+            onClick={() => setIsMenuOpen(false)}
+          />
+          
+          {/* Painel do Menu */}
+          <aside className="relative flex w-64 max-w-xs flex-col bg-background p-5 border-r border-secondary animate-in slide-in-from-left duration-300">
+            <div className="flex items-center justify-between mb-8">
+              <span className="font-bold text-sm text-primary uppercase tracking-wider">Menu</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Links do Menu */}
+            <nav className="flex flex-col gap-2">
+              <Button
+                variant={activeTab === "agenda" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("agenda")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <CalendarIcon className="w-4 h-4" />
+                Agenda
+              </Button>
+              <Button
+                variant={activeTab === "financeiro" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("financeiro")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <DollarSignIcon className="w-4 h-4" />
+                Financeiro
+              </Button>
+              <Button
+                variant={activeTab === "servicos" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("servicos")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <ScissorsIcon className="w-4 h-4" />
+                Serviços
+              </Button>
+              <Button
+                variant={activeTab === "equipe" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("equipe")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <UsersIcon className="w-4 h-4" />
+                Equipe
+              </Button>
+              <Button
+                variant={activeTab === "marketing" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("marketing")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <Share2Icon className="w-4 h-4" />
+                Divulgação
+              </Button>
+              <Button
+                variant={activeTab === "config" ? "secondary" : "ghost"}
+                className="justify-start gap-2 rounded-lg text-sm"
+                onClick={() => {
+                  setActiveTab("config")
+                  setIsMenuOpen(false)
+                }}
+              >
+                <SettingsIcon className="w-4 h-4" />
+                Configurar
+              </Button>
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      {/* 💻 Sidebar de Navegação Desktop */}
+      <aside className="hidden md:flex md:w-64 border-r border-secondary p-5 flex-col justify-between shrink-0 bg-background">
         <div className="space-y-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-black text-sm">
@@ -265,14 +386,14 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </div>
             <div>
               <h1 className="font-bold text-sm line-clamp-1">{barbershop.name}</h1>
-              <p className="text-[10px] text-primary uppercase font-semibold tracking-wider">Painel do Admin</p>
+              <p className="text-[10px] text-primary uppercase font-semibold tracking-wider">Painel Administrativo</p>
             </div>
           </div>
 
-          <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+          <nav className="flex flex-col gap-1">
             <Button
               variant={activeTab === "agenda" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("agenda")}
             >
               <CalendarIcon className="w-4 h-4" />
@@ -280,7 +401,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Button>
             <Button
               variant={activeTab === "financeiro" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("financeiro")}
             >
               <DollarSignIcon className="w-4 h-4" />
@@ -288,7 +409,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Button>
             <Button
               variant={activeTab === "servicos" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("servicos")}
             >
               <ScissorsIcon className="w-4 h-4" />
@@ -296,7 +417,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Button>
             <Button
               variant={activeTab === "equipe" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("equipe")}
             >
               <UsersIcon className="w-4 h-4" />
@@ -304,7 +425,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Button>
             <Button
               variant={activeTab === "marketing" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("marketing")}
             >
               <Share2Icon className="w-4 h-4" />
@@ -312,7 +433,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Button>
             <Button
               variant={activeTab === "config" ? "secondary" : "ghost"}
-              className="justify-start gap-2 rounded-lg text-xs md:text-sm"
+              className="justify-start gap-2 rounded-lg text-sm"
               onClick={() => setActiveTab("config")}
             >
               <SettingsIcon className="w-4 h-4" />
@@ -321,7 +442,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
           </nav>
         </div>
 
-        {/* Informações da Licença/Trial */}
+        {/* Informações da Licença/Trial Desktop */}
         <div className="mt-6 md:mt-0 pt-4 border-t border-secondary text-xs text-muted-foreground space-y-1.5 hidden md:block">
           <p>
             Plano: <strong className="text-primary font-semibold">
@@ -372,9 +493,9 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                               <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">Agendado</span>
                             )}
                           </div>
-                          
+
                           <p className="text-xs text-muted-foreground">
-                            Serviço: <strong className="text-gray-300">{booking.service.name}</strong> • 
+                            Serviço: <strong className="text-gray-300">{booking.service.name}</strong> •
                             Preço: <strong className="text-gray-300">R$ {Number(booking.service.price).toFixed(2)}</strong>
                           </p>
 
@@ -484,7 +605,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* Formulário de Adicionar Serviço */}
               <Card className="border-secondary h-fit">
                 <CardContent className="p-5">
@@ -520,7 +641,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
               {/* Listagem de Serviços Atuais */}
               <div className="lg:col-span-2 space-y-3">
                 <h3 className="font-bold text-sm text-gray-200">Serviços Cadastrados ({barbershop.services.length})</h3>
-                
+
                 {barbershop.services.map((service) => (
                   <Card key={service.id} className="border-secondary bg-secondary/10">
                     <CardContent className="p-4 flex items-center justify-between gap-4">
@@ -535,9 +656,9 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                         </div>
                       </div>
 
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
+                      <Button
+                        variant="destructive"
+                        size="icon"
                         className="w-8 h-8 rounded-lg"
                         onClick={() => handleDeleteService(service.id)}
                       >
@@ -560,7 +681,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* Formulário de Adicionar Barbeiro */}
               <Card className="border-secondary h-fit">
                 <CardContent className="p-5">
@@ -600,9 +721,9 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                         </div>
                       </div>
 
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
+                      <Button
+                        variant="destructive"
+                        size="icon"
                         className="w-8 h-8 rounded-lg"
                         onClick={() => handleDeleteBarber(barber.id)}
                       >
@@ -704,7 +825,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
 
                   <div className="space-y-1">
                     <label className="text-xs text-gray-300 font-semibold">Descrição / Slogan *</label>
-                    <textarea 
+                    <textarea
                       className="w-full min-h-[70px] rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring dark:bg-input/30"
                       value={shopDescription}
                       onChange={(e) => setShopDescription(e.target.value)}
