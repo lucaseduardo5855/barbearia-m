@@ -14,17 +14,23 @@ interface RegisterBarbershopParams {
   bannerUrl?: string
   welcomeMessage?: string
   instagramUrl?: string
+  cortePrice: string
+  barbaPrice: string
+  sobrancelhaPrice: string
+  barberName?: string
 }
 
 export async function registerBarbershop(params: RegisterBarbershopParams) {
   // 1. Busca a sessão do usuário que está chamando a action
   const session = await getServerSession(authOptions)
-  
+
   if (!session || !session.user) {
     throw new Error("Usuário não autenticado!")
   }
 
   const userId = (session.user as any).id
+  const ownerName = session.user.name || "Proprietário"
+  const ownerImage = session.user.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"
 
   if (!userId) {
     throw new Error("ID do usuário não encontrado na sessão!")
@@ -73,6 +79,52 @@ export async function registerBarbershop(params: RegisterBarbershopParams) {
         subscriptionActive: false, // Começa como falso pois está usando o Trial de 7 dias
         trialEndsAt,
       }
+    })
+
+    // 5.1 Criar o Barbeiro Proprietário (Dono)
+    await tx.barber.create({
+      data: {
+        name: ownerName,
+        imageUrl: ownerImage,
+        barbershopId: barbershop.id,
+      }
+    })
+
+    // 5.2 Criar o Colaborador (se houver)
+    if (params.barberName && params.barberName.trim() !== "") {
+      await tx.barber.create({
+        data: {
+          name: params.barberName,
+          imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300&auto=format&fit=crop", // Foto de barbeiro genérica
+          barbershopId: barbershop.id,
+        }
+      })
+    }
+
+    await tx.barbershopService.createMany({
+      data: [
+        {
+          name: 'Cabelo',
+          description: 'Corte de Cabelo',
+          price: Number(params.cortePrice),
+          imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300&auto=format&fit=crop',
+          barbershopId: barbershop.id
+        },
+        {
+          name: 'Barba',
+          description: 'Barba',
+          price: Number(params.barbaPrice),
+          imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300&auto=format&fit=crop',
+          barbershopId: barbershop.id
+        },
+        {
+          name: 'Sobrancelha',
+          description: 'Sobrancelha',
+          price: Number(params.sobrancelhaPrice),
+          imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300&auto=format&fit=crop',
+          barbershopId: barbershop.id
+        }
+      ]
     })
 
     // Atualiza a role do usuário para ADMIN
