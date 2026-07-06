@@ -22,6 +22,7 @@ import {
   Menu
 } from "lucide-react"
 import { toast } from "sonner"
+import { UploadButton } from "@/app/_lib/uploadthing"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {
@@ -126,6 +127,93 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
     return Object.entries(contagem).map(([name, qtd]) => ({ name, qtd }))
   }, [bookings])
 
+
+  // --- AGRUPAMENTO E ORDENAÇÃO DE AGENDAMENTOS ---
+  const groupedBookings = useMemo(() => {
+    const today = new Date()
+    
+    // Zera as horas para comparar apenas os dias
+    const todayStart = new Date(today)
+    todayStart.setHours(0, 0, 0, 0)
+    
+    const todayEnd = new Date(today)
+    todayEnd.setHours(23, 59, 59, 999)
+    
+    const next7DaysEnd = new Date(todayStart)
+    next7DaysEnd.setDate(todayStart.getDate() + 7)
+    next7DaysEnd.setHours(23, 59, 59, 999)
+
+    const hojeList: BookingWithDetails[] = []
+    const estaSemanaList: BookingWithDetails[] = []
+    const futurosList: BookingWithDetails[] = []
+    const passadosList: BookingWithDetails[] = []
+
+    bookings.forEach((b) => {
+      const bDate = new Date(b.date)
+      if (bDate < todayStart) {
+        passadosList.push(b)
+      } else if (bDate >= todayStart && bDate <= todayEnd) {
+        hojeList.push(b)
+      } else if (bDate > todayEnd && bDate <= next7DaysEnd) {
+        estaSemanaList.push(b)
+      } else {
+        futurosList.push(b)
+      }
+    })
+
+    // Ordenação:
+    // Para Hoje, Esta Semana e Futuros -> CRESCENTE (o mais próximo primeiro)
+    const ascSort = (a: BookingWithDetails, b: BookingWithDetails) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    // Para Passados -> DECRESCENTE (o mais recente finalizado primeiro)
+    const descSort = (a: BookingWithDetails, b: BookingWithDetails) => new Date(b.date).getTime() - new Date(a.date).getTime()
+
+    return {
+      hoje: hojeList.sort(ascSort),
+      estaSemana: estaSemanaList.sort(ascSort),
+      futuros: futurosList.sort(ascSort),
+      passados: passadosList.sort(descSort)
+    }
+  }, [bookings])
+
+  const renderBookingCard = (booking: BookingWithDetails) => {
+    const isPastBooking = new Date(booking.date) < new Date()
+    return (
+      <Card key={booking.id} className="border-secondary hover:border-primary/40 transition-colors">
+        <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-gray-200">
+                {booking.user.name || "Cliente sem Nome"}
+              </span>
+              {isPastBooking ? (
+                <span className="text-[10px] bg-secondary text-gray-400 px-2 py-0.5 rounded-full">Finalizado</span>
+              ) : (
+                <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">Agendado</span>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Serviço: <strong className="text-gray-300">{booking.service.name}</strong> •
+              Preço: <strong className="text-gray-300">R$ {Number(booking.service.price).toFixed(2)}</strong>
+            </p>
+
+            <p className="text-xs text-muted-foreground">
+              Profissional: <strong className="text-gray-300">{booking.barber?.name || "Qualquer Profissional"}</strong>
+            </p>
+          </div>
+
+          <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-right w-full sm:w-auto">
+            <p className="text-xs font-bold text-primary uppercase">
+              {format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}
+            </p>
+            <p className="text-sm font-semibold text-gray-300">
+              às {format(new Date(booking.date), "HH:mm")}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   // --- MARKETING INFO ---
   const publicBookingUrl = typeof window !== "undefined"
@@ -475,47 +563,58 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
               <p className="text-xs text-muted-foreground">Listagem histórica dos horários marcados pelos clientes.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-6">
               {bookings.length > 0 ? (
-                bookings.map((booking) => {
-                  const isPastBooking = new Date(booking.date) < new Date()
-                  return (
-                    <Card key={booking.id} className="border-secondary hover:border-primary/40 transition-colors">
-                      <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-gray-200">
-                              {booking.user.name || "Cliente sem Nome"}
-                            </span>
-                            {isPastBooking ? (
-                              <span className="text-[10px] bg-secondary text-gray-400 px-2 py-0.5 rounded-full">Finalizado</span>
-                            ) : (
-                              <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">Agendado</span>
-                            )}
-                          </div>
+                <>
+                  {/* Hoje */}
+                  {groupedBookings.hoje.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        Hoje ({groupedBookings.hoje.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {groupedBookings.hoje.map(renderBookingCard)}
+                      </div>
+                    </div>
+                  )}
 
-                          <p className="text-xs text-muted-foreground">
-                            Serviço: <strong className="text-gray-300">{booking.service.name}</strong> •
-                            Preço: <strong className="text-gray-300">R$ {Number(booking.service.price).toFixed(2)}</strong>
-                          </p>
+                  {/* Esta Semana */}
+                  {groupedBookings.estaSemana.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                        Esta Semana ({groupedBookings.estaSemana.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {groupedBookings.estaSemana.map(renderBookingCard)}
+                      </div>
+                    </div>
+                  )}
 
-                          <p className="text-xs text-muted-foreground">
-                            Profissional: <strong className="text-gray-300">{booking.barber?.name || "Qualquer Profissional"}</strong>
-                          </p>
-                        </div>
+                  {/* Próximos */}
+                  {groupedBookings.futuros.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                        Próximos Compromissos ({groupedBookings.futuros.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {groupedBookings.futuros.map(renderBookingCard)}
+                      </div>
+                    </div>
+                  )}
 
-                        <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-right w-full sm:w-auto">
-                          <p className="text-xs font-bold text-primary uppercase">
-                            {format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}
-                          </p>
-                          <p className="text-sm font-semibold text-gray-300">
-                            às {format(new Date(booking.date), "HH:mm")}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })
+                  {/* Histórico/Finalizados */}
+                  {groupedBookings.passados.length > 0 && (
+                    <div className="space-y-3 pt-4 border-t border-secondary/40">
+                      <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                        Histórico / Finalizados ({groupedBookings.passados.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 opacity-75 hover:opacity-100 transition-opacity">
+                        {groupedBookings.passados.map(renderBookingCard)}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground py-8 text-center border border-dashed border-secondary rounded-lg">
                   Nenhum agendamento realizado até o momento.
@@ -629,8 +728,43 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-gray-400 font-bold uppercase">URL da Imagem</label>
-                      <Input placeholder="Cole o link da foto do corte" value={newServiceImageUrl} onChange={(e) => setNewServiceImageUrl(e.target.value)} required />
+                      <label className="text-[10px] text-gray-400 font-bold uppercase">Imagem do Serviço *</label>
+                      {newServiceImageUrl ? (
+                        <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
+                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setNewServiceImageUrl("")} 
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                          >
+                            X
+                          </button>
+                        </div>
+                      ) : (
+                        <UploadButton
+                          endpoint="imageUploader"
+                          onClientUploadComplete={(res) => {
+                            if (res?.[0]) {
+                              setNewServiceImageUrl(res[0].url)
+                              toast.success("Foto do serviço enviada!")
+                            }
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast.error(`Erro: ${error.message}`)
+                          }}
+                          content={{
+                            button({ ready }) {
+                              if (ready) return "Enviar Foto"
+                              return "Carregando..."
+                            },
+                            allowedContent: "PNG, JPG (até 4MB)"
+                          }}
+                          appearance={{
+                            button: "bg-primary text-black font-extrabold text-[11px] py-2 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                            allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
+                          }}
+                        />
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full mt-2">Cadastrar Serviço</Button>
@@ -695,8 +829,43 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-gray-400 font-bold uppercase">URL da Imagem de Perfil</label>
-                      <Input placeholder="Cole o link da foto do profissional" value={newBarberImageUrl} onChange={(e) => setNewBarberImageUrl(e.target.value)} required />
+                      <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil *</label>
+                      {newBarberImageUrl ? (
+                        <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
+                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setNewBarberImageUrl("")} 
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                          >
+                            X
+                          </button>
+                        </div>
+                      ) : (
+                        <UploadButton
+                          endpoint="imageUploader"
+                          onClientUploadComplete={(res) => {
+                            if (res?.[0]) {
+                              setNewBarberImageUrl(res[0].url)
+                              toast.success("Foto de perfil enviada!")
+                            }
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast.error(`Erro: ${error.message}`)
+                          }}
+                          content={{
+                            button({ ready }) {
+                              if (ready) return "Enviar Foto"
+                              return "Carregando..."
+                            },
+                            allowedContent: "PNG, JPG (até 4MB)"
+                          }}
+                          appearance={{
+                            button: "bg-primary text-black font-extrabold text-[11px] py-2 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                            allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
+                          }}
+                        />
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full mt-2">Cadastrar Profissional</Button>
