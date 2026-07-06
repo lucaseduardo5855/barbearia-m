@@ -19,7 +19,8 @@ import {
   CopyIcon,
   ExternalLinkIcon,
   CheckCircle2Icon,
-  Menu
+  Menu,
+  X
 } from "lucide-react"
 import { toast } from "sonner"
 import { UploadButton } from "@/app/_lib/uploadthing"
@@ -951,7 +952,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                   <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-xs text-gray-300 space-y-2">
                     <p className="font-semibold text-gray-400 uppercase tracking-wider text-[9px]">Mensagem que será enviada:</p>
                     <p className="italic">
-                      "Olá! Agende seu corte ou barba na barbearia *{barbershop.name}* com rapidez pelo nosso link: {publicBookingUrl}"
+                      &ldquo;Olá! Agende seu corte ou barba na barbearia *{barbershop.name}* com rapidez pelo nosso link: {publicBookingUrl}&rdquo;
                     </p>
                   </div>
 
