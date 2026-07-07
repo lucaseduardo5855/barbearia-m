@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { toast } from "sonner"
 import { CheckCircle2Icon, X } from "lucide-react"
 import {
   AlertDialog,
@@ -116,6 +117,33 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
             <p className="text-xs text-muted-foreground">
               Profissional: <strong className="text-gray-300">{booking.barber?.name || "Qualquer Profissional"}</strong>
             </p>
+
+            {/* Botão Lembrar no WhatsApp (Estilizado embaixo do Profissional) */}
+            {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="mt-2 text-xs border-green-500/30 bg-green-500/5 hover:bg-green-500/10 text-green-400 font-semibold gap-1.5 h-7 px-2.5 rounded-full transition-all"
+                title="Lembrar Cliente via WhatsApp"
+                onClick={() => {
+                  if (!booking.user.phone) {
+                    toast.error("Este cliente não cadastrou um número de telefone no perfil!")
+                    return
+                  }
+                  const cleanPhone = booking.user.phone.replace(/\D/g, "")
+                  const formattedDate = format(new Date(booking.date), "dd/MM")
+                  const formattedTime = format(new Date(booking.date), "HH:mm")
+                  const barberName = booking.barber?.name || "Qualquer Profissional"
+                  const message = `Olá, ${booking.user.name || "Cliente"}! Passando para lembrar do seu agendamento no dia ${formattedDate} às ${formattedTime} para o serviço de *${booking.service.name}* com o profissional *${barberName}*. Aguardamos por você!`
+                  window.open(`https://wa.me/${cleanPhone.startsWith("55") ? cleanPhone : "55" + cleanPhone}?text=${encodeURIComponent(message)}`, "_blank")
+                }}
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.019-5.114-2.877-6.974-1.858-1.859-4.337-2.88-6.976-2.881-5.441 0-9.866 4.425-9.87 9.87-.001 1.702.455 3.364 1.32 4.814L1.75 22.25l4.897-1.284v-.014zm11.393-7.535c-.328-.164-1.936-.955-2.227-1.06-.29-.106-.503-.158-.715.164-.212.321-.82.164-1.006.321-.186.157-.37.321-.556.157-.186-.164-.784-.29-1.492-.922-.55-.49-1.12-1.096-1.12-1.096 0-.328.05-.656.242-.848a4.93 4.93 0 0 1 .494-.49c.164-.186.212-.29.318-.49.106-.212.05-.37-.024-.53-.079-.158-.715-1.722-.979-2.358-.258-.621-.516-.536-.71-.546-.184-.01-.397-.01-.61-.01-.212 0-.556.079-.848.37-.29.29-1.112 1.087-1.112 2.65 0 1.564 1.139 3.076 1.297 3.29.158.212 2.242 3.425 5.433 4.8.758.328 1.35.523 1.812.67.761.242 1.454.208 2.001.128.61-.09 1.937-.79 2.21-1.55.275-.76.275-1.41.19-1.55-.083-.14-.308-.242-.636-.406z"/>
+                </svg>
+                Lembrar no WhatsApp
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -130,27 +158,6 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
             
             {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
               <div className="flex flex-row sm:flex-col gap-2 shrink-0">
-                {/* Botão Lembrar no WhatsApp */}
-                {booking.user.phone && (
-                  <Button 
-                    size="sm" 
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold h-9 w-9 p-0 rounded-lg transition-all"
-                    title="Lembrar Cliente via WhatsApp"
-                    onClick={() => {
-                      const cleanPhone = booking.user.phone!.replace(/\D/g, "")
-                      const formattedDate = format(new Date(booking.date), "dd/MM")
-                      const formattedTime = format(new Date(booking.date), "HH:mm")
-                      const barberName = booking.barber?.name || "Qualquer Profissional"
-                      const message = `Olá, ${booking.user.name || "Cliente"}! Passando para lembrar do seu agendamento no dia ${formattedDate} às ${formattedTime} para o serviço de *${booking.service.name}* com o profissional *${barberName}*. Tudo certo?`
-                      window.open(`https://wa.me/${cleanPhone.startsWith("55") ? cleanPhone : "55" + cleanPhone}?text=${encodeURIComponent(message)}`, "_blank")
-                    }}
-                  >
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.019-5.114-2.877-6.974-1.858-1.859-4.337-2.88-6.976-2.881-5.441 0-9.866 4.425-9.87 9.87-.001 1.702.455 3.364 1.32 4.814L1.75 22.25l4.897-1.284v-.014zm11.393-7.535c-.328-.164-1.936-.955-2.227-1.06-.29-.106-.503-.158-.715.164-.212.321-.82.164-1.006.321-.186.157-.37.321-.556.157-.186-.164-.784-.29-1.492-.922-.55-.49-1.12-1.096-1.12-1.096 0-.328.05-.656.242-.848a4.93 4.93 0 0 1 .494-.49c.164-.186.212-.29.318-.49.106-.212.05-.37-.024-.53-.079-.158-.715-1.722-.979-2.358-.258-.621-.516-.536-.71-.546-.184-.01-.397-.01-.61-.01-.212 0-.556.079-.848.37-.29.29-1.112 1.087-1.112 2.65 0 1.564 1.139 3.076 1.297 3.29.158.212 2.242 3.425 5.433 4.8.758.328 1.35.523 1.812.67.761.242 1.454.208 2.001.128.61-.09 1.937-.79 2.21-1.55.275-.76.275-1.41.19-1.55-.083-.14-.308-.242-.636-.406z"/>
-                    </svg>
-                  </Button>
-                )}
-
                 <Button 
                   size="sm" 
                   className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 w-9 p-0 rounded-lg transition-all"
