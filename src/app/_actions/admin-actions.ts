@@ -143,3 +143,30 @@ export async function updateBarbershopConfig(params: {
   revalidatePath(`/${barbershop.slug}/admin`)
   return updated
 }
+
+// 6. Atualizar Status e Pagamento de um Agendamento
+export async function updateBookingStatusAction(params: {
+  barbershopId: string
+  bookingId: string
+  status: "CONFIRMED" | "CANCELLED" | "DONE"
+  paymentStatus?: "PENDING" | "PAID"
+}) {
+  // Roda a segurança para verificar se o usuário atual é dono da barbearia
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  // Atualiza no banco de dados
+  const updatedBooking = await db.booking.update({
+    where: { id: params.bookingId },
+    data: {
+      status: params.status,
+      ...(params.paymentStatus ? { paymentStatus: params.paymentStatus } : {})
+    }
+  })
+
+  // Limpa o cache das páginas do cliente e do admin para atualizar as telas na hora
+  revalidatePath(`/${barbershop.slug}`)
+  revalidatePath(`/${barbershop.slug}/admin`)
+
+  return updatedBooking
+}
+

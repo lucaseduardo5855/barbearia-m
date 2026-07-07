@@ -31,8 +31,21 @@ import {
   deleteServiceAction,
   addBarberAction,
   deleteBarberAction,
-  updateBarbershopConfig
+  updateBarbershopConfig,
+  updateBookingStatusAction
 } from "@/app/_actions/admin-actions"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogHeader,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog"
+
 
 // Define a tipagem estendida dos agendamentos
 type BookingWithDetails = Booking & {
@@ -53,6 +66,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
   const [activeTab, setActiveTab] = useState<"agenda" | "financeiro" | "servicos" | "equipe" | "marketing" | "config">("agenda")
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
 
   // --- Estados do Formulário de Serviço ---
   const [newServiceName, setNewServiceName] = useState("")
@@ -91,6 +105,11 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
 
     const faturamentoEstimado = monthlyBookings.reduce((sum, b) => sum + Number(b.service.price), 0)
 
+    // Faturamento Real: Apenas serviços concluídos (DONE) ou pagos online (PAID)
+    const faturamentoReal = monthlyBookings
+      .filter((b) => b.status === "DONE" || b.paymentStatus === "PAID")
+      .reduce((sum, b) => sum + Number(b.service.price), 0)
+
     const pagamentosOnline = monthlyBookings
       .filter((b) => b.paymentMethod === "ONLINE" && b.paymentStatus === "PAID")
       .reduce((sum, b) => sum + Number(b.service.price), 0)
@@ -101,6 +120,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
 
     return {
       faturamentoEstimado,
+      faturamentoReal,
       totalAgendamentos: monthlyBookings.length,
       pagamentosOnline,
       pagamentosNoLocal,
@@ -186,8 +206,14 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
               <span className="text-sm font-bold text-gray-200">
                 {booking.user.name || "Cliente sem Nome"}
               </span>
-              {isPastBooking ? (
-                <span className="text-[10px] bg-secondary text-gray-400 px-2 py-0.5 rounded-full">Finalizado</span>
+              
+              {/* Crachás de Status Inteligentes */}
+              {booking.status === "CANCELLED" ? (
+                <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full font-semibold">Cancelado</span>
+              ) : booking.status === "DONE" ? (
+                <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full font-semibold">Concluído</span>
+              ) : isPastBooking ? (
+                <span className="text-[10px] bg-secondary text-gray-400 px-2 py-0.5 rounded-full">Expirado</span>
               ) : (
                 <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">Agendado</span>
               )}
@@ -203,13 +229,38 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </p>
           </div>
 
-          <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-right w-full sm:w-auto">
-            <p className="text-xs font-bold text-primary uppercase">
-              {format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}
-            </p>
-            <p className="text-sm font-semibold text-gray-300">
-              às {format(new Date(booking.date), "HH:mm")}
-            </p>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-right w-full sm:w-auto">
+              <p className="text-xs font-bold text-primary uppercase">
+                {format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}
+              </p>
+              <p className="text-sm font-semibold text-gray-300">
+                às {format(new Date(booking.date), "HH:mm")}
+              </p>
+            </div>
+            
+            {/* Botões de Ação rápidos (Somente se o agendamento estiver ativo e no futuro/presente) */}
+            {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
+              <div className="flex flex-row sm:flex-col gap-2 shrink-0">
+                <Button 
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 w-9 p-0 rounded-lg transition-all"
+                  title="Concluir Atendimento"
+                  onClick={() => handleUpdateBookingStatus(booking.id, "DONE", "PAID")}
+                >
+                  <CheckCircle2Icon className="w-5 h-5" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="destructive"
+                  className="h-9 w-9 p-0 rounded-lg transition-all"
+                  title="Cancelar Agendamento"
+                  onClick={() => setBookingToCancel(booking.id)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -229,6 +280,33 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
   const handleShareWhatsapp = () => {
     const message = `Olá! Agende seu corte ou barba na barbearia *${barbershop.name}* com rapidez pelo nosso link: ${publicBookingUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
+  }
+
+  // --- ATUALIZAR STATUS DO AGENDAMENTO (CONCLUIR/CANCELAR) ---
+  const handleUpdateBookingStatus = async (
+    bookingId: string,
+    status: "CONFIRMED" | "CANCELLED" | "DONE",
+    paymentStatus?: "PENDING" | "PAID"
+  ) => {
+    try {
+      setIsLoading(true)
+      await updateBookingStatusAction({
+        barbershopId: barbershop.id,
+        bookingId,
+        status,
+        paymentStatus
+      })
+      
+      toast.success(
+        status === "DONE"
+          ? "Atendimento concluído com sucesso!"
+          : "Agendamento cancelado!"
+      )
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar status.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // --- SUBMIT SERVICES CRUD ---
@@ -633,34 +711,48 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
               <p className="text-xs text-muted-foreground">Métricas estimadas do faturamento obtido através dos agendamentos.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Faturamento Estimado */}
               <Card className="border-secondary bg-secondary/20">
                 <CardContent className="p-5 space-y-2">
-                  <span className="text-xs text-gray-400 font-semibold uppercase">Faturamento Mensal Estimado</span>
-                  <p className="text-3xl font-bold text-primary">
+                  <span className="text-xs text-gray-400 font-semibold uppercase">Faturamento Estimado</span>
+                  <p className="text-3xl font-bold text-gray-300">
                     R$ {financeData.faturamentoEstimado.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-gray-500">Soma de todos os cortes agendados para este mês.</p>
+                  <p className="text-[10px] text-gray-500">Soma de todos os agendamentos ativos do mês.</p>
                 </CardContent>
               </Card>
 
+              {/* Card 2: Faturamento Real (Concluído/Pago) */}
+              <Card className="border-green-600/20 bg-green-950/10">
+                <CardContent className="p-5 space-y-2">
+                  <span className="text-xs text-green-400 font-semibold uppercase">Faturamento Real</span>
+                  <p className="text-3xl font-bold text-green-500">
+                    R$ {financeData.faturamentoReal.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-gray-500">Apenas atendimentos concluídos ou pagos online.</p>
+                </CardContent>
+              </Card>
+
+              {/* Card 3: Total de Agendamentos */}
               <Card className="border-secondary bg-secondary/20">
                 <CardContent className="p-5 space-y-2">
                   <span className="text-xs text-gray-400 font-semibold uppercase">Total de Agendamentos</span>
                   <p className="text-3xl font-bold text-gray-200">
                     {financeData.totalAgendamentos}
                   </p>
-                  <p className="text-[10px] text-gray-500">Agendamentos marcados no mês atual (exclui cancelados).</p>
+                  <p className="text-[10px] text-gray-500">Agendamentos marcados (exclui cancelados).</p>
                 </CardContent>
               </Card>
 
+              {/* Card 4: Pagamentos Online */}
               <Card className="border-secondary bg-secondary/20">
                 <CardContent className="p-5 space-y-2">
-                  <span className="text-xs text-gray-400 font-semibold uppercase">Agendamentos Pagos Online</span>
-                  <p className="text-3xl font-bold text-green-500">
+                  <span className="text-xs text-gray-400 font-semibold uppercase">Pagos Online</span>
+                  <p className="text-3xl font-bold text-primary">
                     R$ {financeData.pagamentosOnline.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-gray-500">Valor já compensado e aprovado via Stripe.</p>
+                  <p className="text-[10px] text-gray-500">Valor processado e compensado via internet.</p>
                 </CardContent>
               </Card>
             </div>
@@ -672,7 +764,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                 <span className="font-semibold text-gray-200">R$ {financeData.pagamentosNoLocal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-xs py-1">
-                <span className="text-gray-400">Total recebido em cartões online (Stripe):</span>
+                <span className="text-gray-400">Total recebido em cartões online:</span>
                 <span className="font-semibold text-gray-200">R$ {financeData.pagamentosOnline.toFixed(2)}</span>
               </div>
             </div>
@@ -1033,7 +1125,31 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             </Card>
           </div>
         )}
-      </main>
+     </main>
+      <AlertDialog open={!!bookingToCancel} onOpenChange={(open) => !open && setBookingToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center justify-center">Você quer cancelar está reserva?</AlertDialogTitle>
+            <AlertDialogDescription className="flex items-center justify-center">
+              Tem certeza que deseja fazer o cancelamento?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row justify-center sm:justify-center gap-3 w-full">
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (bookingToCancel) {
+                  handleUpdateBookingStatus(bookingToCancel, "CANCELLED")
+                  setBookingToCancel(null)
+                }
+              }} 
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
