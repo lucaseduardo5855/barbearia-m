@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Booking, BarbershopService, Barber, User } from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
+import { Input } from "@/app/_components/ui/input"
 
 type BookingWithDetails = Booking & {
   service: BarbershopService
@@ -15,6 +16,8 @@ interface FinanceiroTabProps {
 }
 
 export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
+  const [commissionPercent, setCommissionPercent] = useState<number>(50)
+  const [barberCommissions, setBarberCommissions] = useState<Record<string, number>>({})
   // --- LÓGICA DO FINANCEIRO (Calculada no filho!) ---
   const financeData = useMemo(() => {
     const currentMonth = new Date().getMonth()
@@ -61,7 +64,7 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
   const barbersPerformance = useMemo(() => {
     const currentMonth = new Date().getMonth()
     const currentYear = new Date().getFullYear()
-    const contagem: Record<string, number> = {}
+    const contagem: Record<string, {qtd: number; faturamento: number}> = {}
 
     bookings.forEach((b) => {
       const date = new Date(b.date)
@@ -71,11 +74,18 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
         b.status !== "CANCELLED"
       ) {
         const barberName = b.barber?.name || "Qualquer Profissional"
-        contagem[barberName] = (contagem[barberName] || 0) + 1
+        if(!contagem[barberName]) {
+          contagem[barberName] = {
+            qtd: 0,
+            faturamento: 0
+          }
+        }
+        contagem[barberName].qtd +=1
+        contagem[barberName].faturamento += Number(b.service.price)
       }
     })
 
-    return Object.entries(contagem).map(([name, qtd]) => ({ name, qtd }))
+    return Object.entries(contagem).map(([name, data]) => ({ name, qtd: data.qtd, faturamento: data.faturamento}))
   }, [bookings])
 
   return (
@@ -143,19 +153,80 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
         </div>
       </div>
 
-      <div className="bg-secondary/20 border border-secondary p-5 rounded-xl space-y-3">
-        <h3 className="font-bold text-sm text-gray-200">Desempenho da Equipe (Cortes por Profissional)</h3>
+      <div className="bg-secondary/20 border border-secondary p-5 rounded-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-secondary/30">
+          <div>
+            <h3 className="font-bold text-sm text-gray-200">Desempenho da Equipe e Comissões</h3>
+            <p className="text-[10px] text-muted-foreground">Relatório de repasse financeiro por profissional.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-semibold whitespace-nowrap">Comissão Padrão:</span>
+            <div className="relative w-20">
+              <Input 
+                type="number" 
+                min="0" 
+                max="100" 
+                value={commissionPercent} 
+                onChange={(e) => setCommissionPercent(Number(e.target.value))} 
+                className="h-8 pr-5 text-right font-bold text-xs"
+              />
+              <span className="absolute right-2 top-1.5 text-xs text-gray-400 font-bold">%</span>
+            </div>
+          </div>
+        </div>
+
         {barbersPerformance.length > 0 ? (
-          <div className="space-y-2 pt-1">
-            {barbersPerformance.map((item) => (
-              <div key={item.name} className="flex justify-between text-xs py-1 border-b border-secondary/30 last:border-b-0">
-                <span className="text-gray-400">{item.name}:</span>
-                <span className="font-semibold text-primary">{item.qtd} corte(s) / serviço(s)</span>
-              </div>
-            ))}
+          <div className="space-y-3 pt-1">
+            {barbersPerformance.map((item) => {
+              // Obtém a comissão específica deste barbeiro ou cai na comissão padrão
+              const currentCommission = barberCommissions[item.name] !== undefined 
+                ? barberCommissions[item.name] 
+                : commissionPercent
+              const valorComissao = (item.faturamento * currentCommission) / 100
+              
+              return (
+                <div key={item.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-xs animate-in fade-in">
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-gray-200">{item.name}</h4>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-400">Comissão Individual:</span>
+                      <div className="relative w-16">
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={currentCommission} 
+                          onChange={(e) => {
+                            const val = Number(e.target.value)
+                            setBarberCommissions((prev) => ({
+                              ...prev,
+                              [item.name]: val
+                            }))
+                          }} 
+                          className="h-6 pr-4 text-right font-semibold text-[10px] bg-secondary/30"
+                        />
+                        <span className="absolute right-1.5 top-1 text-[10px] text-gray-500 font-bold">%</span>
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-gray-500">Realizou {item.qtd} corte(s) este mês</p>
+                  </div>
+                  
+                  <div className="flex gap-4 text-right">
+                    <div>
+                      <p className="text-[9px] text-gray-500 uppercase font-semibold">Faturamento Bruto</p>
+                      <p className="font-bold text-gray-300">R$ {item.faturamento.toFixed(2)}</p>
+                    </div>
+                    <div className="border-l border-secondary/50 pl-4 text-left sm:text-right">
+                      <p className="text-[9px] text-green-500 uppercase font-semibold">Comissão ({currentCommission}%)</p>
+                      <p className="font-bold text-green-500">R$ {valorComissao.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">Nenhum serviço realizado por profissionais este mês.</p>
+          <p className="text-xs text-muted-foreground py-2">Nenhum serviço realizado por profissionais este mês.</p>
         )}
       </div>
     </div>
