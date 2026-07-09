@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/prisma"
 import { Resend } from "resend"
 
-// Instanciamos o Resend passando a nossa chave de API
-const resend = new Resend(process.env.RESEND_API_KEY)
+export const dynamic = "force-dynamic"
 
 export async function GET() {
+  // Instanciamos o Resend passando a nossa chave de API apenas quando a rota for chamada
+  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     // 1. Calculamos o período de "Amanhã" (das 00:00:00 às 23:59:59)
     const amanhaInicio = new Date()
