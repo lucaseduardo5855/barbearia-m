@@ -8,6 +8,16 @@ import { Button } from "@/app/_components/ui/button"
 import { UploadButton } from "@/app/_lib/uploadthing"
 import { toast } from "sonner"
 import { PlusIcon, Trash2Icon } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogHeader,
+} from "@/components/ui/alert-dialog"
 
 interface EquipeTabProps {
   barbershop: Barbershop & {
@@ -29,11 +39,13 @@ export default function EquipeTab({
   const [newBarberImageUrl, setNewBarberImageUrl] = useState("")
   const [newBarberEmail, setNewBarberEmail] = useState("")
   const [newBarberPhone, setNewBarberPhone] = useState("")
+  const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null)
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newBarberName || !newBarberImageUrl) {
-      toast.error("Por favor, preencha o nome e a foto do barbeiro.")
+    if (!newBarberName) {
+      toast.error("Por favor, preencha o nome do barbeiro.")
       return
     }
 
@@ -44,7 +56,7 @@ export default function EquipeTab({
         email: newBarberEmail || undefined,
         phone: newBarberPhone || undefined,
       })
-      
+
       // Limpa os campos após o sucesso
       setNewBarberName("")
       setNewBarberImageUrl("")
@@ -72,45 +84,45 @@ export default function EquipeTab({
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro *</label>
-                <Input 
-                  placeholder="Ex: João da Silva" 
-                  value={newBarberName} 
-                  onChange={(e) => setNewBarberName(e.target.value)} 
-                  required 
+                <Input
+                  placeholder="Ex: João da Silva"
+                  value={newBarberName}
+                  onChange={(e) => setNewBarberName(e.target.value)}
+                  required
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">E-mail de Login (Opcional)</label>
-                <Input 
+                <Input
                   type="email"
-                  placeholder="Ex: joao@gmail.com" 
-                  value={newBarberEmail} 
-                  onChange={(e) => setNewBarberEmail(e.target.value)} 
+                  placeholder="Ex: joao@gmail.com"
+                  value={newBarberEmail}
+                  onChange={(e) => setNewBarberEmail(e.target.value)}
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">Telefone (Opcional)</label>
-                <Input 
+                <Input
                   type="text"
-                  placeholder="Ex: 11999998888" 
-                  value={newBarberPhone} 
-                  onChange={(e) => setNewBarberPhone(e.target.value)} 
+                  placeholder="Ex: 11999998888"
+                  value={newBarberPhone}
+                  onChange={(e) => setNewBarberPhone(e.target.value)}
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil *</label>
+                <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil (Opcional) *</label>
                 {newBarberImageUrl ? (
                   <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
                     <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setNewBarberImageUrl("")} 
+                    <button
+                      type="button"
+                      onClick={() => setNewBarberImageUrl("")}
                       className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                       disabled={isLoading}
                     >
@@ -178,11 +190,7 @@ export default function EquipeTab({
                   variant="destructive"
                   size="icon"
                   className="w-8 h-8 rounded-lg"
-                  onClick={() => {
-                    if (confirm(`Deseja realmente desligar o barbeiro "${barber.name}"?`)) {
-                      onDeleteBarber(barber.id)
-                    }
-                  }}
+                  onClick={() => setBarberToDelete(barber)}
                   disabled={isLoading}
                 >
                   <Trash2Icon className="w-4 h-4" />
@@ -192,6 +200,35 @@ export default function EquipeTab({
           ))}
         </div>
       </div>
+
+      {/* PopUp AlertDialog */}
+      <AlertDialog open={!!barberToDelete} onOpenChange={(open) => !open &&
+        setBarberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center justify-center">
+              Deseja realmente desligar este Profissional?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="flex items-center justify-center mb-6">
+              Tem certeza que deseja remover o barbeiro "{barberToDelete?.name}"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row justify-ceenter sm:justify-center gap-3 w-full">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/70 text-destructive-foreground"
+              onClick={async () => {
+                if (barberToDelete) {
+                  await onDeleteBarber(barberToDelete.id)
+                  setBarberToDelete(null)
+                }
+              }}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
