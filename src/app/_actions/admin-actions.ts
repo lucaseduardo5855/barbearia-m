@@ -91,10 +91,12 @@ export async function addBarberAction(params: {
     }
   }
 
+  const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face"
+
   const barber = await db.barber.create({
     data: {
       name: params.name,
-      imageUrl: params.imageUrl,
+      imageUrl: params.imageUrl || DEFAULT_AVATAR,
       email: params.email || null,
       phone: params.phone || null,
       barbershopId: params.barbershopId,

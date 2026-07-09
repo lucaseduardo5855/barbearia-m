@@ -40,8 +40,8 @@ export default async function AdminPage({ params }: AdminPageProps) {
   let loggedInBarber = barbershop.barbers.find(b => b.userId === userId)
 
   // Se o barbeiro não estiver vinculado por userId, mas o e-mail cadastrado for igual ao do usuário logado:
-  if (!loggedInBarber && session.user.email) {
-    const barberWithSameEmail = barbershop.barbers.find(b => b.email === session.user.email)
+  if (!loggedInBarber && session?.user?.email) {
+    const barberWithSameEmail = barbershop.barbers.find(b => b.email === session.user?.email)
     if (barberWithSameEmail) {
       await db.barber.update({
         where: { id: barberWithSameEmail.id },
