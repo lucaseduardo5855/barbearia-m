@@ -210,7 +210,7 @@ export default function EquipeTab({
               Deseja realmente desligar este Profissional?
             </AlertDialogTitle>
             <AlertDialogDescription className="flex items-center justify-center mb-6">
-              Tem certeza que deseja remover o barbeiro "{barberToDelete?.name}"?
+              Tem certeza que deseja remover o barbeiro &quot;{barberToDelete?.name}&quot;?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row justify-ceenter sm:justify-center gap-3 w-full">
