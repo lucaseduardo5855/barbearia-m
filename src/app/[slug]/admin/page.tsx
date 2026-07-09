@@ -55,9 +55,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const isSubActive = barbershop.subscriptionActive
 
   // Se o trial acabou E a assinatura manual não está ativa: exibe a Tela de Bloqueio Pix
-  if (!isTrialActive && !isSubActive) {
-    return <PixLockScreen barbershopName={barbershop.name} />
-  }
+  // if (!isTrialActive && !isSubActive) {
+  //   return <PixLockScreen barbershopName={barbershop.name} />
+  // }
 
   // 7. Busca todos os agendamentos atrelados aos serviços desta barbearia
   const bookings = await db.booking.findMany({
