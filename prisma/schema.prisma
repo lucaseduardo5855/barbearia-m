@@ -11,8 +11,8 @@ datasource db {
 
 model User {
   id            String    @id @default(cuid())
-  email         String?   @unique
   name          String?
+  email         String?   @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   emailVerified DateTime? @map("email_verified")
@@ -21,9 +21,15 @@ model User {
   password      String?
   role          Role      @default(CLIENT)
   barbershop    Barbershop?
+  barber        Barber?
   bookings      Booking[]
   accounts      Account[]
   sessions      Session[]
+}
+
+enum BarberRole{
+  ADMIN
+  EMPLOYEE
 }
 
 model Account {
@@ -89,9 +95,14 @@ model Barber {
   id           String     @id @default(uuid())
   name         String
   imageUrl     String
+  email        String?    @unique
+  phone        String?    @unique 
   barbershopId String
   barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
   bookings     Booking[]
+  userId       String?    @unique
+  user         User?      @relation(fields: [userId], references: [id])
+  role         BarberRole @default(EMPLOYEE)
 }
 
 model BarbershopService {

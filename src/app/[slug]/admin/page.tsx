@@ -36,8 +36,25 @@ export default async function AdminPage({ params }: AdminPageProps) {
     notFound()
   }
 
-  // 5. Valida se o usuário logado é o proprietário desta barbearia (Segurança)
-  if (barbershop.ownerId !== userId) {
+  // 5. Valida se o usuário logado é o proprietário ou um barbeiro cadastrado (Segurança)
+  let loggedInBarber = barbershop.barbers.find(b => b.userId === userId)
+
+  // Se o barbeiro não estiver vinculado por userId, mas o e-mail cadastrado for igual ao do usuário logado:
+  if (!loggedInBarber && session.user.email) {
+    const barberWithSameEmail = barbershop.barbers.find(b => b.email === session.user.email)
+    if (barberWithSameEmail) {
+      await db.barber.update({
+        where: { id: barberWithSameEmail.id },
+        data: { userId: userId }
+      })
+      barberWithSameEmail.userId = userId
+      loggedInBarber = barberWithSameEmail
+    }
+  }
+  const isOwner = barbershop.ownerId === userId
+  const isBarber = !!loggedInBarber
+
+  if (!isOwner && !isBarber) {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-foreground p-6 text-center">
         <div className="space-y-2">
@@ -50,21 +67,24 @@ export default async function AdminPage({ params }: AdminPageProps) {
     )
   }
 
+  // Define o nível de acesso: OWNER (Dono), ADMIN (Sócio) ou EMPLOYEE (Funcionário)
+  const userRole = isOwner 
+    ? "OWNER" 
+    : loggedInBarber?.role === "ADMIN" 
+      ? "ADMIN" 
+      : "EMPLOYEE"
+
   // 6. Verifica a vigência da assinatura ou do período de testes (Trial)
   const isTrialActive = barbershop.trialEndsAt && new Date() < new Date(barbershop.trialEndsAt)
   const isSubActive = barbershop.subscriptionActive
 
-  // Se o trial acabou E a assinatura manual não está ativa: exibe a Tela de Bloqueio Pix
-  // if (!isTrialActive && !isSubActive) {
-  //   return <PixLockScreen barbershopName={barbershop.name} />
-  // }
-
-  // 7. Busca todos os agendamentos atrelados aos serviços desta barbearia
+  // 7. Busca os agendamentos (filtrando apenas os do próprio profissional caso seja funcionário)
   const bookings = await db.booking.findMany({
     where: {
       service: {
         barbershopId: barbershop.id
-      }
+      },
+      ...(userRole === "EMPLOYEE" ? { barberId: loggedInBarber?.id } : {})
     },
     include: {
       service: true,
@@ -84,6 +104,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
     <AdminDashboardClient 
       barbershop={serializedBarbershop} 
       bookings={serializedBookings} 
+      userRole={userRole}
     />
   )
 }

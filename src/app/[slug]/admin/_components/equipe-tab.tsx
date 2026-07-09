@@ -14,7 +14,7 @@ interface EquipeTabProps {
     barbers: Barber[]
   }
   isLoading: boolean
-  onAddBarber: (params: { name: string; imageUrl: string }) => Promise<void>
+  onAddBarber: (params: { name: string; imageUrl: string; email?: string; phone?: string }) => Promise<void>
   onDeleteBarber: (barberId: string) => Promise<void>
 }
 
@@ -24,14 +24,16 @@ export default function EquipeTab({
   onAddBarber,
   onDeleteBarber,
 }: EquipeTabProps) {
-  // --- Estados do Formulário de Barbeiro (Isolados aqui!) ---
+  // --- Estados do Formulário de Barbeiro ---
   const [newBarberName, setNewBarberName] = useState("")
   const [newBarberImageUrl, setNewBarberImageUrl] = useState("")
+  const [newBarberEmail, setNewBarberEmail] = useState("")
+  const [newBarberPhone, setNewBarberPhone] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newBarberName || !newBarberImageUrl) {
-      toast.error("Por favor, preencha todos os campos do barbeiro.")
+      toast.error("Por favor, preencha o nome e a foto do barbeiro.")
       return
     }
 
@@ -39,11 +41,15 @@ export default function EquipeTab({
       await onAddBarber({
         name: newBarberName,
         imageUrl: newBarberImageUrl,
+        email: newBarberEmail || undefined,
+        phone: newBarberPhone || undefined,
       })
       
       // Limpa os campos após o sucesso
       setNewBarberName("")
       setNewBarberImageUrl("")
+      setNewBarberEmail("")
+      setNewBarberPhone("")
     } catch (err) {
       // O erro já é tratado na action do pai
     }
@@ -65,12 +71,34 @@ export default function EquipeTab({
             </h3>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro</label>
+                <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro *</label>
                 <Input 
                   placeholder="Ex: João da Silva" 
                   value={newBarberName} 
                   onChange={(e) => setNewBarberName(e.target.value)} 
                   required 
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-400 font-bold uppercase">E-mail de Login (Opcional)</label>
+                <Input 
+                  type="email"
+                  placeholder="Ex: joao@gmail.com" 
+                  value={newBarberEmail} 
+                  onChange={(e) => setNewBarberEmail(e.target.value)} 
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-400 font-bold uppercase">Telefone (Opcional)</label>
+                <Input 
+                  type="text"
+                  placeholder="Ex: 11999998888" 
+                  value={newBarberPhone} 
+                  onChange={(e) => setNewBarberPhone(e.target.value)} 
                   disabled={isLoading}
                 />
               </div>
@@ -136,7 +164,13 @@ export default function EquipeTab({
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm">{barber.name}</h4>
-                    <p className="text-xs text-muted-foreground">Profissional ativo para agendamento</p>
+                    {barber.email && (
+                      <p className="text-[11px] text-gray-400">E-mail: {barber.email}</p>
+                    )}
+                    {barber.phone && (
+                      <p className="text-[11px] text-gray-400">Tel: {barber.phone}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">Profissional ativo para agendamento</p>
                   </div>
                 </div>
 

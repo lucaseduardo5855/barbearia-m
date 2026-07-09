@@ -75,14 +75,30 @@ export async function addBarberAction(params: {
   barbershopId: string
   name: string
   imageUrl: string
+  email?: string
+  phone?: string
 }) {
   const barbershop = await verifyOwnership(params.barbershopId)
+
+  // Tenta encontrar o usuário correspondente ao e-mail para vincular na hora
+  let linkedUserId: string | null = null
+  if (params.email) {
+    const existingUser = await db.user.findUnique({
+      where: { email: params.email }
+    })
+    if (existingUser) {
+      linkedUserId = existingUser.id
+    }
+  }
 
   const barber = await db.barber.create({
     data: {
       name: params.name,
       imageUrl: params.imageUrl,
-      barbershopId: params.barbershopId
+      email: params.email || null,
+      phone: params.phone || null,
+      barbershopId: params.barbershopId,
+      userId: linkedUserId
     }
   })
 

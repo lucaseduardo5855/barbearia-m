@@ -46,9 +46,10 @@ interface AdminDashboardClientProps {
     barbers: Barber[]
   }
   bookings: BookingWithDetails[]
+  userRole: "OWNER" | "ADMIN" | "EMPLOYEE"
 }
 
-export default function AdminDashboardClient({ barbershop, bookings }: AdminDashboardClientProps) {
+export default function AdminDashboardClient({ barbershop, bookings, userRole }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"agenda" | "financeiro" | "servicos" | "equipe" | "marketing" | "config">("agenda")
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -116,7 +117,7 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
     }
   }
 
-  const handleAddBarber = async (params: { name: string; imageUrl: string }) => {
+  const handleAddBarber = async (params: { name: string; imageUrl: string; email?: string; phone?: string }) => {
     try {
       setIsLoading(true)
       await addBarberAction({
@@ -218,30 +219,34 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                 <CalendarIcon className="w-4 h-4" />
                 Agenda
               </Button>
-              <Button
-                variant={activeTab === "financeiro" ? "secondary" : "ghost"}
-                className="justify-start gap-2 rounded-lg text-sm"
-                onClick={() => { setActiveTab("financeiro"); setIsMenuOpen(false) }}
-              >
-                <DollarSignIcon className="w-4 h-4" />
-                Financeiro
-              </Button>
-              <Button
-                variant={activeTab === "servicos" ? "secondary" : "ghost"}
-                className="justify-start gap-2 rounded-lg text-sm"
-                onClick={() => { setActiveTab("servicos"); setIsMenuOpen(false) }}
-              >
-                <ScissorsIcon className="w-4 h-4" />
-                Serviços
-              </Button>
-              <Button
-                variant={activeTab === "equipe" ? "secondary" : "ghost"}
-                className="justify-start gap-2 rounded-lg text-sm"
-                onClick={() => { setActiveTab("equipe"); setIsMenuOpen(false) }}
-              >
-                <UsersIcon className="w-4 h-4" />
-                Equipe
-              </Button>
+              {userRole !== "EMPLOYEE" && (
+                <>
+                  <Button
+                    variant={activeTab === "financeiro" ? "secondary" : "ghost"}
+                    className="justify-start gap-2 rounded-lg text-sm"
+                    onClick={() => { setActiveTab("financeiro"); setIsMenuOpen(false) }}
+                  >
+                    <DollarSignIcon className="w-4 h-4" />
+                    Financeiro
+                  </Button>
+                  <Button
+                    variant={activeTab === "servicos" ? "secondary" : "ghost"}
+                    className="justify-start gap-2 rounded-lg text-sm"
+                    onClick={() => { setActiveTab("servicos"); setIsMenuOpen(false) }}
+                  >
+                    <ScissorsIcon className="w-4 h-4" />
+                    Serviços
+                  </Button>
+                  <Button
+                    variant={activeTab === "equipe" ? "secondary" : "ghost"}
+                    className="justify-start gap-2 rounded-lg text-sm"
+                    onClick={() => { setActiveTab("equipe"); setIsMenuOpen(false) }}
+                  >
+                    <UsersIcon className="w-4 h-4" />
+                    Equipe
+                  </Button>
+                </>
+              )}
               <Button
                 variant={activeTab === "marketing" ? "secondary" : "ghost"}
                 className="justify-start gap-2 rounded-lg text-sm"
@@ -250,14 +255,16 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
                 <Share2Icon className="w-4 h-4" />
                 Divulgação
               </Button>
-              <Button
-                variant={activeTab === "config" ? "secondary" : "ghost"}
-                className="justify-start gap-2 rounded-lg text-sm"
-                onClick={() => { setActiveTab("config"); setIsMenuOpen(false) }}
-              >
-                <SettingsIcon className="w-4 h-4" />
-                Configurar
-              </Button>
+              {userRole !== "EMPLOYEE" && (
+                <Button
+                  variant={activeTab === "config" ? "secondary" : "ghost"}
+                  className="justify-start gap-2 rounded-lg text-sm"
+                  onClick={() => { setActiveTab("config"); setIsMenuOpen(false) }}
+                >
+                  <SettingsIcon className="w-4 h-4" />
+                  Configurar
+                </Button>
+              )}
             </nav>
           </aside>
         </div>
@@ -284,30 +291,34 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             <CalendarIcon className="w-4 h-4" />
             Agenda
           </Button>
-          <Button
-            variant={activeTab === "financeiro" ? "secondary" : "ghost"}
-            className="justify-start gap-3 rounded-lg text-sm"
-            onClick={() => setActiveTab("financeiro")}
-          >
-            <DollarSignIcon className="w-4 h-4" />
-            Financeiro
-          </Button>
-          <Button
-            variant={activeTab === "servicos" ? "secondary" : "ghost"}
-            className="justify-start gap-3 rounded-lg text-sm"
-            onClick={() => setActiveTab("servicos")}
-          >
-            <ScissorsIcon className="w-4 h-4" />
-            Serviços
-          </Button>
-          <Button
-            variant={activeTab === "equipe" ? "secondary" : "ghost"}
-            className="justify-start gap-3 rounded-lg text-sm"
-            onClick={() => setActiveTab("equipe")}
-          >
-            <UsersIcon className="w-4 h-4" />
-            Equipe
-          </Button>
+          {userRole !== "EMPLOYEE" && (
+            <>
+              <Button
+                variant={activeTab === "financeiro" ? "secondary" : "ghost"}
+                className="justify-start gap-3 rounded-lg text-sm"
+                onClick={() => setActiveTab("financeiro")}
+              >
+                <DollarSignIcon className="w-4 h-4" />
+                Financeiro
+              </Button>
+              <Button
+                variant={activeTab === "servicos" ? "secondary" : "ghost"}
+                className="justify-start gap-3 rounded-lg text-sm"
+                onClick={() => setActiveTab("servicos")}
+              >
+                <ScissorsIcon className="w-4 h-4" />
+                Serviços
+              </Button>
+              <Button
+                variant={activeTab === "equipe" ? "secondary" : "ghost"}
+                className="justify-start gap-3 rounded-lg text-sm"
+                onClick={() => setActiveTab("equipe")}
+              >
+                <UsersIcon className="w-4 h-4" />
+                Equipe
+              </Button>
+            </>
+          )}
           <Button
             variant={activeTab === "marketing" ? "secondary" : "ghost"}
             className="justify-start gap-3 rounded-lg text-sm"
@@ -316,23 +327,25 @@ export default function AdminDashboardClient({ barbershop, bookings }: AdminDash
             <Share2Icon className="w-4 h-4" />
             Divulgação
           </Button>
-          <Button
-            variant={activeTab === "config" ? "secondary" : "ghost"}
-            className="justify-start gap-3 rounded-lg text-sm"
-            onClick={() => setActiveTab("config")}
-          >
-            <SettingsIcon className="w-4 h-4" />
-            Configurar
-          </Button>
+          {userRole !== "EMPLOYEE" && (
+            <Button
+              variant={activeTab === "config" ? "secondary" : "ghost"}
+              className="justify-start gap-3 rounded-lg text-sm"
+              onClick={() => setActiveTab("config")}
+            >
+              <SettingsIcon className="w-4 h-4" />
+              Configurar
+            </Button>
+          )}
         </nav>
       </aside>
-
+ 
       {/* Content Area */}
       <main className="flex-1 p-6 overflow-y-auto">
         {activeTab === "agenda" && (
           <AgendaTab bookings={bookings} onUpdateStatus={handleUpdateBookingStatus} />
         )}
-        {activeTab === "financeiro" && (
+        {activeTab === "financeiro" && userRole !== "EMPLOYEE" && (
           <FinanceiroTab bookings={bookings} />
         )}
         {activeTab === "servicos" && (
