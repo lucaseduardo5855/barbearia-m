@@ -247,7 +247,10 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
                 <div className="grid grid-cols-1 gap-3">
                   {groupedBookings.futuros.map(renderBookingCard)}
                 </div>
-                          {/* Histórico */}
+              </div>
+            )}
+
+            {/* Histórico */}
             {groupedBookings.passados.length > 0 && (
               <div className="space-y-3 pt-4 border-t border-secondary/40">
                 <div
