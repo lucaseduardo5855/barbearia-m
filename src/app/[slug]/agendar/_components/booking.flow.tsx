@@ -10,7 +10,6 @@ import { ptBR } from "date-fns/locale"
 import { format, isPast, isToday, set, startOfDay } from "date-fns"
 import { getBookings } from "@/app/_actions/get-bookins"
 import { createBooking } from "@/app/_actions/create-booking"
-import { createStripeCheckout } from "@/app/_actions/create-stripe-checkout"
 import BookingSummary from "@/app/_components/booking-summary"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -73,7 +72,7 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
     // Estado para armazenar os agendamentos já ocupados do dia selecionado
     const [dayBookings, setDayBookings] = useState<any[]>([])
 
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("ON_SITE")
+    const paymentMethod = "ON_SITE"
     const [isSubmitting, setIsSubmitting] = useState(false)
     const router = useRouter()
 
@@ -134,31 +133,14 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
             setIsSubmitting(true) // Ativa a trava de segurança para evitar cliques duplos
 
             // 1. Cria a reserva no banco de dados chamando a nossa Server Action
-            const booking = await createBooking({
+            await createBooking({
                 serviceId: selectedService.id,
                 date: selectDate,
                 paymentMethod,
                 barberId: selectedBarber?.id || null // Associa o barbeiro selecionado à reserva
             })
 
-            // 2. Se a forma de pagamento selecionada for ONLINE (Stripe)
-            if (paymentMethod === "ONLINE") {
-                const checkoutUrl = await createStripeCheckout({
-                    products: [selectedService],
-                    bookingId: booking.id,
-                })
-
-                if (checkoutUrl) {
-                    window.location.href = checkoutUrl // Redireciona para a tela de pagamento do Stripe
-                    return
-                }
-
-                toast.error("Erro ao gerar link de pagamento!")
-                setIsSubmitting(false)
-                return
-            }
-
-            // 3. Se for pagamento no local, finaliza direto
+            // 2. Se for pagamento no local, finaliza direto
             toast.success("Reserva realizada com sucesso!")
 
             // Redireciona o usuário para o histórico de reservas desta barbearia
@@ -441,37 +423,6 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                             />
                         </div>
                     )}
-
-                    {/* 2. Seleção de Método de Pagamento */}
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-semibold uppercase text-gray-400 tracking-wider">
-                            Método de Pagamento
-                        </h3>
-                        
-                        <div className="flex gap-3">
-                            {/* Botão Pagar no Local */}
-                            <Button
-                                type="button"
-                                className="flex-1 py-6"
-                                variant={paymentMethod === "ON_SITE" ? "default" : "outline"}
-                                onClick={() => setPaymentMethod("ON_SITE")}
-                                disabled={isSubmitting}
-                            >
-                                Pagar no local
-                            </Button>
-                            
-                            {/* Botão Pagar Online */}
-                            <Button
-                                type="button"
-                                className="flex-1 py-6"
-                                variant={paymentMethod === "ONLINE" ? "default" : "outline"}
-                                onClick={() => setPaymentMethod("ONLINE")}
-                                disabled={isSubmitting}
-                            >
-                                Pagar online (Stripe)
-                            </Button>
-                        </div>
-                    </div>
 
                     {/* 3. Botão de Envio com loading */}
                     <Button 

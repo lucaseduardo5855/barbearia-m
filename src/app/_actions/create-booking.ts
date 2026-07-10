@@ -42,10 +42,8 @@ export const createBooking = async (params: CreateBookingParams) => {
       date: params.date,
       userId: (user.user as any).id,
       barberId: params.barberId || null,
-      paymentMethod: params.paymentMethod || "ON_SITE",
-      // Se for pagamento ONLINE, criamos com status PENDING até que o Stripe confirme.
-      // Se for ON_SITE (no local), criamos como CONFIRMED direto.
-      status: params.paymentMethod === "ONLINE" ? "PENDING" : "CONFIRMED",
+      paymentMethod: "ON_SITE",
+      status: "CONFIRMED",
     },
   })
   // revalidar a página da barbearia específica para atualizar SSR
