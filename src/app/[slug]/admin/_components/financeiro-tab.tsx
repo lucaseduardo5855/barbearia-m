@@ -95,7 +95,7 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
         <p className="text-xs text-muted-foreground">Métricas estimadas do faturamento obtido através dos agendamentos.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card 1: Faturamento Estimado */}
         <Card className="border-secondary bg-secondary/20">
           <CardContent className="p-5 space-y-2">
@@ -114,7 +114,7 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
             <p className="text-3xl font-bold text-green-500">
               R$ {financeData.faturamentoReal.toFixed(2)}
             </p>
-            <p className="text-[10px] text-gray-500">Serviços concluídos, pagos online ou realizados.</p>
+            <p className="text-[10px] text-gray-500">Serviços concluídos e realizados.</p>
           </CardContent>
         </Card>
 
@@ -128,29 +128,6 @@ export default function FinanceiroTab({ bookings }: FinanceiroTabProps) {
             <p className="text-[10px] text-gray-500">Agendamentos marcados (exclui cancelados).</p>
           </CardContent>
         </Card>
-
-        {/* Card 4: Pagamentos Online */}
-        <Card className="border-secondary bg-secondary/20">
-          <CardContent className="p-5 space-y-2">
-            <span className="text-xs text-gray-400 font-semibold uppercase">Pagos Online</span>
-            <p className="text-3xl font-bold text-primary">
-              R$ {financeData.pagamentosOnline.toFixed(2)}
-            </p>
-            <p className="text-[10px] text-gray-500">Valor processado e compensado via internet.</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-secondary/20 border border-secondary p-5 rounded-xl space-y-3">
-        <h3 className="font-bold text-sm text-gray-200">Divisão Detalhada (Mês Corrente)</h3>
-        <div className="flex justify-between text-xs py-1 border-b border-secondary/50">
-          <span className="text-gray-400">Total a receber no local (Dinheiro/Máquina):</span>
-          <span className="font-semibold text-gray-200">R$ {financeData.pagamentosNoLocal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs py-1">
-          <span className="text-gray-400">Total recebido em cartões online:</span>
-          <span className="font-semibold text-gray-200">R$ {financeData.pagamentosOnline.toFixed(2)}</span>
-        </div>
       </div>
 
       <div className="bg-secondary/20 border border-secondary p-5 rounded-xl space-y-4">

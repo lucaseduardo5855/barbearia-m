@@ -143,7 +143,7 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
               <Button
                 variant="default"
                 size="sm"
-                className="mt-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 h-8 px-3 rounded-lg shadow-sm transition-all"
+                className="mt-4 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 h-8 px-3 rounded-lg shadow-sm transition-all"
                 title="Lembrar Cliente via WhatsApp"
                 onClick={() => {
                   if (!booking.user.phone) {
