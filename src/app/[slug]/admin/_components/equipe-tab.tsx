@@ -41,7 +41,6 @@ export default function EquipeTab({
   const [newBarberPhone, setNewBarberPhone] = useState("")
   const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null)
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newBarberName) {
@@ -56,7 +55,7 @@ export default function EquipeTab({
         email: newBarberEmail || undefined,
         phone: newBarberPhone || undefined,
       })
-
+      
       // Limpa os campos após o sucesso
       setNewBarberName("")
       setNewBarberImageUrl("")
@@ -84,45 +83,45 @@ export default function EquipeTab({
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro *</label>
-                <Input
-                  placeholder="Ex: João da Silva"
-                  value={newBarberName}
-                  onChange={(e) => setNewBarberName(e.target.value)}
-                  required
+                <Input 
+                  placeholder="Ex: João da Silva" 
+                  value={newBarberName} 
+                  onChange={(e) => setNewBarberName(e.target.value)} 
+                  required 
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">E-mail de Login (Opcional)</label>
-                <Input
+                <Input 
                   type="email"
-                  placeholder="Ex: joao@gmail.com"
-                  value={newBarberEmail}
-                  onChange={(e) => setNewBarberEmail(e.target.value)}
+                  placeholder="Ex: joao@gmail.com" 
+                  value={newBarberEmail} 
+                  onChange={(e) => setNewBarberEmail(e.target.value)} 
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">Telefone (Opcional)</label>
-                <Input
+                <Input 
                   type="text"
-                  placeholder="Ex: 11999998888"
-                  value={newBarberPhone}
-                  onChange={(e) => setNewBarberPhone(e.target.value)}
+                  placeholder="Ex: 11999998888" 
+                  value={newBarberPhone} 
+                  onChange={(e) => setNewBarberPhone(e.target.value)} 
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil (Opcional) *</label>
+                <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil (Opcional)</label>
                 {newBarberImageUrl ? (
                   <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
                     <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
-                    <button
-                      type="button"
-                      onClick={() => setNewBarberImageUrl("")}
+                    <button 
+                      type="button" 
+                      onClick={() => setNewBarberImageUrl("")} 
                       className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                       disabled={isLoading}
                     >
@@ -202,8 +201,7 @@ export default function EquipeTab({
       </div>
 
       {/* PopUp AlertDialog */}
-      <AlertDialog open={!!barberToDelete} onOpenChange={(open) => !open &&
-        setBarberToDelete(null)}>
+      <AlertDialog open={!!barberToDelete} onOpenChange={(open) => !open && setBarberToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center justify-center">
@@ -213,7 +211,7 @@ export default function EquipeTab({
               Tem certeza que deseja remover o barbeiro &quot;{barberToDelete?.name}&quot;?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row justify-ceenter sm:justify-center gap-3 w-full">
+          <AlertDialogFooter className="flex flex-row justify-center sm:justify-center gap-3 w-full">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/70 text-destructive-foreground"

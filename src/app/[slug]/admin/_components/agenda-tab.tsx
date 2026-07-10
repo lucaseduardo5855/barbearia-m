@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Booking, BarbershopService, Barber, User } from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
-import { CheckCircle2Icon, X } from "lucide-react"
+import { CheckCircle2Icon, HistoryIcon, X } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,18 +36,35 @@ interface AgendaTabProps {
 
 export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) {
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null)
+  const [historyClearedAt, setHistoryClearedAt] = useState<number | null>(null)
+  const [isClearHistoryDialogOpen, setIsClearHistoryDialogOpen] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem("history_cleared_at")
+    if (saved) {
+      setHistoryClearedAt(Number(saved))
+    }
+  }, [])
+
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
+  // Rastreia se existem quaisquer agendamentos passados ou cancelados no banco de dados
+  const hasRawPassados = useMemo(() => {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    return bookings.some(b => b.status === "CANCELLED" || new Date(b.date) < todayStart)
+  }, [bookings])
 
   // --- LÓGICA DE AGRUPAMENTO DE AGENDAMENTOS (Calculada no filho!) ---
   const groupedBookings = useMemo(() => {
     const today = new Date()
-    
+
     const todayStart = new Date(today)
     todayStart.setHours(0, 0, 0, 0)
-    
+
     const todayEnd = new Date(today)
     todayEnd.setHours(23, 59, 59, 999)
-    
+
     const next7DaysEnd = new Date(today)
     next7DaysEnd.setDate(today.getDate() + 7)
     next7DaysEnd.setHours(23, 59, 59, 999)
@@ -61,7 +78,10 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
       const bDate = new Date(b.date)
       // Se estiver cancelado ou for uma data no passado, vai direto para o histórico
       if (b.status === "CANCELLED" || bDate < todayStart) {
-        passadosList.push(b)
+        // Só exibe se a data do agendamento for depois do momento da última limpeza
+        if (!historyClearedAt || bDate.getTime() > historyClearedAt) {
+          passadosList.push(b)
+        }
       } else if (bDate >= todayStart && bDate <= todayEnd) {
         hojeList.push(b)
       } else if (bDate > todayEnd && bDate <= next7DaysEnd) {
@@ -74,7 +94,7 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
     // Ordenar listas crescentes (do mais próximo para o futuro)
     const sortByDateAsc = (a: BookingWithDetails, b: BookingWithDetails) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
-      
+
     // Ordenar histórico decrescente (do mais recente para o mais antigo)
     const sortByDateDesc = (a: BookingWithDetails, b: BookingWithDetails) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -85,7 +105,7 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
       futuros: futurosList.sort(sortByDateAsc),
       passados: passadosList.sort(sortByDateDesc),
     }
-  }, [bookings])
+  }, [bookings, historyClearedAt])
 
   const renderBookingCard = (booking: BookingWithDetails) => {
     const isPastBooking = new Date(booking.date) < new Date()
@@ -97,7 +117,7 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
               <span className="text-sm font-bold text-gray-200">
                 {booking.user.name || "Cliente sem Nome"}
               </span>
-              
+
               {booking.status === "CANCELLED" ? (
                 <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full font-semibold">Cancelado</span>
               ) : booking.status === "DONE" ? (
@@ -120,7 +140,7 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
 
             {/* Botão Lembrar no WhatsApp (Estilizado embaixo do Profissional) */}
             {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
-              <Button 
+              <Button
                 variant="default"
                 size="sm"
                 className="mt-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 h-8 px-3 rounded-lg shadow-sm transition-all"
@@ -155,19 +175,19 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
                 às {format(new Date(booking.date), "HH:mm")}
               </p>
             </div>
-            
+
             {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
               <div className="flex flex-row sm:flex-col gap-2 shrink-0">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 w-9 p-0 rounded-lg transition-all"
                   title="Concluir Atendimento"
                   onClick={() => onUpdateStatus(booking.id, "DONE", "PAID")}
                 >
                   <CheckCircle2Icon className="w-5 h-5" />
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="destructive"
                   className="h-9 w-9 p-0 rounded-lg transition-all"
                   title="Cancelar Agendamento"
@@ -227,24 +247,37 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
                 <div className="grid grid-cols-1 gap-3">
                   {groupedBookings.futuros.map(renderBookingCard)}
                 </div>
-              </div>
-            )}
-
-            {/* Histórico */}
+                          {/* Histórico */}
             {groupedBookings.passados.length > 0 && (
               <div className="space-y-3 pt-4 border-t border-secondary/40">
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer group"
                   onClick={() => setIsHistoryOpen(!isHistoryOpen)}
                 >
                   <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider group-hover:text-gray-400 transition-colors">
                     Histórico / Finalizados ({groupedBookings.passados.length})
                   </h3>
-                  <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-gray-300 h-8">
-                    {isHistoryOpen ? "Recolher" : "Expandir"}
-                  </Button>
+
+                  <div className="flex items-center gap-2">
+                    {isHistoryOpen && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/5 h-8 font-semibold"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsClearHistoryDialogOpen(true)
+                        }}
+                      >
+                        Limpar Histórico
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-gray-300 h-8">
+                      {isHistoryOpen ? "Recolher" : "Expandir"}
+                    </Button>
+                  </div>
                 </div>
-                
+
                 {isHistoryOpen && (
                   <div className="grid grid-cols-1 gap-3 opacity-75 hover:opacity-100 transition-opacity animate-in fade-in duration-200">
                     {groupedBookings.passados.map(renderBookingCard)}
@@ -258,26 +291,54 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
             Nenhum agendamento realizado até o momento.
           </p>
         )}
+
       </div>
 
       {/* AlertDialog de Cancelamento Isolado no Componente da Agenda */}
       <AlertDialog open={!!bookingToCancel} onOpenChange={(open) => !open && setBookingToCancel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center justify-center">Você quer cancelar está reserva?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center justify-center">Você quer cancelar esta reserva?</AlertDialogTitle>
             <AlertDialogDescription className="flex items-center justify-center">
               Tem certeza que deseja fazer o cancelamento?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row justify-center sm:justify-center gap-3 w-full">
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => {
                 if (bookingToCancel) {
                   onUpdateStatus(bookingToCancel, "CANCELLED")
                   setBookingToCancel(null)
                 }
-              }} 
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog de Confirmação de Limpeza de Histórico */}
+      <AlertDialog open={isClearHistoryDialogOpen} onOpenChange={setIsClearHistoryDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center justify-center">Limpar visualização do histórico?</AlertDialogTitle>
+            <AlertDialogDescription className="flex items-center justify-center text-center text-sm text-muted-foreground">
+              Tem certeza que deseja ocultar estes agendamentos passados? Isso não afetará os dados do faturamento financeiro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row justify-center sm:justify-center gap-3 w-full">
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const now = Date.now()
+                localStorage.setItem("history_cleared_at", String(now))
+                setHistoryClearedAt(now)
+                setIsClearHistoryDialogOpen(false)
+                toast.success("Histórico limpo visualmente!")
+              }}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
             >
               Confirmar

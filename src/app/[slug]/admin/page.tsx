@@ -68,21 +68,29 @@ export default async function AdminPage({ params }: AdminPageProps) {
   }
 
   // Define o nível de acesso: OWNER (Dono), ADMIN (Sócio) ou EMPLOYEE (Funcionário)
-  const userRole = isOwner 
-    ? "OWNER" 
-    : loggedInBarber?.role === "ADMIN" 
-      ? "ADMIN" 
+  const userRole = isOwner
+    ? "OWNER"
+    : loggedInBarber?.role === "ADMIN"
+      ? "ADMIN"
       : "EMPLOYEE"
 
   // 6. Verifica a vigência da assinatura ou do período de testes (Trial)
   const isTrialActive = barbershop.trialEndsAt && new Date() < new Date(barbershop.trialEndsAt)
   const isSubActive = barbershop.subscriptionActive
 
-  // 7. Busca os agendamentos (filtrando apenas os do próprio profissional caso seja funcionário)
+  // Calcula a data de 30 dias atrás para não carregar agendamentos eternos no histórico
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  thirtyDaysAgo.setHours(0, 0, 0, 0)
+
+  //Busca os agendamentos (filtrando apenas os do próprio profissional caso seja funcionário)
   const bookings = await db.booking.findMany({
     where: {
       service: {
         barbershopId: barbershop.id
+      },
+      date: {
+        gte: thirtyDaysAgo
       },
       ...(userRole === "EMPLOYEE" ? { barberId: loggedInBarber?.id } : {})
     },
@@ -101,9 +109,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const serializedBookings = JSON.parse(JSON.stringify(bookings))
 
   return (
-    <AdminDashboardClient 
-      barbershop={serializedBarbershop} 
-      bookings={serializedBookings} 
+    <AdminDashboardClient
+      barbershop={serializedBarbershop}
+      bookings={serializedBookings}
       userRole={userRole}
     />
   )
