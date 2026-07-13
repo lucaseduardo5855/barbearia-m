@@ -78,6 +78,10 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const isTrialActive = barbershop.trialEndsAt && new Date() < new Date(barbershop.trialEndsAt)
   const isSubActive = barbershop.subscriptionActive
 
+  if (!isTrialActive && !isSubActive) {
+    return <PixLockScreen barbershopId={barbershop.id} barbershopName={barbershop.name} />
+  }
+
   // Calcula a data de 30 dias atrás para não carregar agendamentos eternos no histórico
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
