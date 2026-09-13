@@ -5,6 +5,18 @@ const nextConfig = {
       {
         hostname: "utfs.io",
       },
+      {
+        hostname: "images.unsplash.com",
+      },
+      {
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        hostname: "platform-lookaside.fbsbx.com",
+      },
+      {
+        hostname: "ufs.sh",
+      },
     ],
   },
   outputFileTracingIncludes: {
