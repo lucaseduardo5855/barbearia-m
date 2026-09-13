@@ -89,7 +89,21 @@ model Barbershop {
   trialEndsAt    DateTime?
   barbers        Barber[]
   services       BarbershopService[]
+  subscriptionPayments SubscriptionPayment[]
 }
+
+model SubscriptionPayment {
+  id                   String     @id @default(uuid())
+  barbershopId         String
+  barbershop           Barbershop @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  amount               Decimal    @db.Decimal(10, 2)
+  paymentMethod        String     @default("PIX")
+  mercadopagoPaymentId String     @unique
+  status               String
+  paidAt               DateTime   @default(now())
+  createdAt            DateTime   @default(now())
+}
+
 
 model Barber {
   id           String     @id @default(uuid())

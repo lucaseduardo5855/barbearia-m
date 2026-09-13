@@ -2,6 +2,26 @@
 
 import { getServerSession } from "next-auth"
 import { authOptions } from "../_lib/auth"
+import { db } from "@/lib/prisma"
+
+export async function checkBarbershopSubscriptionAction(barbershopId: string) {
+  const barbershop = await db.barbershop.findUnique({
+    where: { id: barbershopId },
+    select: {
+      subscriptionActive: true,
+      trialEndsAt: true,
+    },
+  })
+
+  if (!barbershop) return { active: false }
+
+  const isTrialActive = barbershop.trialEndsAt && new Date() < new Date(barbershop.trialEndsAt)
+  const isSubActive = barbershop.subscriptionActive
+
+  return {
+    active: Boolean(isTrialActive || isSubActive),
+  }
+}
 
 export async function createPixPaymentAction(barbershopId: string) {
   const session = await getServerSession(authOptions)
@@ -35,8 +55,8 @@ export async function createPixPaymentAction(barbershopId: string) {
       "X-Idempotency-Key": `sub_${barbershopId}_${Date.now()}`,
     },
     body: JSON.stringify({
-      transaction_amount: 49.90,
-      description: `Assinatura Mensal - Barbearia`,
+      transaction_amount: 1.00,
+      description: `Assinatura Mensal - Barbearia (Teste)`,
       payment_method_id: "pix",
       external_reference: barbershopId,
       payer: {

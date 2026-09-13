@@ -2,9 +2,10 @@
 
 import { Button } from "@/app/_components/ui/button"
 import { Card, CardContent } from "@/app/_components/ui/card"
-import { LockIcon, MessageCircleIcon, Loader2, Copy, Check } from "lucide-react"
+import { LockIcon, Loader2, Copy, Check } from "lucide-react"
 import { useEffect, useState } from "react"
-import { createPixPaymentAction } from "@/app/_actions/payment-actions"
+import { useRouter } from "next/navigation"
+import { createPixPaymentAction, checkBarbershopSubscriptionAction } from "@/app/_actions/payment-actions"
 import { toast } from "sonner"
 
 interface PixLockScreenProps {
@@ -13,8 +14,7 @@ interface PixLockScreenProps {
 }
 
 export default function PixLockScreen({ barbershopId, barbershopName }: PixLockScreenProps) {
-  const CONTACT_NUMBER = "5511999999999" // Formato internacional: DDI + DDD + Número (ex: 55 + 11 + 999999999)
-  const WHATSAPP_URL = `https://wa.me/${CONTACT_NUMBER}?text=Olá!%20Fiz%20o%20pagamento%20da%20mensalidade%20para%20a%20barbearia%20*${encodeURIComponent(barbershopName)}*.%20Segue%20o%20comprovante.`
+  const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -38,6 +38,24 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
     }
     loadPix()
   }, [barbershopId])
+
+  // Verifica automaticamente a cada 3.5s se a assinatura foi ativada
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await checkBarbershopSubscriptionAction(barbershopId)
+        if (res.active) {
+          toast.success("Pagamento confirmado! Liberando acesso...")
+          clearInterval(interval)
+          router.refresh()
+        }
+      } catch (err) {
+        // Silencioso para não incomodar o usuário durante verificações normais
+      }
+    }, 3500)
+
+    return () => clearInterval(interval)
+  }, [barbershopId, router])
 
   const handleCopy = () => {
     if (!paymentData?.qrCode) return
@@ -67,8 +85,8 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         {/* Informações de Pagamento */}
         <div className="bg-secondary/40 p-4 rounded-xl text-left space-y-4 border border-secondary">
           <div className="flex justify-between border-b border-secondary/60 pb-2">
-            <span className="text-xs text-gray-400 font-semibold uppercase">Valor Mensal</span>
-            <span className="text-sm font-bold text-primary">R$ 49,90</span>
+            <span className="text-xs text-gray-400 font-semibold uppercase">Valor Mensal (Teste)</span>
+            <span className="text-sm font-bold text-primary">R$ 1,00</span>
           </div>
 
           {isLoading ? (
@@ -114,16 +132,17 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
           )}
         </div>
 
-        {/* Botão de WhatsApp */}
-        <div className="space-y-2 pt-2">
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="w-full block">
-            <Button className="w-full py-6 flex items-center justify-center gap-2 font-bold text-md">
-              <MessageCircleIcon className="w-5 h-5 fill-current" />
-              Enviar Comprovante por WhatsApp
-            </Button>
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Sua conta será liberada na hora assim que confirmarmos o Pix.
+        {/* Status de Liberação Automática */}
+        <div className="space-y-2 pt-2 border-t border-secondary/40">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span>Aguardando pagamento Pix...</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Assim que você efetuar o Pix no seu banco, o sistema reconhecerá e liberará o seu acesso automaticamente em tempo real.
           </p>
         </div>
       </Card>

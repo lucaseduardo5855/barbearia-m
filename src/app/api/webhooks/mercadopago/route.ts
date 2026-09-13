@@ -69,6 +69,29 @@ async function handlePaymentUpdate(paymentId: string) {
       },
     })
 
+    // 5. Registra o pagamento no histórico financeiro (SubscriptionPayment)
+    try {
+      await (db as any).subscriptionPayment.upsert({
+        where: { mercadopagoPaymentId: String(paymentId) },
+        update: {
+          status: paymentData.status,
+          amount: paymentData.transaction_amount || 1.00,
+          paidAt: new Date(),
+        },
+        create: {
+          barbershopId: barbershopId,
+          amount: paymentData.transaction_amount || 1.00,
+          paymentMethod: "PIX",
+          mercadopagoPaymentId: String(paymentId),
+          status: paymentData.status,
+          paidAt: new Date(),
+        },
+      })
+      console.log(`[Webhook] Histórico financeiro registrado para o pagamento ID ${paymentId}!`)
+    } catch (e: any) {
+      console.error("[Webhook] Erro ao salvar histórico financeiro:", e.message)
+    }
+
     console.log(`[Webhook] Assinatura da barbearia ID ${barbershopId} ativada com sucesso!`)
   }
 
