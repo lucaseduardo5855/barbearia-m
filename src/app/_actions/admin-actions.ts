@@ -57,6 +57,14 @@ export async function deleteServiceAction(params: {
 }) {
   const barbershop = await verifyOwnership(params.barbershopId)
 
+  // Validação Multi-tenant: Confirma se o serviço pertence a esta barbearia
+  const existingService = await db.barbershopService.findFirst({
+    where: { id: params.serviceId, barbershopId: params.barbershopId }
+  })
+  if (!existingService) {
+    throw new Error("Serviço não encontrado nesta barbearia.")
+  }
+
   // Primeiro removemos agendamentos atrelados para evitar erros de chave estrangeira (boas práticas SQL)
   await db.booking.deleteMany({
     where: { serviceId: params.serviceId }
@@ -116,6 +124,14 @@ export async function deleteBarberAction(params: {
 }) {
   const barbershop = await verifyOwnership(params.barbershopId)
 
+  // Validação Multi-tenant: Confirma se o profissional pertence a esta barbearia
+  const existingBarber = await db.barber.findFirst({
+    where: { id: params.barberId, barbershopId: params.barbershopId }
+  })
+  if (!existingBarber) {
+    throw new Error("Profissional não encontrado nesta barbearia.")
+  }
+
   // Remove agendamentos vinculados a esse barbeiro antes
   await db.booking.deleteMany({
     where: { barberId: params.barberId }
@@ -134,6 +150,8 @@ export async function updateBarbershopConfig(params: {
   barbershopId: string
   name: string
   address: string
+  city?: string | null
+  state?: string | null
   phones: string[]
   description: string
   imageUrl: string
@@ -148,6 +166,8 @@ export async function updateBarbershopConfig(params: {
     data: {
       name: params.name,
       address: params.address,
+      city: params.city || null,
+      state: params.state || null,
       phones: params.phones,
       description: params.description,
       imageUrl: params.imageUrl,
@@ -172,6 +192,17 @@ export async function updateBookingStatusAction(params: {
   // Roda a segurança para verificar se o usuário atual é dono da barbearia
   const barbershop = await verifyOwnership(params.barbershopId)
 
+  // Validação Multi-tenant: Confirma se o agendamento pertence a esta barbearia
+  const existingBooking = await db.booking.findFirst({
+    where: {
+      id: params.bookingId,
+      service: { barbershopId: params.barbershopId }
+    }
+  })
+  if (!existingBooking) {
+    throw new Error("Agendamento não encontrado nesta barbearia.")
+  }
+
   // Atualiza no banco de dados
   const updatedBooking = await db.booking.update({
     where: { id: params.bookingId },
@@ -187,4 +218,3 @@ export async function updateBookingStatusAction(params: {
 
   return updatedBooking
 }
-

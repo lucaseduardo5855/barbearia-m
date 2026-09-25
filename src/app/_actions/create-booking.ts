@@ -2,26 +2,31 @@
 
 import { db } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
-import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate"
+import { revalidatePath } from "next/cache"
 import { authOptions } from "../_lib/auth"
 import { PaymentMethod } from "@prisma/client"
+import { z } from "zod"
+
+const createBookingSchema = z.object({
+  serviceId: z.string().min(1, "Serviço inválido"),
+  date: z.coerce.date(),
+  barberId: z.string().nullable().optional(),
+})
 
 interface CreateBookingParams {
   serviceId: string
   date: Date
   paymentMethod?: PaymentMethod
-  barberId?: string | null // <-- Permite string ou null opcionalmente
+  barberId?: string | null
 }
 
 // Função para criar uma nova reserva (booking) no banco de dados
 export const createBooking = async (params: CreateBookingParams) => {
+  const validated = createBookingSchema.parse(params)
+
   const user = await getServerSession(authOptions)
   if (!user) {
     throw new Error("Usuário não autenticado!")
-  }
-  // validações
-  if (!params.serviceId) {
-    throw new Error("Serviço inválido")
   }
 
   const service = await db.barbershopService.findUnique({

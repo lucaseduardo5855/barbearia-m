@@ -74,6 +74,8 @@ model Barbershop {
   id             String              @id @default(uuid())
   name           String
   address        String
+  city           String?
+  state          String?
   phones         String[]
   description    String
   imageUrl       String
@@ -170,4 +172,3 @@ enum Role {
   CLIENT
   ADMIN
 }
-

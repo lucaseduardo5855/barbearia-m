@@ -7,7 +7,7 @@ import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
 import { UploadButton } from "@/app/_lib/uploadthing"
 import { toast } from "sonner"
-import { PlusIcon, Trash2Icon } from "lucide-react"
+import { Trash2Icon } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,9 +77,7 @@ export default function EquipeTab({
         {/* Formulário de Adicionar Barbeiro */}
         <Card className="border-secondary h-fit">
           <CardContent className="p-5">
-            <h3 className="font-bold text-sm text-primary mb-4 flex items-center gap-1">
-              <PlusIcon className="w-4 h-4" /> Contratar Barbeiro
-            </h3>
+            <h3 className="mb-4 text-sm font-bold text-primary">Contratar barbeiro</h3>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro *</label>
@@ -148,7 +146,7 @@ export default function EquipeTab({
                       allowedContent: "PNG, JPG (até 4MB)"
                     }}
                     appearance={{
-                      button: "bg-primary text-black font-extrabold text-[11px] py-2 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                      button: "border border-border bg-muted text-foreground font-medium text-xs py-2.5 w-full rounded-lg hover:bg-secondary transition-colors cursor-pointer",
                       allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
                     }}
                   />

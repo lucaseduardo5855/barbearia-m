@@ -86,8 +86,8 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
   return (
     <>
       <Sheet open={isShetOpen} onOpenChange={handleSheetOpenChange}>
-        <SheetTrigger className="w-full min-w-[90%]">
-          <Card className="min-w-[90%]">
+        <SheetTrigger className="w-full min-w-[90%] md:min-w-[420px]">
+          <Card className="min-w-[90%] md:min-w-[420px] transition-colors hover:bg-muted/40">
             <CardContent className="flex justify-between p-0">
               {/* Esquerda */}
               <div className="flex flex-col gap-2 p-5 py-5">
@@ -103,19 +103,10 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                   {/* 2. Status do Pagamento (Apenas para agendamentos futuros) */}
                   {isFutureBooking && (
                     <Badge
-                      className={`w-fit rounded-full ${booking.paymentMethod === "ONLINE"
-                        ? booking.paymentStatus === "PAID"
-                          ? "bg-green-500/20 text-green-500 border-none hover:bg-green-500/20"
-                          : "bg-yellow-500/20 text-yellow-500 border-none hover:bg-yellow-500/20"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary"
-                        }`}
+                      className="w-fit rounded-full bg-secondary text-secondary-foreground hover:bg-secondary"
                       variant="outline"
                     >
-                      {booking.paymentMethod === "ONLINE"
-                        ? booking.paymentStatus === "PAID"
-                          ? "Pagamento confirmado"
-                          : "Aguardando Pagamento"
-                        : "Pagar no local"}
+                      Pagar no local
                     </Badge>
                   )}
                 </div>
@@ -166,7 +157,7 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
           </Card>
         </SheetTrigger>
 
-        <SheetContent>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
             <SheetTitle className="text-left">
               Informações da Reserva
@@ -187,7 +178,7 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                 </Avatar>
                 <div>
                   <h3 className="font-bold">{barbershop.name}</h3>
-                  <p className="text-xs">{barbershop.address}</p>
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(barbershop.address)}`} target="_blank" rel="noreferrer" className="text-left text-xs text-muted-foreground hover:text-primary hover:underline">{barbershop.address}</a>
                 </div>
               </CardContent>
             </Card>
@@ -206,12 +197,19 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                 barbershop={barbershop}
                 service={booking.service}
                 selectDay={booking.date}
+                barber={booking.barber}
+                paymentMethod="Pagar no local"
               />
             </div>
 
             {barbershop.phones.map((phone, index) => (
               <PhoneItem key={index} phone={phone} />
             ))}
+            {barbershop.phones[0] && (
+              <Button asChild variant="outline" className="mt-3 w-full border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400">
+                <a href={`https://wa.me/${barbershop.phones[0].replace(/\D/g, "")}`} target="_blank" rel="noreferrer">Falar no WhatsApp</a>
+              </Button>
+            )}
           </div>
 
           <SheetFooter className="mt-6">
@@ -225,19 +223,18 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
               {isConfirmed && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex-1">
+                    <Button variant="outline" className="flex-1 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10 hover:text-destructive">
                       Cancelar Reserva
                     </Button>
                   </AlertDialogTrigger>
 
-                  <AlertDialogContent className="w-[90%]">
+                  <AlertDialogContent className="w-[90%] sm:max-w-md">
                     <AlertDialogHeader className="text-center sm:text-center">
                       <AlertDialogTitle>
                         Você quer cancelar sua reserva?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Tem certeza que deseja fazer o cancelamento? Essa ação é
-                        irreversível.
+                        Tem certeza que deseja fazer o cancelamento?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     

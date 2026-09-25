@@ -77,7 +77,7 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         <div className="space-y-2">
           <h1 className="text-xl font-bold text-destructive">Período de Teste Expirou!</h1>
           <p className="text-sm text-muted-foreground">
-            Os 7 dias grátis de teste da barbearia <strong>{barbershopName}</strong> terminaram. 
+            Os 7 dias grátis de teste da barbearia <strong>{barbershopName}</strong> terminaram.
             Para continuar acessando o painel e recebendo agendamentos, ative sua assinatura.
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         <div className="bg-secondary/40 p-4 rounded-xl text-left space-y-4 border border-secondary">
           <div className="flex justify-between border-b border-secondary/60 pb-2">
             <span className="text-xs text-gray-400 font-semibold uppercase">Valor Mensal (Teste)</span>
-            <span className="text-sm font-bold text-primary">R$ 1,00</span>
+            <span className="text-sm font-bold text-primary">R$ 49,99</span>
           </div>
 
           {isLoading ? (

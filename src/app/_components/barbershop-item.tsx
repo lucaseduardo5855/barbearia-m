@@ -37,11 +37,17 @@ const BarbershopItem = ({ barbershop }: BarbershopItemProps) => {
           <h3 className="overflow-hidden truncate text-ellipsis text-nowrap font-semibold">
             {barbershop.name}
           </h3>
-          <p className="overflow-hidden truncate text-sm text-gray-400">
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(barbershop.address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Abrir o endereço da ${barbershop.name} no Google Maps`}
+            className="block overflow-hidden truncate text-sm text-gray-400 hover:text-primary hover:underline"
+          >
             {barbershop.address}
-          </p>
-          <Button variant="secondary" className="asChild mt-3 w-full">
-            <Link href={`/barbershops/${barbershop.id}`}>Reservar</Link>
+          </a>
+          <Button variant="secondary" asChild className="mt-3 w-full">
+            <Link href={`/${barbershop.slug}`}>Ver perfil</Link>
           </Button>
         </div>
       </CardContent>

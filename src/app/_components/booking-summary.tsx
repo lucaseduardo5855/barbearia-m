@@ -8,6 +8,7 @@ interface BookingSummaryProps {
   barbershop: Pick<Barbershop, "name">
   selectDay: Date
   barber?: Pick<Barber, "name"> | null
+  paymentMethod?: string
 }
 
 const BookingSummary = ({
@@ -15,6 +16,7 @@ const BookingSummary = ({
   barbershop,
   selectDay,
   barber,
+  paymentMethod = "Pagar no local",
 }: BookingSummaryProps) => {
   return (
     <>
@@ -55,6 +57,11 @@ const BookingSummary = ({
               <p className="text-sm">{barber.name}</p>
             </div>
           )}
+
+          <div className="flex items-center justify-between border-t border-border/40 pt-3">
+            <h2 className="text-sm text-gray-400">Forma de Pagamento</h2>
+            <p className="text-sm font-medium text-emerald-400">{paymentMethod}</p>
+          </div>
         </CardContent>
       </Card>
     </>

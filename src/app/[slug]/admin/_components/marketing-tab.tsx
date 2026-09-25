@@ -76,7 +76,7 @@ export default function MarketingTab({ barbershop }: MarketingTabProps) {
               </p>
             </div>
 
-            <Button onClick={handleShareWhatsapp} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
+            <Button onClick={handleShareWhatsapp} size="sm" className="bg-green-600 px-5 text-xs font-medium text-white hover:bg-green-700">
               <Share2Icon className="w-4 h-4" /> Enviar para Contatos
             </Button>
           </CardContent>

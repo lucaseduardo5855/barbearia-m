@@ -12,6 +12,8 @@ import {
   UsersIcon,
   Share2Icon,
   SettingsIcon,
+  LayoutDashboardIcon,
+  TrendingUpIcon,
   Menu,
   X
 } from "lucide-react"
@@ -50,7 +52,7 @@ interface AdminDashboardClientProps {
 }
 
 export default function AdminDashboardClient({ barbershop, bookings, userRole }: AdminDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<"agenda" | "financeiro" | "servicos" | "equipe" | "marketing" | "config">("agenda")
+  const [activeTab, setActiveTab] = useState<"overview" | "agenda" | "financeiro" | "servicos" | "equipe" | "marketing" | "config">("overview")
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -151,6 +153,8 @@ export default function AdminDashboardClient({ barbershop, bookings, userRole }:
   const handleUpdateConfig = async (params: {
     name: string
     address: string
+    city?: string | null
+    state?: string | null
     phones: string[]
     description: string
     imageUrl: string
@@ -211,6 +215,9 @@ export default function AdminDashboardClient({ barbershop, bookings, userRole }:
             </div>
 
             <nav className="flex flex-col gap-2">
+              <Button variant={activeTab === "overview" ? "secondary" : "ghost"} className="justify-start gap-2 rounded-lg text-sm" onClick={() => { setActiveTab("overview"); setIsMenuOpen(false) }}>
+                <LayoutDashboardIcon className="w-4 h-4" /> Visão geral
+              </Button>
               <Button
                 variant={activeTab === "agenda" ? "secondary" : "ghost"}
                 className="justify-start gap-2 rounded-lg text-sm"
@@ -283,6 +290,9 @@ export default function AdminDashboardClient({ barbershop, bookings, userRole }:
         </div>
 
         <nav className="flex flex-col gap-2 flex-grow">
+          <Button variant={activeTab === "overview" ? "secondary" : "ghost"} className="justify-start gap-3 rounded-lg text-sm" onClick={() => setActiveTab("overview")}>
+            <LayoutDashboardIcon className="w-4 h-4" /> Visão geral
+          </Button>
           <Button
             variant={activeTab === "agenda" ? "secondary" : "ghost"}
             className="justify-start gap-3 rounded-lg text-sm"
@@ -341,12 +351,40 @@ export default function AdminDashboardClient({ barbershop, bookings, userRole }:
       </aside>
  
       {/* Content Area */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        {activeTab === "overview" && (() => {
+          const activeBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
+          const completed = bookings.filter((booking) => booking.status === "DONE")
+          const revenue = completed.reduce((total, booking) => total + Number(booking.service.price), 0)
+          const upcoming = activeBookings.filter((booking) => new Date(booking.date) >= new Date()).slice(0, 5)
+          return <div className="space-y-6">
+            <div><h2 className="text-2xl font-bold">Visão geral</h2><p className="text-sm text-muted-foreground">Acompanhe os principais números e os próximos atendimentos.</p></div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                ['Faturamento realizado', `R$ ${revenue.toFixed(2).replace('.', ',')}`],
+                ['Agendamentos', String(activeBookings.length)],
+                ['Serviços cadastrados', String(barbershop.services.length)],
+                ['Profissionais', String(barbershop.barbers.length)],
+              ].map(([label, value]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between text-xs text-muted-foreground"><span>{label}</span><TrendingUpIcon className="size-4" /></div><strong className="text-2xl">{value}</strong></div>)}
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center justify-between"><div><h3 className="font-semibold">Próximos atendimentos</h3><p className="text-xs text-muted-foreground">Agenda em ordem cronológica</p></div><Button variant="outline" size="sm" onClick={() => setActiveTab('agenda')}>Ver agenda</Button></div>
+              <div className="divide-y divide-border">
+                {upcoming.length ? upcoming.map((booking) => <div key={booking.id} className="grid gap-3 py-3 text-sm sm:grid-cols-[180px_minmax(0,1fr)_auto_auto] sm:items-center"><div><span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Cliente</span><span className="font-medium">{booking.user.name || 'Cliente'}</span></div><div><span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Serviço</span><span className="text-left text-foreground">{booking.service.name}</span></div><div><span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Horário</span><span className="whitespace-nowrap text-xs text-muted-foreground">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(booking.date))}</span></div>{booking.user.phone && <Button size="sm" variant="outline" className="border-emerald-500/30 text-xs text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400" onClick={() => window.open(`https://wa.me/${booking.user.phone!.replace(/\D/g, '')}`, '_blank')}>Lembrar no WhatsApp</Button>}</div>) : <p className="py-8 text-center text-sm text-muted-foreground">Nenhum atendimento futuro.</p>}
+              </div>
+            </div>
+          </div>
+        })()}
         {activeTab === "agenda" && (
           <AgendaTab bookings={bookings} onUpdateStatus={handleUpdateBookingStatus} />
         )}
         {activeTab === "financeiro" && userRole !== "EMPLOYEE" && (
-          <FinanceiroTab bookings={bookings} />
+          <FinanceiroTab 
+            bookings={bookings} 
+            barbershopId={barbershop.id}
+            subscriptionActive={barbershop.subscriptionActive}
+            trialEndsAt={barbershop.trialEndsAt}
+          />
         )}
         {activeTab === "servicos" && (
           <ServicosTab 

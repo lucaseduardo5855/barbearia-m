@@ -1,8 +1,8 @@
 # 💈 Barber-M
 
-Barber-M é um sistema moderno de agendamentos online para barbearias, construído com foco em alta performance, usabilidade premium e fluxos completos de pagamento integrados.
+Barber-M é um sistema moderno de agendamentos online para barbearias, construído com foco em alta performance, usabilidade premium e pagamentos de mensalidade via Pix.
 
-O sistema permite que clientes encontrem barbearias, visualizem serviços e preços, agendem horários de forma inteligente com verificação de disponibilidade em tempo real e realizem pagamentos online via cartão de crédito ou optem por pagar no local.
+O sistema permite que clientes encontrem barbearias, visualizem serviços e preços e agendem horários com verificação de disponibilidade em tempo real. Os cortes são pagos presencialmente; a mensalidade da plataforma é cobrada por Pix via Mercado Pago.
 
 ---
 
@@ -16,10 +16,10 @@ O sistema permite que clientes encontrem barbearias, visualizem serviços e pre�
   - Seleção dinâmica de data e horários disponíveis.
   - Prevenção de conflito de horários (bloqueando horários já reservados por outros usuários no banco de dados).
 - **Autenticação Segura**: Login social completo usando NextAuth.js (com suporte ao Google).
-- **Integração com Stripe**:
-  - Possibilidade de agendamento gratuito com pagamento no local ou pagamento online por cartão de crédito.
-  - Redirecionamento automático e seguro para a página de checkout do Stripe.
-  - **Webhook Seguro**: Atualização automática do status do agendamento (`Confirmado`) e pagamento (`Pago`) assim que a transação é processada no Stripe.
+- **Pagamento de mensalidade via Pix (Mercado Pago)**:
+  - QR Code dinâmico e código Pix copia-e-cola.
+  - Liberação automática da assinatura após a confirmação do pagamento.
+  - **Webhook Seguro**: confere o status diretamente na API do Mercado Pago e registra o histórico financeiro.
 
 ---
 
@@ -52,9 +52,9 @@ NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="seu_google_client_id"
 GOOGLE_CLIENT_SECRET="seu_google_client_secret"
 
-# Stripe Configurações
-STRIPE_SECRET_KEY="sua_chave_secreta_do_stripe"
-STRIPE_WEBHOOK_SECRET="seu_segredo_de_webhook_do_stripe"
+# Mercado Pago (mensalidade Pix)
+MERCADO_PAGO_ACCESS_TOKEN="seu_access_token_privado"
+NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY="sua_chave_publica"
 
 # URL Base da Aplicação
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -89,12 +89,8 @@ npm run dev
 ```
 Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-### 4. Rodar o Stripe Webhook Localmente (Para testar pagamentos)
-Instale a [Stripe CLI](https://stripe.com/docs/stripe-cli) e execute o comando abaixo para encaminhar os eventos do Stripe para a sua API local:
-```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
-```
-Copie a chave de webhook gerada no terminal (`whsec_...`) e salve-a na variável `STRIPE_WEBHOOK_SECRET` no seu arquivo `.env`.
+### 4. Testar o webhook do Mercado Pago (opcional)
+Para receber notificações durante o desenvolvimento local, exponha `http://localhost:3000/api/webhooks/mercadopago` com um túnel HTTPS (por exemplo, ngrok) e cadastre a URL gerada nas configurações de Webhooks do Mercado Pago.
 
 ---
 

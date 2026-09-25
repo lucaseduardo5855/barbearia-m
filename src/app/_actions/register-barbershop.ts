@@ -4,6 +4,22 @@ import { db } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../_lib/auth"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
+
+const registerBarbershopSchema = z.object({
+  name: z.string().min(2, "Nome da barbearia deve ter pelo menos 2 caracteres"),
+  address: z.string().min(3, "Endereço inválido"),
+  phones: z.array(z.string()).min(1, "Informe ao menos um telefone"),
+  description: z.string().min(3, "Descrição muito curta"),
+  imageUrl: z.string().min(1, "Imagem da barbearia é obrigatória"),
+  bannerUrl: z.string().optional(),
+  welcomeMessage: z.string().optional(),
+  instagramUrl: z.string().optional(),
+  cortePrice: z.string().min(1, "Preço do corte é obrigatório"),
+  barbaPrice: z.string().min(1, "Preço da barba é obrigatório"),
+  sobrancelhaPrice: z.string().min(1, "Preço da sobrancelha é obrigatório"),
+  barberName: z.string().optional(),
+})
 
 interface RegisterBarbershopParams {
   name: string
@@ -21,6 +37,8 @@ interface RegisterBarbershopParams {
 }
 
 export async function registerBarbershop(params: RegisterBarbershopParams) {
+  const validated = registerBarbershopSchema.parse(params)
+
   // 1. Busca a sessão do usuário que está chamando a action
   const session = await getServerSession(authOptions)
 

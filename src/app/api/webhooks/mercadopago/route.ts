@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/prisma"
+import { rateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: máximo 60 requisições por minuto por chamador
+    const ip = request.headers.get("x-forwarded-for") || "webhook-caller"
+    const { success } = rateLimit(`webhook-${ip}`, 60, 60 * 1000)
+    if (!success) {
+      return NextResponse.json({ error: "Limite de requisições excedido." }, { status: 429 })
+    }
+
     // 1. Captura os parâmetros enviados pelo Mercado Pago.
     // O Mercado Pago pode enviar dados tanto na query string quanto no corpo da requisição (JSON).
     const { searchParams } = new URL(request.url)
@@ -30,7 +38,7 @@ export async function POST(request: Request) {
     return await handlePaymentUpdate(paymentId)
   } catch (error: any) {
     console.error("Erro no Webhook do Mercado Pago:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Erro interno no servidor ao processar o webhook." }, { status: 500 })
   }
 }
 

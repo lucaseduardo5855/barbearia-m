@@ -110,9 +110,9 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
   const renderBookingCard = (booking: BookingWithDetails) => {
     const isPastBooking = new Date(booking.date) < new Date()
     return (
-      <Card key={booking.id} className="border-secondary hover:border-primary/40 transition-colors">
-        <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="space-y-1">
+      <Card key={booking.id} className="border-border bg-card hover:bg-muted/30 transition-colors">
+        <CardContent className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="min-w-0 flex-1 space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-gray-200">
                 {booking.user.name || "Cliente sem Nome"}
@@ -125,18 +125,22 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
               ) : isPastBooking ? (
                 <span className="text-[10px] bg-secondary text-gray-400 px-2 py-0.5 rounded-full">Expirado</span>
               ) : (
-                <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-semibold">Agendado</span>
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">Agendado</span>
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              Serviço: <strong className="text-gray-300">{booking.service.name}</strong> •
-              Preço: <strong className="text-gray-300">R$ {Number(booking.service.price).toFixed(2)}</strong>
-            </p>
+            <div className="grid gap-2 text-xs sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-muted/40 p-3">
+                <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Serviço</span>
+                <strong className="mt-1 block text-foreground">{booking.service.name}</strong>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/40 p-3">
+                <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Preço</span>
+                <strong className="mt-1 block text-foreground">R$ {Number(booking.service.price).toFixed(2).replace('.', ',')}</strong>
+              </div>
+            </div>
 
-            <p className="text-xs text-muted-foreground">
-              Profissional: <strong className="text-gray-300">{booking.barber?.name || "Qualquer Profissional"}</strong>
-            </p>
+            <p className="text-xs text-muted-foreground">Profissional: <strong className="text-foreground">{booking.barber?.name || "Qualquer Profissional"}</strong></p>
 
             {/* Botão Lembrar no WhatsApp (Estilizado embaixo do Profissional) */}
             {(booking.status === "CONFIRMED" || booking.status === "PENDING") && (
@@ -169,11 +173,11 @@ export default function AgendaTab({ bookings, onUpdateStatus }: AgendaTabProps) 
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-right w-full sm:w-auto">
-              <p className="text-xs font-bold text-primary uppercase">
+            <div className="flex min-h-[72px] w-full flex-col items-center justify-center rounded-lg border border-border bg-muted p-3 text-center sm:w-[152px]">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">
                 {format(new Date(booking.date), "dd 'de' MMMM", { locale: ptBR })}
               </p>
-              <p className="text-sm font-semibold text-gray-300">
+              <p className="text-sm font-semibold text-foreground">
                 às {format(new Date(booking.date), "HH:mm")}
               </p>
             </div>

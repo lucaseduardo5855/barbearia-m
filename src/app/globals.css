@@ -16,7 +16,7 @@
     --popover: 228 9% 11%; /* fundo de popover (escuro) */
     --popover-foreground: 210 40% 98%; /* texto do popover */
 
-    --primary: 252 100% 69%; /* roxo / cor primária */
+    --primary: 252 80% 58%; /* roxo / cor primária, contraste AA com texto branco */
     --primary-foreground: 0 0% 100%; /* texto primário (branco) */
 
     --secondary: 228 6% 16%; /* cinza escuro / secundária */
@@ -28,7 +28,7 @@
     --accent: 228 6% 16%; /* cor de destaque (similar ao secondary) */
     --accent-foreground: 210 40% 98%; /* texto do accent */
 
-    --destructive: 0 84% 60%; /* vermelho / ações destrutivas */
+    --destructive: 0 72% 43%; /* vermelho / ações destrutivas, contraste AA com texto claro */
     --destructive-foreground: 210 40% 98%; /* texto sobre destructive */
 
     --border: 228 6% 16%; /* cor das bordas */

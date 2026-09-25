@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react"
 import { Barbershop, BarbershopService, Barber } from "@prisma/client"
 import { Button } from "@/app/_components/ui/button"
 import { Card, CardContent } from "@/app/_components/ui/card"
-import { ChevronLeftIcon } from "lucide-react"
+import { Badge } from "@/app/_components/ui/badge"
+import { ChevronLeftIcon, BanknoteIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { ptBR } from "date-fns/locale"
 import { format, isPast, isToday, set, startOfDay } from "date-fns"
@@ -420,9 +421,26 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                 service={selectedService}
                                 selectDay={selectDate}
                                 barber={selectedBarber}
+                                paymentMethod="Pagar no local"
                             />
                         </div>
                     )}
+
+                    {/* 2. Informações Claras de Pagamento Presencial */}
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                                <BanknoteIcon className="h-4 w-4 text-emerald-400" />
+                                <span>Pagamento no Estabelecimento</span>
+                            </div>
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border-none hover:bg-emerald-500/20 text-xs font-semibold">
+                                Pagar no Local
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Nenhum valor será cobrado agora pelo site. Você realiza o pagamento presencialmente na barbearia no momento do atendimento (via Pix, Cartão ou Dinheiro).
+                        </p>
+                    </div>
 
                     {/* 3. Botão de Envio com loading */}
                     <Button 

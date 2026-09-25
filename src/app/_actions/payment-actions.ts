@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "../_lib/auth"
 import { db } from "@/lib/prisma"
+import { z } from "zod"
 
 export async function checkBarbershopSubscriptionAction(barbershopId: string) {
   const barbershop = await db.barbershop.findUnique({
@@ -55,8 +56,8 @@ export async function createPixPaymentAction(barbershopId: string) {
       "X-Idempotency-Key": `sub_${barbershopId}_${Date.now()}`,
     },
     body: JSON.stringify({
-      transaction_amount: 1.00,
-      description: `Assinatura Mensal - Barbearia (Teste)`,
+      transaction_amount: 49.90,
+      description: `Assinatura Mensal - Barbearia`,
       payment_method_id: "pix",
       external_reference: barbershopId,
       payer: {
@@ -81,3 +82,17 @@ export async function createPixPaymentAction(barbershopId: string) {
     qrCodeBase64: data.point_of_interaction.transaction_data.qr_code_base64,
   }
 }
+
+export async function getSubscriptionPayments(barbershopId: string) {
+  // Validate barbershopId
+  const schema = z.string().min(1);
+  const validId = schema.parse(barbershopId);
+
+  // Fetch subscription payments for the given barbershop
+  const payments = await db.subscriptionPayment.findMany({
+    where: { barbershopId: validId },
+    orderBy: { paidAt: "desc" },
+  });
+
+  return payments;
+};

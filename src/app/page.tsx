@@ -7,17 +7,29 @@ import BarbershopItem from "./_components/barbershop-item"
 import BookingItem from "./_components/booking-item"
 import quickSearchOptions from "./_constants/search"
 import Search from "./_components/search"
+import LocationFilter from "./_components/location-filter"
 import { getServerSession } from "next-auth"
 import { authOptions } from "./_lib/auth"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { getConfirmedBookings } from "./_data/get-confirmed-bookings"
 
-const Home = async () => {
+interface HomeProps {
+  searchParams?: { state?: string; city?: string }
+}
+
+const Home = async ({ searchParams }: HomeProps) => {
   const session = await getServerSession(authOptions)
+  const selectedState = searchParams?.state?.trim() || ""
+  const selectedCity = searchParams?.city?.trim() || ""
+  const locationWhere = {
+    ...(selectedState ? { state: { equals: selectedState, mode: "insensitive" as const } } : {}),
+    ...(selectedCity ? { city: { contains: selectedCity, mode: "insensitive" as const } } : {}),
+  }
   //chamar bd
-  const barbershops = await db.barbershop.findMany({}) //pega todas as barbearias
+  const barbershops = await db.barbershop.findMany({ where: locationWhere }) //pega todas as barbearias
   const popularBarbershops = await db.barbershop.findMany({
+    where: locationWhere,
     orderBy: {
       name: "desc",
     },
@@ -46,8 +58,10 @@ const Home = async () => {
           <Search />
         </div>
 
+        <LocationFilter />
+
         {/* Busca Rápida */}
-        <div className="mt-6 flex gap-3 overflow-x-scroll [&::-webkit-scrollbar]:hidden">
+        <div className="mt-6 flex gap-3 overflow-x-scroll md:justify-center [&::-webkit-scrollbar]:hidden">
           {quickSearchOptions.map((option) => (
             <Button
               asChild

@@ -8,6 +8,10 @@ import { Button } from "@/app/_components/ui/button"
 import { UploadButton } from "@/app/_lib/uploadthing"
 import { toast } from "sonner"
 import { PlusIcon, Trash2Icon } from "lucide-react"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface ServicosTabProps {
   barbershop: Barbershop & {
@@ -34,6 +38,7 @@ export default function ServicosTab({
   const [newServicePrice, setNewServicePrice] = useState("")
   const [newServiceDescription, setNewServiceDescription] = useState("")
   const [newServiceImageUrl, setNewServiceImageUrl] = useState("")
+  const [serviceToDelete, setServiceToDelete] = useState<BarbershopService | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,10 +72,10 @@ export default function ServicosTab({
         <p className="text-xs text-muted-foreground">Cadastre novos tipos de serviço ou gerencie os preços atuais.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         {/* Formulário de Adicionar Serviço */}
         <Card className="border-secondary h-fit">
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <h3 className="font-bold text-sm text-primary mb-4 flex items-center gap-1">
               <PlusIcon className="w-4 h-4" /> Novo Serviço
             </h3>
@@ -144,14 +149,14 @@ export default function ServicosTab({
                       allowedContent: "PNG, JPG (até 4MB)"
                     }}
                     appearance={{
-                      button: "bg-primary text-black font-extrabold text-[11px] py-2 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                      button: "border border-border bg-muted text-foreground font-medium text-xs py-2.5 w-full rounded-lg hover:bg-secondary transition-colors cursor-pointer",
                       allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
                     }}
                   />
                 )}
               </div>
 
-              <Button type="submit" className="w-full mt-2" disabled={isLoading}>
+              <Button type="submit" className="w-full mt-2 rounded-lg" disabled={isLoading}>
                 {isLoading ? "Cadastrando..." : "Cadastrar Serviço"}
               </Button>
             </form>
@@ -159,12 +164,12 @@ export default function ServicosTab({
         </Card>
 
         {/* Listagem de Serviços Atuais */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-200">Serviços Cadastrados ({barbershop.services.length})</h3>
 
           {barbershop.services.map((service) => (
-            <Card key={service.id} className="border-secondary bg-secondary/10">
-              <CardContent className="p-4 flex items-center justify-between gap-4">
+            <Card key={service.id} className="border-border bg-background transition-colors hover:bg-muted/40">
+              <CardContent className="flex min-h-[92px] items-center justify-between gap-4 p-4 sm:p-5">
                 <div className="flex items-center gap-3">
                   <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-secondary shrink-0">
                     <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
@@ -172,7 +177,7 @@ export default function ServicosTab({
                   <div>
                     <h4 className="font-semibold text-sm">{service.name}</h4>
                     <p className="text-xs text-muted-foreground line-clamp-1">{service.description}</p>
-                    <span className="text-xs text-primary font-bold">R$ {Number(service.price).toFixed(2)}</span>
+                    <span className="text-sm text-foreground font-semibold">R$ {Number(service.price).toFixed(2).replace('.', ',')}</span>
                   </div>
                 </div>
 
@@ -180,11 +185,7 @@ export default function ServicosTab({
                   variant="destructive"
                   size="icon"
                   className="w-8 h-8 rounded-lg"
-                  onClick={() => {
-                    if (confirm(`Deseja realmente excluir o serviço "${service.name}"?`)) {
-                      onDeleteService(service.id)
-                    }
-                  }}
+                  onClick={() => setServiceToDelete(service)}
                   disabled={isLoading}
                 >
                   <Trash2Icon className="w-4 h-4" />
@@ -194,6 +195,22 @@ export default function ServicosTab({
           ))}
         </div>
       </div>
+      <AlertDialog open={Boolean(serviceToDelete)} onOpenChange={(open) => !open && setServiceToDelete(null)}>
+        <AlertDialogContent className="w-[92%] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
+            <AlertDialogDescription>O serviço “{serviceToDelete?.name}” será removido da lista de agendamentos.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              if (!serviceToDelete) return
+              await onDeleteService(serviceToDelete.id)
+              setServiceToDelete(null)
+            }}>Excluir serviço</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
