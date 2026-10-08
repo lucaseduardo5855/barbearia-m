@@ -63,6 +63,25 @@ const features = [
   },
 ] as const
 
+const featureVisuals = {
+  agenda: {
+    eyebrow: "Agenda de hoje",
+    rows: [["09:00", "Thiago Moura", "Corte + barba"], ["10:30", "Rafael Mendes", "Corte masculino"], ["13:00", "Camila Freitas", "Barba clássica"]],
+  },
+  financeiro: {
+    eyebrow: "Caixa de hoje",
+    rows: [["Entradas", "R$ 1.080,00", "12 atendimentos"], ["Comissões", "R$ 324,00", "3 profissionais"], ["Saldo previsto", "R$ 756,00", "Fechamento do dia"]],
+  },
+  equipe: {
+    eyebrow: "Equipe ativa",
+    rows: [["Lucas", "5 agendamentos", "37% ocupado"], ["Vinícius", "4 agendamentos", "53% ocupado"], ["Marcos", "3 agendamentos", "27% ocupado"]],
+  },
+  clientes: {
+    eyebrow: "Página pública",
+    rows: [["Corte + barba", "45 min", "R$ 70"], ["Corte masculino", "30 min", "R$ 45"], ["Barba clássica", "30 min", "R$ 35"]],
+  },
+} as const
+
 const appointments = [
   { time: "09:00", client: "Thiago Moura", service: "Corte + barba", value: "R$ 70", tone: "bg-success/15 border-success/25" },
   { time: "10:30", client: "Rafael Mendes", service: "Corte masculino", value: "R$ 45", tone: "bg-info/15 border-info/25" },
@@ -310,6 +329,7 @@ export default function LandingPage() {
   const [featurePaused, setFeaturePaused] = useState(false)
   const active = features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
+  const activeVisual = featureVisuals[active.id]
 
   useEffect(() => {
     if (featurePaused) return
@@ -497,7 +517,20 @@ export default function LandingPage() {
             </div>
             <h3 className="mt-8 max-w-xl text-2xl font-extrabold tracking-[-0.025em] sm:text-4xl">{active.title}</h3>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">{active.copy}</p>
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+              <div className="flex items-center justify-between border-b border-border bg-muted/55 px-4 py-3">
+                <span className="text-xs font-bold text-foreground">{activeVisual.eyebrow}</span>
+                <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">Dados ilustrativos</span>
+              </div>
+              {activeVisual.rows.map(([label, value, meta]) => (
+                <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[0.8fr_1fr_auto]">
+                  <span className="text-xs font-bold text-foreground">{label}</span>
+                  <span className="text-xs font-semibold text-primary sm:text-right">{value}</span>
+                  <span className="text-[10px] text-muted-foreground">{meta}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
                 <Clock3 className="size-4 text-primary" />
                 <p className="mt-5 text-sm font-bold">Rotina visível</p>
