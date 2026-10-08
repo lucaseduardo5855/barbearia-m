@@ -404,9 +404,9 @@ export default function LandingPage() {
       <section className="landing-opero__hero border-b border-border/70 px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:px-10">
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
           <div data-gsap="hero-copy" className="max-w-xl">
-            <span className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary"><span className="h-px w-4 bg-primary" /> O sistema por dentro</span>
+            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">Agenda + marketplace para barbearias</span>
             <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-[1.02] tracking-[-0.038em] sm:text-5xl lg:text-[4.2rem]">
-              Da agenda ao caixa, <span className="text-muted-foreground">tela por tela.</span>
+              Da agenda ao caixa, <span className="text-muted-foreground">sua barbearia</span> em sintonia.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               Agenda da equipe, atendimentos, financeiro e comissões no mesmo painel. Menos troca de tela para você ter mais controle do dia.
@@ -426,13 +426,9 @@ export default function LandingPage() {
               <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Página de agendamento</span>
             </div>
           </div>
-          <div data-gsap="hero-showcase" className="relative overflow-hidden rounded-[2rem] bg-[#1d347e] p-5 shadow-[0_26px_70px_hsl(222_62%_30%/0.22)] sm:p-7 lg:p-8">
-            <div className="relative z-10 mb-6 flex items-start justify-between gap-3 text-white">
-              <div><p className="text-xs font-bold text-blue-200">Agenda da equipe</p><p className="mt-1 max-w-xs text-xl font-bold leading-tight tracking-[-0.025em]">O dia de cada profissional em uma só leitura.</p></div>
-              <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold text-blue-100">Conta demonstrativa</span>
-            </div>
+          <div data-gsap="hero-showcase" className="relative pb-10 lg:pb-0">
             <AgendaPreview />
-            <div className="relative z-10 mt-4 ml-auto max-w-[25rem]">
+            <div className="relative z-10 mt-4 lg:absolute lg:-bottom-8 lg:-right-8 lg:mt-0 lg:scale-[0.78] lg:origin-bottom-right">
               <MarketplacePreview />
             </div>
             <span className="absolute right-3 top-3 hidden rounded-full border border-border bg-background/90 px-3 py-1.5 text-[10px] font-bold text-muted-foreground shadow-sm sm:inline-flex">Duas experiências, um produto</span>
