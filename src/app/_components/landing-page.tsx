@@ -1,0 +1,439 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleDollarSign,
+  Clock3,
+  LayoutDashboard,
+  Menu,
+  Play,
+  Scissors,
+  Store,
+  Users,
+  Wallet,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { LandingBarbershopModes } from "./landing-barbershop-modes"
+import { LandingOperationsFlow } from "./landing-operations-flow"
+import SignInDiaLog from "./sign-in-dialong"
+
+const features = [
+  {
+    id: "agenda",
+    label: "Agenda da equipe",
+    title: "Cada cadeira, cada horário e cada encaixe no lugar certo.",
+    copy: "Visualize a rotina de todos os profissionais, encontre espaços livres e deixe o atendimento fluir sem conversas perdidas.",
+    icon: CalendarDays,
+  },
+  {
+    id: "financeiro",
+    label: "Caixa do dia",
+    title: "O movimento da barbearia fica fácil de acompanhar.",
+    copy: "Receitas, despesas e comissões aparecem no mesmo contexto dos atendimentos que aconteceram no dia.",
+    icon: CircleDollarSign,
+  },
+  {
+    id: "equipe",
+    label: "Equipe alinhada",
+    title: "Todo profissional enxerga o que vem a seguir.",
+    copy: "Organize agenda, serviços e repasses sem pedir atualização em planilha ou grupo de mensagens.",
+    icon: Users,
+  },
+  {
+    id: "clientes",
+    label: "Agenda pública",
+    title: "Seu cliente encontra horários sem interromper o atendimento.",
+    copy: "Publique serviços, profissionais e disponibilidade em uma página própria para a sua barbearia.",
+    icon: Store,
+  },
+] as const
+
+const appointments = [
+  { time: "09:00", client: "Thiago Moura", service: "Corte + barba", value: "R$ 70", tone: "bg-success/15 border-success/25" },
+  { time: "10:30", client: "Rafael Mendes", service: "Corte masculino", value: "R$ 45", tone: "bg-info/15 border-info/25" },
+  { time: "13:00", client: "Camila Freitas", service: "Barba clássica", value: "R$ 35", tone: "bg-warning/15 border-warning/25" },
+]
+
+const agendaColumns = [
+  { initials: "LM", name: "Lucas", meta: "5 agendamentos", line: "bg-primary" },
+  { initials: "VM", name: "Vinícius", meta: "4 agendamentos", line: "bg-info" },
+  { initials: "MS", name: "Marcos", meta: "3 agendamentos", line: "bg-success" },
+]
+
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={`flex items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_12px_26px_hsl(var(--primary)/0.24)] ${compact ? "size-7" : "size-9"}`}>
+      <Scissors className={compact ? "size-3.5" : "size-4"} aria-hidden="true" />
+    </span>
+  )
+}
+
+function AgendaPreview() {
+  return (
+    <div className="landing-showcase relative mx-auto w-full max-w-[44rem]" aria-label="Prévia ilustrativa da agenda do BARBER-M">
+      <div className="pointer-events-none absolute -inset-x-12 top-12 h-2/3 rounded-full bg-primary/15 blur-3xl" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-[0_26px_70px_hsl(var(--foreground)/0.16)]">
+        <div className="flex h-11 items-center justify-between border-b border-border bg-card px-4 sm:px-5">
+          <div className="flex items-center gap-2.5">
+            <BrandMark compact />
+            <span className="text-xs font-extrabold tracking-[0.12em]">BARBER-M</span>
+            <span className="hidden rounded-full bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground sm:inline">Painel administrativo</span>
+          </div>
+          <span className="rounded-full bg-success/15 px-2.5 py-1 text-[10px] font-semibold text-success">Dados ilustrativos</span>
+        </div>
+
+        <div className="grid min-h-[25rem] grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[8.75rem_minmax(0,1fr)]">
+          <aside className="border-r border-border bg-muted/45 px-2 py-4 sm:px-3" aria-hidden="true">
+            <div className="hidden items-center gap-2 px-2 sm:flex">
+              <BrandMark compact />
+              <span className="text-[10px] font-extrabold tracking-[0.1em]">BARBER-M</span>
+            </div>
+            <div className="mt-7 space-y-1">
+              <div className="flex items-center gap-2 rounded-lg bg-primary px-2 py-2 text-primary-foreground shadow-sm sm:px-2.5">
+                <LayoutDashboard className="size-3.5 shrink-0" />
+                <span className="hidden text-[10px] font-semibold sm:block">Visão geral</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-2 text-muted-foreground sm:px-2.5">
+                <CalendarDays className="size-3.5 shrink-0" />
+                <span className="hidden text-[10px] font-medium sm:block">Agenda</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-2 text-muted-foreground sm:px-2.5">
+                <Wallet className="size-3.5 shrink-0" />
+                <span className="hidden text-[10px] font-medium sm:block">Financeiro</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-2 text-muted-foreground sm:px-2.5">
+                <Users className="size-3.5 shrink-0" />
+                <span className="hidden text-[10px] font-medium sm:block">Equipe</span>
+              </div>
+            </div>
+          </aside>
+
+          <div className="min-w-0 px-3 py-4 sm:px-5 sm:py-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-medium text-muted-foreground">Terça-feira, 29 de setembro</p>
+                <h2 className="mt-1 text-base font-extrabold tracking-[-0.02em] sm:text-lg">Agenda da equipe</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" className="hidden items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring sm:flex">
+                  Ter, 29 de set <ChevronDown className="size-3" />
+                </button>
+                <button type="button" className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="hidden sm:inline">Novo </span>agendamento
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-1.5" aria-hidden="true">
+              <span className="rounded-full bg-foreground px-2 py-1 text-[9px] font-semibold text-background">Todos (12)</span>
+              <span className="rounded-full bg-warning/20 px-2 py-1 text-[9px] font-semibold text-warning">Pendentes (2)</span>
+              <span className="rounded-full bg-info/15 px-2 py-1 text-[9px] font-semibold text-info">Confirmados (4)</span>
+              <span className="hidden rounded-full bg-success/15 px-2 py-1 text-[9px] font-semibold text-success sm:inline">Concluídos (6)</span>
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-xl border border-border">
+              <div className="grid grid-cols-[2.25rem_repeat(3,minmax(5.5rem,1fr))] border-b border-border bg-muted/45 sm:grid-cols-[3rem_repeat(3,minmax(7rem,1fr))]">
+                <div className="border-r border-border p-2 text-[9px] font-semibold text-muted-foreground">Hora</div>
+                {agendaColumns.map((column) => (
+                  <div key={column.name} className="min-w-0 border-r border-border p-2 last:border-r-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-card text-[8px] font-extrabold text-foreground">{column.initials}</span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[9px] font-bold">{column.name}</p>
+                        <p className="hidden truncate text-[8px] text-muted-foreground sm:block">{column.meta}</p>
+                      </div>
+                    </div>
+                    <span className={`mt-2 block h-0.5 rounded-full ${column.line}`} />
+                  </div>
+                ))}
+              </div>
+
+              {appointments.map((appointment, index) => (
+                <div key={appointment.time} className="grid min-h-[4.6rem] grid-cols-[2.25rem_repeat(3,minmax(5.5rem,1fr))] border-b border-border last:border-b-0 sm:grid-cols-[3rem_repeat(3,minmax(7rem,1fr))]">
+                  <div className="border-r border-border px-1 pt-2 text-center text-[8px] font-semibold text-muted-foreground sm:text-[9px]">{appointment.time}</div>
+                  <div className="border-r border-border p-1.5">
+                    {index !== 1 && <AppointmentCard appointment={appointment} />}
+                  </div>
+                  <div className="border-r border-border p-1.5">
+                    {index !== 2 && <AppointmentCard appointment={appointments[(index + 1) % appointments.length]} />}
+                  </div>
+                  <div className="p-1.5">{index !== 0 && <AppointmentCard appointment={appointments[(index + 2) % appointments.length]} />}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:max-w-sm">
+              <div className="rounded-lg bg-primary/10 px-3 py-2">
+                <p className="text-[9px] font-medium text-muted-foreground">Receita prevista</p>
+                <p className="mt-1 text-sm font-extrabold text-primary">R$ 1.080,00</p>
+              </div>
+              <div className="rounded-lg bg-muted px-3 py-2">
+                <p className="text-[9px] font-medium text-muted-foreground">Atendimentos</p>
+                <p className="mt-1 text-sm font-extrabold">12 <span className="text-[9px] font-medium text-muted-foreground">hoje</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute -bottom-7 -left-3 hidden w-52 rounded-xl border border-border bg-card p-3 shadow-[0_18px_45px_hsl(var(--foreground)/0.16)] sm:block" aria-hidden="true">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold">Atendimento confirmado</span>
+          <Check className="size-3.5 text-success" />
+        </div>
+        <p className="mt-2 text-xs font-extrabold">Rafael · 15:00</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">Corte + barba · R$ 70</p>
+      </div>
+    </div>
+  )
+}
+
+function AppointmentCard({ appointment }: { appointment: (typeof appointments)[number] }) {
+  return (
+    <div className={`min-w-0 rounded-md border px-1.5 py-1.5 ${appointment.tone}`}>
+      <p className="truncate text-[8px] font-extrabold sm:text-[9px]">{appointment.client}</p>
+      <p className="mt-0.5 truncate text-[7px] text-muted-foreground sm:text-[8px]">{appointment.service}</p>
+      <p className="mt-1 text-right text-[7px] font-bold sm:text-[8px]">{appointment.value}</p>
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [activeFeature, setActiveFeature] = useState<(typeof features)[number]["id"]>("agenda")
+  const active = features.find((feature) => feature.id === activeFeature) ?? features[0]
+  const ActiveIcon = active.icon
+
+  return (
+    <main className="landing-opero min-h-screen overflow-hidden bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10" aria-label="Navegação principal">
+          <Link href="/" className="flex items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-ring" aria-label="BARBER-M, início da página">
+            <BrandMark />
+            <span className="text-sm font-extrabold tracking-[0.12em]">BARBER-M</span>
+          </Link>
+
+          <div className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
+            <a href="#recursos" className="rounded-sm transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Funcionalidades</a>
+            <a href="#como-funciona" className="rounded-sm transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Como funciona</a>
+            <a href="#para-quem" className="rounded-sm transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Para barbearias</a>
+            <Link href="/?view=marketplace" className="rounded-sm transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Encontrar barbearias</Link>
+          </div>
+
+          <div className="hidden items-center gap-2 sm:flex">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-10 rounded-lg px-4 font-semibold">
+                  Entrar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] sm:max-w-md">
+                <SignInDiaLog />
+              </DialogContent>
+            </Dialog>
+            <Button asChild size="sm" className="h-10 rounded-lg px-4 font-bold shadow-[0_10px_22px_hsl(var(--primary)/0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_26px_hsl(var(--primary)/0.3)]">
+              <Link href="/admin/register">Criar minha barbearia <ArrowRight className="size-3.5" /></Link>
+            </Button>
+          </div>
+
+          <Button variant="ghost" size="icon" className="sm:hidden" aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}>
+            <Menu className="size-5" />
+          </Button>
+        </nav>
+
+        {mobileMenuOpen && (
+          <div className="border-t border-border bg-card px-5 py-4 sm:hidden">
+            <div className="mx-auto flex max-w-7xl flex-col gap-1">
+              <a href="#recursos" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">Funcionalidades</a>
+              <a href="#como-funciona" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">Como funciona</a>
+              <a href="#para-quem" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">Para barbearias</a>
+              <div className="mt-2 flex gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex-1">Entrar</Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[90%] sm:max-w-md">
+                    <SignInDiaLog />
+                  </DialogContent>
+                </Dialog>
+                <Button asChild size="sm" className="flex-1"><Link href="/admin/register">Começar</Link></Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      <section className="landing-opero__hero border-b border-border/70 px-5 pb-24 pt-16 sm:px-8 sm:pb-32 sm:pt-24 lg:px-10">
+        <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
+          <div className="max-w-xl">
+            <h1 className="max-w-2xl text-5xl font-extrabold leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
+              Da agenda ao caixa, <span className="text-muted-foreground">sua barbearia</span> em sintonia.
+            </h1>
+            <p className="mt-7 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+              Agenda da equipe, atendimentos, financeiro e comissões no mesmo painel. Menos troca de tela para você ter mais controle do dia.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)]">
+                <Link href="/admin/register">Criar minha barbearia <ArrowRight className="size-4" /></Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-card hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)]">
+                <a href="#recursos">
+                  <span className="mr-2 flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><Play className="size-3 fill-current" aria-hidden="true" /></span>
+                  Ver o sistema por dentro
+                </a>
+              </Button>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Agenda por profissional</span>
+              <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Controle de caixa</span>
+              <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Página de agendamento</span>
+            </div>
+          </div>
+          <AgendaPreview />
+        </div>
+      </section>
+
+      <section className="border-b border-border/70 bg-card px-5 py-5 sm:px-8 lg:px-10" aria-label="Módulos disponíveis">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-9 gap-y-3 text-sm font-semibold text-muted-foreground sm:justify-between">
+          <span className="inline-flex items-center gap-2"><CalendarDays className="size-4 text-primary" /> Agenda</span>
+          <span className="inline-flex items-center gap-2"><Users className="size-4 text-primary" /> Equipe</span>
+          <span className="inline-flex items-center gap-2"><Wallet className="size-4 text-primary" /> Financeiro</span>
+          <span className="inline-flex items-center gap-2"><Store className="size-4 text-primary" /> Agenda pública</span>
+        </div>
+      </section>
+
+      <section id="recursos" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+        <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
+          <div>
+            <h2 className="max-w-md text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">O que acontece na barbearia aparece onde você precisa.</h2>
+            <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">O BARBER-M concentra os momentos que fazem parte da operação, para a equipe trabalhar com a mesma informação.</p>
+            <div className="mt-8 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              {features.map((feature) => {
+                const Icon = feature.icon
+                const selected = activeFeature === feature.id
+                return (
+                  <button
+                    key={feature.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setActiveFeature(feature.id)}
+                    className={`group flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-[background-color,color,transform] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring ${selected ? "bg-primary text-primary-foreground shadow-[0_12px_24px_hsl(var(--primary)/0.18)]" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  >
+                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-primary-foreground/15" : "bg-card border border-border"}`}><Icon className="size-4" /></span>
+                    <span className="flex-1 text-sm font-bold">{feature.label}</span>
+                    <ChevronRight className={`size-4 transition-transform duration-200 ${selected ? "translate-x-0" : "-translate-x-1 group-hover:translate-x-0"}`} />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="self-start rounded-2xl bg-muted p-5 sm:p-8">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-card text-primary shadow-[0_14px_30px_hsl(var(--foreground)/0.1)]"><ActiveIcon className="size-6" /></div>
+            <h3 className="mt-8 max-w-xl text-2xl font-extrabold tracking-[-0.025em] sm:text-4xl">{active.title}</h3>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">{active.copy}</p>
+            <div className="mt-10 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <Clock3 className="size-4 text-primary" />
+                <p className="mt-5 text-sm font-bold">Rotina visível</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">O que já foi e o que vem a seguir, sem procurar informação.</p>
+              </div>
+              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <Users className="size-4 text-primary" />
+                <p className="mt-5 text-sm font-bold">Equipe conectada</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">As atualizações relevantes chegam à pessoa certa.</p>
+              </div>
+              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <CircleDollarSign className="size-4 text-primary" />
+                <p className="mt-5 text-sm font-bold">Fechamento claro</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">Cada atendimento ajuda a compor a leitura financeira do dia.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <LandingOperationsFlow />
+
+      <LandingBarbershopModes />
+
+      <section id="como-funciona" className="scroll-mt-24 border-y border-border/70 bg-card px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
+          <div>
+            <h2 className="max-w-md text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">Uma rotina simples, do primeiro horário ao fechamento.</h2>
+            <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">Comece com a sua operação real e deixe o sistema organizar as próximas etapas.</p>
+          </div>
+          <ol className="divide-y divide-border">
+            <li className="grid gap-4 py-6 first:pt-0 sm:grid-cols-[2.25rem_1fr] sm:gap-6">
+              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">1</span>
+              <div><h3 className="text-xl font-extrabold tracking-[-0.02em]">Monte a sua agenda</h3><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Cadastre serviços, horários e profissionais para que cada cadeira comece o dia organizada.</p></div>
+            </li>
+            <li className="grid gap-4 py-6 sm:grid-cols-[2.25rem_1fr] sm:gap-6">
+              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">2</span>
+              <div><h3 className="text-xl font-extrabold tracking-[-0.02em]">Compartilhe seu link</h3><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">O cliente vê os serviços e escolhe um horário disponível na página da sua barbearia.</p></div>
+            </li>
+            <li className="grid gap-4 py-6 last:pb-0 sm:grid-cols-[2.25rem_1fr] sm:gap-6">
+              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">3</span>
+              <div><h3 className="text-xl font-extrabold tracking-[-0.02em]">Atenda com o dia em ordem</h3><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Os atendimentos alimentam a visão do caixa, o histórico e as comissões da equipe.</p></div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="diferenciais" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
+          <div className="rounded-2xl bg-primary p-7 text-primary-foreground shadow-[0_24px_60px_hsl(var(--primary)/0.25)] sm:p-10">
+            <LayoutDashboard className="size-7" />
+            <blockquote className="mt-16 max-w-xl text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-4xl">“O que a equipe precisa saber aparece antes de alguém precisar perguntar.”</blockquote>
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-primary-foreground/80">
+              <span className="inline-flex items-center gap-2"><Check className="size-4" /> Painel para a rotina</span>
+              <span className="inline-flex items-center gap-2"><Check className="size-4" /> Agenda pública</span>
+            </div>
+          </div>
+          <div>
+            <h2 className="max-w-xl text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">Feito para barbearias que querem crescer sem perder o ritmo.</h2>
+            <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">Para quem atende sozinho, coordena uma equipe ou abriu a primeira unidade e precisa enxergar a operação sem complicar o atendimento.</p>
+            <ul className="mt-8 space-y-4">
+              {[
+                "Para confirmar horários sem depender de improviso",
+                "Para equipes que precisam trabalhar olhando o mesmo dia",
+                "Para donos que querem conferir o caixa sem montar outra planilha",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3 text-sm font-semibold">
+                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success"><Check className="size-3" /></span>{item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-24 sm:px-8 sm:pb-32 lg:px-10">
+        <div className="landing-opero__cta relative mx-auto max-w-7xl overflow-hidden rounded-2xl bg-muted px-6 py-10 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+          <div className="relative flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl font-extrabold tracking-[-0.035em] sm:text-5xl">A próxima agenda organizada começa agora.</h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">Crie sua barbearia, cadastre sua equipe e publique o seu primeiro horário.</p>
+            </div>
+            <Button asChild size="lg" className="h-14 shrink-0 rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)]"><Link href="/admin/register">Criar minha barbearia <ArrowRight className="size-4" /></Link></Button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-border bg-card px-5 py-7 sm:px-8 lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <Link href="/landing" className="flex items-center gap-2 font-extrabold tracking-[0.12em] text-foreground"><BrandMark compact /> BARBER-M</Link>
+          <span>Gestão de barbearia feita para o ritmo do atendimento.</span>
+        </div>
+      </footer>
+
+    </main>
+  )
+}

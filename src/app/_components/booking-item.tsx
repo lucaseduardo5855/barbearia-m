@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-//test
 
 import { Badge } from "./ui/badge"
 import { Card, CardContent } from "./ui/card"
@@ -18,7 +17,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import Image from "next/image"
 import PhoneItem from "./phone-item"
 import { Button } from "./ui/button"
 import {
@@ -37,6 +35,7 @@ import { toast } from "sonner"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import BookingSummary from "./booking-summary"
+import { MapPin, Navigation, XCircle } from "lucide-react"
 
 //Puxa o service para utilizarmos dentro de outros componentes
 interface BookingItemProps {
@@ -51,10 +50,11 @@ interface BookingItemProps {
     }
   }>
   hideBarberShopInfo?: boolean
+  layout?: "stack" | "rail"
 }
 
 //Todo receber agendamento como prop
-const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) => {
+const BookingItem = ({ booking, hideBarberShopInfo = false, layout = "stack" }: BookingItemProps) => {
   const [isShetOpen, setIsShetOpen] = useState(false)
 
   const {
@@ -71,10 +71,9 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
     try {
       await deleteBooking(booking.id)
       setIsShetOpen(false) //fecha o sheet
-      toast.success("Reserva cancelada com sucesso")
+      toast.success("Agendamento cancelado.")
     } catch (e) {
-      console.log(e)
-      toast.error("Erro ao cancelar reserva. Tente novamente.")
+      toast.error("Não foi possível cancelar o agendamento. Tente novamente.")
     }
   }
 
@@ -86,11 +85,17 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
   return (
     <>
       <Sheet open={isShetOpen} onOpenChange={handleSheetOpenChange}>
-        <SheetTrigger className="w-full min-w-[90%] md:min-w-[420px]">
-          <Card className="min-w-[90%] md:min-w-[420px] transition-colors hover:bg-muted/40">
-            <CardContent className="flex justify-between p-0">
+        <SheetTrigger
+          className={
+            layout === "rail"
+              ? "w-[min(92vw,440px)] shrink-0 md:w-[440px]"
+              : "w-full min-w-0"
+          }
+        >
+          <Card className="w-full min-w-0 rounded-xl border border-border bg-card transition-colors hover:bg-muted/30">
+            <CardContent className="flex min-w-0 justify-between p-0">
               {/* Esquerda */}
-              <div className="flex flex-col gap-2 p-5 py-5">
+              <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
                 <div className="flex flex-col items-start gap-1">
                   {/* 1. Status Principal do Agendamento */}
                   <Badge
@@ -117,14 +122,14 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                       <Avatar className="h-5 w-5">
                         <AvatarImage src={barbershop.imageUrl} />
                       </Avatar>
-                      <p className="text-xs text-gray-400">{barbershop.name}</p>
+                      <p className="min-w-0 truncate text-xs text-muted-foreground">{barbershop.name}</p>
                     </div>
                   )}
 
                   {/* Nome do Serviço em destaque */}
                   <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Serviço</span>
-                    <h3 className="text-sm font-semibold text-white">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Serviço</span>
+                    <h3 className="line-clamp-2 text-sm font-semibold text-foreground">
                       {booking.service.name}
                     </h3>
                   </div>
@@ -132,8 +137,8 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                   {/* Nome do Barbeiro (se houver algum associado) */}
                   {booking.barber && (
                     <div className="flex flex-col mt-0.5">
-                      <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Profissional</span>
-                      <p className="text-xs text-gray-300">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Profissional</span>
+                    <p className="text-xs text-secondary-foreground">
                         {booking.barber.name}
                       </p>
                     </div>
@@ -142,14 +147,14 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
               </div>
 
               {/* Direita */}
-              <div className="flex flex-col items-center justify-center border-l-2 border-solid px-5">
-                <p className="text-sm capitalize">
+              <div className="flex min-w-20 flex-col items-center justify-center border-l border-border bg-muted/45 px-4">
+                <p className="text-xs font-semibold capitalize text-muted-foreground">
                   {format(booking.date, "MMM", { locale: ptBR })}
                 </p>
-                <p className="text-2xl">
+                <p className="text-2xl font-extrabold tracking-[-0.03em]">
                   {format(booking.date, "dd", { locale: ptBR })}
                 </p>
-                <p className="text-sm">
+                <p className="text-xs font-semibold text-muted-foreground">
                   {format(booking.date, "HH:mm", { locale: ptBR })}
                 </p>
               </div>
@@ -157,33 +162,31 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
           </Card>
         </SheetTrigger>
 
-        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetContent className="w-full overflow-y-auto bg-card sm:max-w-xl">
           <SheetHeader>
             <SheetTitle className="text-left">
-              Informações da Reserva
+              Informações do agendamento
             </SheetTitle>
           </SheetHeader>
-          <div className="relative mx-4 mt-6 flex h-[180px] items-end rounded-xl">
-            <Image
-              alt={`Mapa da Barbearia ${barbershop.name}`}
-              src="/map.png"
-              fill
-              className="rounded-xl object-cover"
-            />
-
-            <Card className="z-50 mx-5 mb-3 w-full rounded-xl">
-              <CardContent className="flex items-center gap-3 px-5 py-3">
+          <div className="mx-4 mt-6">
+            <Card className="gap-0 rounded-xl bg-muted/45 shadow-none ring-1 ring-border">
+              <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                 <Avatar>
                   <AvatarImage src={barbershop.imageUrl} />
                 </Avatar>
-                <div>
-                  <h3 className="font-bold">{barbershop.name}</h3>
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(barbershop.address)}`} target="_blank" rel="noreferrer" className="text-left text-xs text-muted-foreground hover:text-primary hover:underline">{barbershop.address}</a>
+                  <div className="min-w-0">
+                    <h3 className="truncate font-extrabold">{barbershop.name}</h3>
+                    <p className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>{barbershop.address}</span></p>
+                  </div>
                 </div>
+                <Button asChild variant="outline" size="sm" className="w-full shrink-0 gap-2 sm:w-auto">
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(barbershop.address)}`} target="_blank" rel="noopener noreferrer"><Navigation className="size-3.5" /> Ver no mapa</a>
+                </Button>
               </CardContent>
             </Card>
           </div>
-          <div className="mt-6 p-3">
+          <div className="mt-5 p-3">
             <Badge
               className="rounded-full"
               variant={isConfirmed ? "default" : "secondary"}
@@ -206,16 +209,16 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
               <PhoneItem key={index} phone={phone} />
             ))}
             {barbershop.phones[0] && (
-              <Button asChild variant="outline" className="mt-3 w-full border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400">
+              <Button asChild variant="outline" className="mt-3 w-full border-success/30 text-success hover:bg-success/10 hover:text-success">
                 <a href={`https://wa.me/${barbershop.phones[0].replace(/\D/g, "")}`} target="_blank" rel="noreferrer">Falar no WhatsApp</a>
               </Button>
             )}
           </div>
 
           <SheetFooter className="mt-6">
-            <div className="flex items-center gap-3 ">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
               <SheetClose asChild>
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="w-full sm:flex-1">
                   Voltar
                 </Button>
               </SheetClose>
@@ -223,18 +226,18 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
               {isConfirmed && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="flex-1 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10 hover:text-destructive">
-                      Cancelar Reserva
+                    <Button variant="outline" className="w-full gap-2 border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10 hover:text-destructive sm:flex-1">
+                      <XCircle className="size-4" /> Cancelar agendamento
                     </Button>
                   </AlertDialogTrigger>
 
                   <AlertDialogContent className="w-[90%] sm:max-w-md">
                     <AlertDialogHeader className="text-center sm:text-center">
                       <AlertDialogTitle>
-                        Você quer cancelar sua reserva?
+                        Você quer cancelar este agendamento?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Tem certeza que deseja fazer o cancelamento?
+                        Esta ação não pode ser desfeita. Deseja continuar?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     
@@ -245,7 +248,7 @@ const BookingItem = ({ booking, hideBarberShopInfo = false }: BookingItemProps) 
                           variant="destructive"
                           onClick={handleCancelBookingClick}
                         >
-                          Confirmar
+                          Confirmar cancelamento
                         </Button>
                       </AlertDialogAction>
                     </AlertDialogFooter>

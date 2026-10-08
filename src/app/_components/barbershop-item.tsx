@@ -8,23 +8,31 @@ import Link from "next/link"
 
 interface BarbershopItemProps {
   barbershop: Barbershop
+  layout?: "grid" | "rail"
 }
 
-const BarbershopItem = ({ barbershop }: BarbershopItemProps) => {
+const BarbershopItem = ({ barbershop, layout = "grid" }: BarbershopItemProps) => {
   return (
-    <Card className="min-w-[159px] overflow-hidden rounded-2xl">
-      <CardContent className="p-0 px-2">
+    <Card
+      className={
+        layout === "rail"
+          ? "w-48 shrink-0 snap-start overflow-hidden rounded-xl md:w-56"
+          : "w-full min-w-0 overflow-hidden rounded-xl"
+      }
+    >
+      <CardContent className="p-0">
         {/* IMAGEM */}
-        <div className="relative h-[159px] w-full">
+        <div className="relative aspect-[4/3] w-full">
           <Image
             alt={barbershop.name}
             fill
-            className="rounded-2xl object-cover"
+            className="object-cover"
             src={barbershop.imageUrl}
+            sizes="(min-width: 1024px) 220px, (min-width: 768px) 30vw, 78vw"
           />
 
           <Badge
-            className="absolute left-2 top-2 space-x-1 rounded-xl"
+            className="absolute left-2 top-2 space-x-1 rounded-md"
             variant="secondary"
           >
             <StarIcon size={12} className="fill-primary text-primary" />
@@ -33,7 +41,7 @@ const BarbershopItem = ({ barbershop }: BarbershopItemProps) => {
         </div>
 
         {/* NOME e ENDEREÇO */}
-        <div className="px-1 py-3">
+        <div className="p-3">
           <h3 className="overflow-hidden truncate text-ellipsis text-nowrap font-semibold">
             {barbershop.name}
           </h3>
@@ -42,11 +50,11 @@ const BarbershopItem = ({ barbershop }: BarbershopItemProps) => {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Abrir o endereço da ${barbershop.name} no Google Maps`}
-            className="block overflow-hidden truncate text-sm text-gray-400 hover:text-primary hover:underline"
+            className="block overflow-hidden truncate text-sm text-muted-foreground hover:text-primary hover:underline"
           >
             {barbershop.address}
           </a>
-          <Button variant="secondary" asChild className="mt-3 w-full">
+          <Button variant="default" size="sm" asChild className="mt-3 w-full rounded-xl">
             <Link href={`/${barbershop.slug}`}>Ver perfil</Link>
           </Button>
         </div>

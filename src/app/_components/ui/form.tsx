@@ -26,6 +26,9 @@ export function Form(props: FormProps & any) {
     setError, 
     setFocus, 
     resetField, 
+    setValues,
+    resetDefaultValues,
+    subscribe,
     ...rest 
   } = props
   return <div {...rest}>{children}</div>

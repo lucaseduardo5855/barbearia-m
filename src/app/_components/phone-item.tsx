@@ -10,9 +10,13 @@ interface PhoneItemProps {
 
 const PhoneItem = ({ phone }: PhoneItemProps) => {
   //função para copiar o número de telefone para a área de transferência
-  const handleCopyPhoneClick = (phone: string) => {
-    navigator.clipboard.writeText(phone)
-    toast.success("telefone copiado com sucesso!")
+  const handleCopyPhoneClick = async (phone: string) => {
+    try {
+      await navigator.clipboard.writeText(phone)
+      toast.success("Telefone copiado para a área de transferência.")
+    } catch {
+      toast.error("Não foi possível copiar o telefone. Tente novamente.")
+    }
   }
 
   return (

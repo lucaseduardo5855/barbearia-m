@@ -1,139 +1,141 @@
-import { Input } from "./_components/ui/input"
-import Header from "./_components/header"
-import { Button } from "./_components/ui/button"
-import Image from "next/image"
-import { db } from "@/lib/prisma"
-import BarbershopItem from "./_components/barbershop-item"
-import BookingItem from "./_components/booking-item"
-import quickSearchOptions from "./_constants/search"
-import Search from "./_components/search"
-import LocationFilter from "./_components/location-filter"
-import { getServerSession } from "next-auth"
-import { authOptions } from "./_lib/auth"
+import Link from "next/link"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { getServerSession } from "next-auth"
+import type { Session } from "next-auth"
+import { Scissors } from "lucide-react"
+import { authOptions } from "./_lib/auth"
+import { db } from "@/lib/prisma"
 import { getConfirmedBookings } from "./_data/get-confirmed-bookings"
+import Header from "./_components/header"
+import LocationFilter from "./_components/location-filter"
+import BarbershopItem from "./_components/barbershop-item"
+import BookingItem from "./_components/booking-item"
+import { Button } from "./_components/ui/button"
+import quickSearchOptions from "./_constants/search"
+import LandingPage from "./_components/landing-page"
+import RegionBanner from "./_components/region-banner"
 
 interface HomeProps {
-  searchParams?: { state?: string; city?: string }
+  searchParams?: { state?: string; city?: string; view?: string }
 }
 
-const Home = async ({ searchParams }: HomeProps) => {
-  const session = await getServerSession(authOptions)
+export default async function Home({ searchParams }: HomeProps) {
+  if (searchParams?.view === "landing") {
+    return <LandingPage />
+  }
+
   const selectedState = searchParams?.state?.trim() || ""
   const selectedCity = searchParams?.city?.trim() || ""
   const locationWhere = {
     ...(selectedState ? { state: { equals: selectedState, mode: "insensitive" as const } } : {}),
     ...(selectedCity ? { city: { contains: selectedCity, mode: "insensitive" as const } } : {}),
   }
-  //chamar bd
-  const barbershops = await db.barbershop.findMany({ where: locationWhere }) //pega todas as barbearias
-  const popularBarbershops = await db.barbershop.findMany({
-    where: locationWhere,
-    orderBy: {
-      name: "desc",
-    },
-  }) //pega as barbearias populares chamada do banco
 
-  // Busca as reservas do usuário autenticado, incluindo os dados do serviço e da barbearia
-  const confirmedBookings = await getConfirmedBookings()
+  let session: Session | null = null
+  let barbershops: Awaited<ReturnType<typeof db.barbershop.findMany>> = []
+  let popularBarbershops: Awaited<ReturnType<typeof db.barbershop.findMany>> = []
+  let confirmedBookings: Awaited<ReturnType<typeof getConfirmedBookings>> = []
+
+  try {
+    const homeData = await Promise.race([
+      (async () => {
+        const currentSession: Session | null = await getServerSession(authOptions)
+        const [shops, popularShops, bookings] = await Promise.all([
+          db.barbershop.findMany({ where: locationWhere }),
+          db.barbershop.findMany({ where: locationWhere, orderBy: { name: "desc" } }),
+          getConfirmedBookings(),
+        ])
+        return { currentSession, shops, popularShops, bookings }
+      })(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+    ])
+
+    if (homeData) {
+      session = homeData.currentSession
+      barbershops = homeData.shops
+      popularBarbershops = homeData.popularShops
+      confirmedBookings = homeData.bookings
+    }
+  } catch {
+    // A página continua navegável se o banco estiver reiniciando ou indisponível.
+  }
+
+  const locationLabel = selectedCity ? `em ${selectedCity}${selectedState ? `, ${selectedState}` : ""}` : "perto de você"
 
   return (
-    <div>
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <div className="px-5">
-        {/* Texto */}
-        <h1 className="mt-5 text-xl font-bold">
-          Olá, {session?.user ? session.user.name : "Sejá Bem Vindo!"}
-        </h1>
-        <p>
-          <span className="capitalize">
-            {format(new Date(), "EEEE, dd", { locale: ptBR })}
-          </span>
-          <span> de {format(new Date(), "MMMM", { locale: ptBR })}</span>
-        </p>
+      <main className="mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
+        <section className="mx-auto max-w-2xl text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Olá, {session?.user?.name || "seja bem-vindo"}.
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </p>
 
-        {/* Busca */}
-        <div className="mt-6">
-          <Search />
-        </div>
+          <LocationFilter />
+        </section>
 
-        <LocationFilter />
-
-        {/* Busca Rápida */}
-        <div className="mt-6 flex gap-3 overflow-x-scroll md:justify-center [&::-webkit-scrollbar]:hidden">
-          {quickSearchOptions.map((option) => (
-            <Button
-              asChild
-              className="gap-2"
-              variant="secondary"
-              key={option.title}
-            >
-              <a
-                href={`/barbershops?service=${encodeURIComponent(option.title)}`}
-              >
-                <Image
-                  src={option.imageUrl}
-                  width={16}
-                  height={16}
-                  alt={option.title}
-                />
+        <nav className="mt-6 flex justify-start sm:justify-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Buscar por serviço">
+          {quickSearchOptions.map((option, index) => (
+            <Button asChild className="shrink-0 gap-2 rounded-xl" variant="secondary" key={`${option.title}-${index}`}>
+              <a href={`/barbershops?service=${encodeURIComponent(option.title)}`}>
+                <Scissors className="size-3.5 text-primary" />
                 {option.title}
               </a>
             </Button>
           ))}
-        </div>
+        </nav>
 
-        {/* Imagem */}
-        <div className="relative mt-6 h-[150px] w-full">
-          <Image
-            alt="Agende nos melhores com FSW Barber"
-            src="/Banner-01.png"
-            fill
-            className="rounded-xl object-contain"
-          />
-        </div>
+        <RegionBanner />
 
-        {/* Se eu n tiver agendamentos n mostro na homepage *agendamentos* escrito */}
         {confirmedBookings.length > 0 && (
-          <>
-            <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
-              Agendamentos
-            </h2>
-
-            {/* Agendamentos */}
-            <div className="mt-3 flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+          <section className="mt-10" aria-labelledby="bookings-title">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 id="bookings-title" className="text-lg font-bold tracking-tight">Seus próximos horários</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Toque em um agendamento para ver os detalhes.</p>
+              </div>
+            </div>
+            <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {confirmedBookings.map((booking) => (
-                <BookingItem
-                  key={booking.id}
-                  booking={JSON.parse(JSON.stringify(booking))}
-                />
+                <BookingItem key={booking.id} booking={JSON.parse(JSON.stringify(booking))} layout="rail" />
               ))}
             </div>
-          </>
+          </section>
         )}
 
-        <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
-          Recomendados
-        </h2>
-        <div className="flex gap-4 overflow-auto [&::-webkit-scrollbar]:hidden">
-          {barbershops.map((barbershop) => (
-            <BarbershopItem key={barbershop.id} barbershop={barbershop} />
-          ))}
-        </div>
+        <section className="mt-10" aria-labelledby="recommended-title">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 id="recommended-title" className="text-lg font-bold tracking-tight">Barbearias {locationLabel}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Arraste para conhecer as opções.</p>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="shrink-0 text-primary"><Link href="/barbershops">Ver todas</Link></Button>
+          </div>
+          {barbershops.length > 0 ? (
+            <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {barbershops.map((barberShopItem) => <BarbershopItem key={barberShopItem.id} barbershop={barberShopItem} layout="rail" />)}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">Ainda não encontramos barbearias para esse filtro. Tente outra cidade.</p>
+          )}
+        </section>
 
-        {/* Barbearias Populares */}
-        <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
-          Populares
-        </h2>
-        <div className="flex gap-4 overflow-auto [&::-webkit-scrollbar]:hidden">
-          {popularBarbershops.map((barbershop) => (
-            <BarbershopItem key={barbershop.id} barbershop={barbershop} />
-          ))}
-        </div>
-      </div>
+        {popularBarbershops.length > 0 && (
+          <section className="mt-10" aria-labelledby="popular-title">
+            <div>
+              <h2 id="popular-title" className="text-lg font-bold tracking-tight">Mais opções para você</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Perfis disponíveis para explorar.</p>
+            </div>
+            <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {popularBarbershops.map((popularShopItem) => <BarbershopItem key={popularShopItem.id} barbershop={popularShopItem} layout="rail" />)}
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   )
 }
-
-export default Home

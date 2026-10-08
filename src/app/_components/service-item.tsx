@@ -34,19 +34,20 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
       <Card>
         <CardContent className="flex items-center gap-3 p-3">
           {/* IMAGEM */}
-          <div className="relative max-h-[110px] min-h-[110px] min-w-[110px] max-w-[110px]">
+          <div className="relative size-[110px] shrink-0">
             <Image
               src={service.imageUrl}
               alt={service.name}
+              sizes="110px"
               fill
               className="rounded-xl object-cover"
             />
           </div>
 
           {/* DIREITA */}
-          <div className="space-y-2 flex-1">
-            <h3 className="text-sm font-semibold">{service.name}</h3>
-            <p className="text-sm text-gray-400">{service.description}</p>
+          <div className="min-w-0 flex-1 space-y-2">
+            <h3 className="line-clamp-2 text-sm font-semibold">{service.name}</h3>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{service.description}</p>
 
             {/* PREÇO E BOTÃO */}
             <div className="flex items-center justify-between gap-1 font-semibold text-primary">
@@ -62,7 +63,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
                 size="sm"
                 onClick={handleBookingClick}
               >
-                Reservar
+                Agendar
               </Button>
             </div>
           </div>

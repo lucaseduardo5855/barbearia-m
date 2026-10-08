@@ -46,6 +46,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
             alt={`Banner de ${barbershop.name}`}
             src={barbershop.bannerUrl}
             fill
+            sizes="100vw"
             className="object-cover"
           />
         )}
@@ -53,6 +54,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
         <Button
           size="icon"
           variant="secondary"
+          aria-label="Voltar"
           className="absolute left-4 top-4"
           asChild
         >
@@ -67,6 +69,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
             <Button
               size="icon"
               variant="outline"
+              aria-label="Abrir menu"
               className="absolute right-4 top-4"
             >
               <MenuIcon />
@@ -85,6 +88,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
               alt={`Logo da ${barbershop.name}`}
               src={barbershop.imageUrl}
               fill
+              sizes="80px"
               className="object-cover"
             />
           </div>
@@ -95,7 +99,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Abrir o endereço da ${barbershop.name} no Google Maps`}
-          className="mb-2 flex w-fit items-center gap-2 text-sm text-gray-400 transition-colors hover:text-primary hover:underline md:text-base"
+          className="mb-2 flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary hover:underline md:text-base"
         >
           <MapPinIcon className="size-[18px] text-primary" />
           <span>{barbershop.address}</span>
@@ -103,19 +107,19 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
 
         <div className="flex items-center gap-2">
           <StarIcon className="fill-primary text-primary" />
-          <p className="text-sm text-gray-400">5,0 (482 avaliações)</p>
+          <p className="text-sm text-muted-foreground">5,0 (482 avaliações)</p>
         </div>
       </div>
 
       {/* DESCRIÇÃO */}
       <div className="space-y-2 border-b border-solid p-5 md:px-8 md:py-7">
-        <h2 className="text-xs font-bold uppercase text-gray-400">Sobre nós</h2>
+        <h2 className="text-xs font-bold uppercase text-primary/80">Sobre nós</h2>
         <p className="justify-text text-sm">{barbershop?.description}</p>
       </div>
 
       {/* SERVIÇOS */}
       <div className="border-bottom space-y-3 border-solid p-5 md:px-8 md:py-7">
-        <h2 className="text-xs font-bold uppercase text-gray-400">Serviços</h2>
+        <h2 className="text-xs font-bold uppercase text-primary/80">Serviços</h2>
         <div className="space-y-3 pt-3">
           {barbershop.services.map((service) => (
             <ServiceItem
@@ -128,7 +132,7 @@ const BarbershopPage = async ({ params }: BarbershopPageProps) => {
       </div>
 
       {/* CONTATO */}
-      <div className="space-y-3 p-5 text-white">
+      <div className="space-y-3 p-5 text-foreground">
         {barbershop.phones.map((phone) => (
           <PhoneItem phone={phone} key={phone} />
         ))}

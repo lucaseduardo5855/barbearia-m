@@ -5,7 +5,7 @@ const Footer = () => {
     <footer>
       <Card className="mt-10 px-2 py-6">
         <CardContent>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             © 2026 Copyright <span className="font-bold">Barberia-M</span>
           </p>
         </CardContent>

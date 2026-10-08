@@ -36,13 +36,13 @@ export default function ConcluedBookingsList({
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between border-2 border-dashed px-4 py-6 transition-all duration-300 hover:bg-accent/50"
       >
-        <span className="text-sm font-semibold text-gray-200">
+        <span className="text-sm font-semibold text-foreground">
           Finalizados ({bookings.length})
         </span>
         {isOpen ? (
-          <ChevronUp className="h-4 w-4 text-gray-400 transition-transform duration-300" />
+          <ChevronUp className="h-4 w-4 text-muted-foreground transition-transform duration-300" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-300" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-300" />
         )}
       </Button>
       {/* Lista de agendamentos que só aparece se isOpen for true */}
