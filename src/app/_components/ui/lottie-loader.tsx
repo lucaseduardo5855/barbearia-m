@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { Lottie } from "lottie-react"
 
 const loaderAnimation = {
@@ -56,4 +56,19 @@ export default function LottieLoader({ size = 28 }: { size?: number }) {
   }
 
   return <Lottie src={loaderAnimation} loop autoplay aria-label="Carregando" style={{ width: size, height: size }} />
+}
+
+export function LottieSuccess({ size = 34 }: { size?: number }) {
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  }, [])
+
+  return (
+    <span className="relative inline-flex items-center justify-center" style={{ width: size, height: size }} aria-label="Concluído">
+      {!reducedMotion && <Lottie src={loaderAnimation} loop={false} autoplay style={{ width: size, height: size }} />}
+      <Check className="absolute size-4 text-success" strokeWidth={3} aria-hidden="true" />
+    </span>
+  )
 }

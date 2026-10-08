@@ -14,6 +14,7 @@ import {
   Menu,
   Play,
   Scissors,
+  Search,
   Store,
   Users,
   Wallet,
@@ -23,10 +24,12 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { LandingBarbershopModes } from "./landing-barbershop-modes"
 import { LandingOperationsFlow } from "./landing-operations-flow"
 import SignInDiaLog from "./sign-in-dialong"
+import { LottieSuccess } from "./ui/lottie-loader"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
 
-gsap.registerPlugin(useGSAP)
+gsap.registerPlugin(useGSAP, ScrollTrigger)
 
 const features = [
   {
@@ -209,6 +212,96 @@ function AppointmentCard({ appointment }: { appointment: (typeof appointments)[n
   )
 }
 
+const marketplaceBarbershops = [
+  { name: "Barbearia do Minhoca", meta: "Centro · 4,9 ★", image: "/logominhoca.png" },
+  { name: "Corte & Estilo", meta: "Vila Madalena · 5,0 ★", image: "/barba.png" },
+  { name: "Barba & Navalha", meta: "Jardins · 4,8 ★", image: "/Banner-01.png" },
+]
+
+function MarketplacePreview() {
+  return (
+    <div data-gsap="marketplace-preview" className="relative w-full max-w-[32rem] rounded-2xl border border-border bg-card p-3 shadow-[0_24px_60px_hsl(var(--foreground)/0.14)] sm:p-4" aria-label="Prévia ilustrativa do marketplace para clientes">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex items-center gap-2">
+          <BrandMark compact />
+          <div>
+            <p className="text-[10px] font-extrabold tracking-[0.1em]">BARBER-M</p>
+            <p className="text-[9px] text-muted-foreground">Marketplace para clientes</p>
+          </div>
+        </div>
+        <span className="rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold text-primary">Área do cliente</span>
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-[10px] text-muted-foreground">
+        <Search className="size-3.5 text-primary" />
+        <span>Buscar por serviço ou barbearia</span>
+      </div>
+      <div className="mt-3 flex gap-1.5 overflow-hidden" aria-hidden="true">
+        {["Cabelo", "Barba", "Corte + barba", "Sobrancelha"].map((tag) => (
+          <span key={tag} className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[9px] font-semibold text-muted-foreground">{tag}</span>
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {marketplaceBarbershops.map((barbershop) => (
+          <div key={barbershop.name} className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
+            <div className="h-16 bg-muted">
+              <img src={barbershop.image} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="p-2">
+              <p className="truncate text-[9px] font-bold">{barbershop.name}</p>
+              <p className="mt-0.5 truncate text-[8px] text-muted-foreground">{barbershop.meta}</p>
+              <span className="mt-2 block rounded-md bg-primary px-2 py-1 text-center text-[8px] font-bold text-primary-foreground">Ver perfil</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-lg border border-success/25 bg-success/10 px-3 py-2">
+        <LottieSuccess size={30} />
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold">Agendamento confirmado</p>
+          <p className="truncate text-[9px] text-muted-foreground">Corte + barba · hoje às 15:00</p>
+        </div>
+        <span className="ml-auto shrink-0 text-[9px] font-bold text-success">R$ 70</span>
+      </div>
+    </div>
+  )
+}
+
+function CustomerFlowPreview() {
+  const steps = [
+    { icon: Search, title: "Cliente encontra", copy: "Busca por cidade, serviço ou barbearia." },
+    { icon: CalendarDays, title: "Cliente agenda", copy: "Escolhe serviço, profissional e horário." },
+    { icon: LayoutDashboard, title: "Você acompanha", copy: "Tudo entra na agenda e no caixa." },
+  ]
+
+  return (
+    <section data-gsap="scroll-section" className="border-y border-border/70 bg-card px-5 py-16 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl">
+        <div className="max-w-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Uma experiência conectada</p>
+          <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] sm:text-4xl">Do primeiro clique ao caixa fechado.</h2>
+          <p className="mt-3 text-base leading-7 text-muted-foreground">O cliente encontra e agenda sozinho. A equipe recebe tudo organizado no painel.</p>
+        </div>
+        <div className="mt-9 grid gap-3 md:grid-cols-3">
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            return (
+              <div key={step.title} className="relative rounded-2xl border border-border bg-background p-5">
+                <div className="flex items-center justify-between">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" /></span>
+                  <span className="text-xs font-extrabold text-muted-foreground">0{index + 1}</span>
+                </div>
+                <h3 className="mt-6 text-lg font-extrabold">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.copy}</p>
+                {index < steps.length - 1 && <ArrowRight className="absolute -right-4 top-1/2 z-10 hidden size-7 -translate-y-1/2 rounded-full border border-border bg-card p-1.5 text-primary md:block" />}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LandingPage() {
   const landingRoot = useRef<HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -233,6 +326,16 @@ export default function LandingPage() {
         duration: 0.9,
         delay: 0.15,
         ease: "power3.out",
+      })
+
+      gsap.utils.toArray<HTMLElement>("[data-gsap='scroll-section']").forEach((section) => {
+        gsap.fromTo(section, { opacity: 0, y: 34 }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.75,
+          ease: "power3.out",
+          scrollTrigger: { trigger: section, start: "top 84%", once: true },
+        })
       })
     })
 
@@ -298,37 +401,42 @@ export default function LandingPage() {
         )}
       </header>
 
-      <section className="landing-opero__hero border-b border-border/70 px-5 pb-24 pt-16 sm:px-8 sm:pb-32 sm:pt-24 lg:px-10">
-        <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
+      <section className="landing-opero__hero border-b border-border/70 px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:px-10">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
           <div data-gsap="hero-copy" className="max-w-xl">
-            <h1 className="max-w-2xl text-5xl font-extrabold leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
+            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">Agenda + marketplace para barbearias</span>
+            <h1 className="mt-5 max-w-2xl text-4xl font-extrabold leading-[0.98] tracking-[-0.045em] sm:text-5xl lg:text-[4.4rem]">
               Da agenda ao caixa, <span className="text-muted-foreground">sua barbearia</span> em sintonia.
             </h1>
-            <p className="mt-7 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+            <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               Agenda da equipe, atendimentos, financeiro e comissões no mesmo painel. Menos troca de tela para você ter mais controle do dia.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild size="lg" className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)]">
                 <Link href="/admin/register">Criar minha barbearia <ArrowRight className="size-4" /></Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-card hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)]">
-                <a href="#recursos">
-                  <span className="mr-2 flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><Play className="size-3 fill-current" aria-hidden="true" /></span>
-                  Ver o sistema por dentro
-                </a>
+                <Link href="/?view=marketplace">Encontrar barbearias <Search className="ml-2 size-4" /></Link>
               </Button>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-semibold text-muted-foreground">
+            <a href="#recursos" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-foreground underline decoration-primary/40 underline-offset-4 transition-colors hover:text-primary"><Play className="size-3 fill-current text-primary" /> Ver o sistema por dentro</a>
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-semibold text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Agenda por profissional</span>
               <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Controle de caixa</span>
               <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-success" /> Página de agendamento</span>
             </div>
           </div>
-          <AgendaPreview />
+          <div data-gsap="hero-showcase" className="relative pb-10 lg:pb-0">
+            <AgendaPreview />
+            <div className="relative mt-4 lg:absolute lg:-bottom-10 lg:-left-12 lg:mt-0">
+              <MarketplacePreview />
+            </div>
+            <span className="absolute right-3 top-3 hidden rounded-full border border-border bg-background/90 px-3 py-1.5 text-[10px] font-bold text-muted-foreground shadow-sm sm:inline-flex">Duas experiências, um produto</span>
+          </div>
         </div>
       </section>
 
-      <section className="border-b border-border/70 bg-card px-5 py-5 sm:px-8 lg:px-10" aria-label="Módulos disponíveis">
+      <section data-gsap="scroll-section" className="border-b border-border/70 bg-card px-5 py-5 sm:px-8 lg:px-10" aria-label="Módulos disponíveis">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-9 gap-y-3 text-sm font-semibold text-muted-foreground sm:justify-between">
           <span className="inline-flex items-center gap-2"><CalendarDays className="size-4 text-primary" /> Agenda</span>
           <span className="inline-flex items-center gap-2"><Users className="size-4 text-primary" /> Equipe</span>
@@ -337,7 +445,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="recursos" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+      <section data-gsap="scroll-section" id="recursos" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28 lg:px-10">
         <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
           <div>
             <h2 className="max-w-md text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">O que acontece na barbearia aparece onde você precisa.</h2>
@@ -388,11 +496,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <LandingOperationsFlow />
+      <CustomerFlowPreview />
 
-      <LandingBarbershopModes />
+      <div data-gsap="scroll-section"><LandingOperationsFlow /></div>
 
-      <section id="como-funciona" className="scroll-mt-24 border-y border-border/70 bg-card px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+      <div data-gsap="scroll-section"><LandingBarbershopModes /></div>
+
+      <section data-gsap="scroll-section" id="como-funciona" className="scroll-mt-24 border-y border-border/70 bg-card px-5 py-20 sm:px-8 sm:py-28 lg:px-10">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
           <div>
             <h2 className="max-w-md text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">Uma rotina simples, do primeiro horário ao fechamento.</h2>
@@ -415,7 +525,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="diferenciais" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+      <section data-gsap="scroll-section" id="diferenciais" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
           <div className="rounded-2xl bg-primary p-7 text-primary-foreground shadow-[0_24px_60px_hsl(var(--primary)/0.25)] sm:p-10">
             <LayoutDashboard className="size-7" />
@@ -443,7 +553,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-5 pb-24 sm:px-8 sm:pb-32 lg:px-10">
+      <section data-gsap="scroll-section" className="px-5 pb-24 sm:px-8 sm:pb-32 lg:px-10">
         <div className="landing-opero__cta relative mx-auto max-w-7xl overflow-hidden rounded-2xl bg-muted px-6 py-10 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
           <div className="relative flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
