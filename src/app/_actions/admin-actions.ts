@@ -189,10 +189,8 @@ export async function updateBookingStatusAction(params: {
   status: "CONFIRMED" | "CANCELLED" | "DONE"
   paymentStatus?: "PENDING" | "PAID"
 }) {
-  // Roda a segurança para verificar se o usuário atual é dono da barbearia
   const barbershop = await verifyOwnership(params.barbershopId)
 
-  // Validação Multi-tenant: Confirma se o agendamento pertence a esta barbearia
   const existingBooking = await db.booking.findFirst({
     where: {
       id: params.bookingId,
@@ -203,7 +201,6 @@ export async function updateBookingStatusAction(params: {
     throw new Error("Agendamento não encontrado nesta barbearia.")
   }
 
-  // Atualiza no banco de dados
   const updatedBooking = await db.booking.update({
     where: { id: params.bookingId },
     data: {
@@ -212,9 +209,422 @@ export async function updateBookingStatusAction(params: {
     }
   })
 
-  // Limpa o cache das páginas do cliente e do admin para atualizar as telas na hora
   revalidatePath(`/${barbershop.slug}`)
   revalidatePath(`/${barbershop.slug}/admin`)
 
   return updatedBooking
 }
+
+// 7. Criar Agendamento Manual no Admin (Agenda)
+export async function createAdminBookingAction(params: {
+  barbershopId: string
+  barberId?: string
+  serviceId: string
+  date: Date | string
+  clientName: string
+  clientPhone?: string
+  bookingType?: "PADRAO" | "ENCAIXE"
+  notes?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const service = await db.barbershopService.findFirst({
+    where: { id: params.serviceId, barbershopId: params.barbershopId }
+  })
+  if (!service) {
+    throw new Error("Serviço selecionado não existe.")
+  }
+
+  // Tenta encontrar ou criar o usuário cliente pelo telefone/nome
+  let targetUser = null
+  const cleanPhone = params.clientPhone ? params.clientPhone.replace(/\D/g, "") : null
+
+  if (cleanPhone) {
+    targetUser = await db.user.findFirst({
+      where: { phone: cleanPhone }
+    })
+  }
+
+  if (!targetUser) {
+    targetUser = await db.user.create({
+      data: {
+        name: params.clientName || "Cliente Balcão",
+        phone: cleanPhone || `manual_${Date.now()}`,
+        role: "CLIENT"
+      }
+    })
+  }
+
+  // Gera número da comanda de 7 dígitos aleatórios
+  const orderNumber = String(Math.floor(1000000 + Math.random() * 9000000))
+
+  const newBooking = await db.booking.create({
+    data: {
+      serviceId: params.serviceId,
+      barberId: params.barberId || null,
+      userId: targetUser.id,
+      date: new Date(params.date),
+      bookingType: params.bookingType || "PADRAO",
+      orderNumber,
+      status: "CONFIRMED",
+      paymentStatus: "PENDING",
+      paymentMethod: "ON_SITE",
+      totalPrice: service.price
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}`)
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return newBooking
+}
+
+// 8. Atualizar Detalhes da Comanda (Serviços Extras, Produtos e Comissão)
+export async function updateBookingDetailsAction(params: {
+  barbershopId: string
+  bookingId: string
+  status?: "CONFIRMED" | "CANCELLED" | "DONE"
+  extraServices?: { id: string; name: string; price: number }[]
+  extraProducts?: { id: string; name: string; price: number; quantity: number }[]
+  barberCommissionAmount?: number
+  totalPrice?: number
+  paymentStatus?: "PENDING" | "PAID"
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const existingBooking = await db.booking.findFirst({
+    where: {
+      id: params.bookingId,
+      service: { barbershopId: params.barbershopId }
+    },
+    include: { service: true, barber: true }
+  })
+  if (!existingBooking) {
+    throw new Error("Agendamento não encontrado.")
+  }
+
+  const updatedBooking = await db.booking.update({
+    where: { id: params.bookingId },
+    data: {
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.paymentStatus ? { paymentStatus: params.paymentStatus } : {}),
+      ...(params.extraServices !== undefined ? { extraServices: JSON.stringify(params.extraServices) } : {}),
+      ...(params.extraProducts !== undefined ? { extraProducts: JSON.stringify(params.extraProducts) } : {}),
+      ...(params.barberCommissionAmount !== undefined ? { barberCommissionAmount: params.barberCommissionAmount } : {}),
+      ...(params.totalPrice !== undefined ? { totalPrice: params.totalPrice } : {})
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}`)
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return updatedBooking
+}
+
+// 9. Bloquear Horário na Agenda
+export async function createBlockedTimeAction(params: {
+  barbershopId: string
+  barberId?: string | null
+  date: Date | string
+  reason?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const blocked = await db.blockedTime.create({
+    data: {
+      barbershopId: params.barbershopId,
+      barberId: params.barberId || null,
+      date: new Date(params.date),
+      reason: params.reason || "Horário Bloqueado"
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return blocked
+}
+
+// 10. Desbloquear Horário
+export async function deleteBlockedTimeAction(params: {
+  barbershopId: string
+  blockedTimeId: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  await db.blockedTime.delete({
+    where: { id: params.blockedTimeId, barbershopId: params.barbershopId }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+}
+
+// 11. Cadastrar / Editar / Excluir Produto
+export async function addProductAction(params: {
+  barbershopId: string
+  name: string
+  price: number
+  costPrice?: number
+  stock: number
+  category?: string
+  imageUrl?: string
+  description?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const product = await db.product.create({
+    data: {
+      barbershopId: params.barbershopId,
+      name: params.name,
+      price: params.price,
+      costPrice: params.costPrice || null,
+      stock: params.stock || 0,
+      category: params.category || "Geral",
+      imageUrl: params.imageUrl || null,
+      description: params.description || null
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return product
+}
+
+export async function updateProductAction(params: {
+  barbershopId: string
+  productId: string
+  name: string
+  price: number
+  costPrice?: number
+  stock: number
+  category?: string
+  imageUrl?: string
+  description?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const updated = await db.product.update({
+    where: { id: params.productId, barbershopId: params.barbershopId },
+    data: {
+      name: params.name,
+      price: params.price,
+      costPrice: params.costPrice || null,
+      stock: params.stock,
+      category: params.category || "Geral",
+      imageUrl: params.imageUrl || null,
+      description: params.description || null
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return updated
+}
+
+export async function deleteProductAction(params: {
+  barbershopId: string
+  productId: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  await db.product.delete({
+    where: { id: params.productId, barbershopId: params.barbershopId }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+}
+
+// 12. Venda de Produto Avulsa (ou associada a um agendamento)
+export async function createProductSaleAction(params: {
+  barbershopId: string
+  productId: string
+  barberId?: string | null
+  clientName?: string
+  quantity: number
+  unitPrice: number
+  date?: Date | string
+  bookingId?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const product = await db.product.findFirst({
+    where: { id: params.productId, barbershopId: params.barbershopId }
+  })
+  if (!product) {
+    throw new Error("Produto não encontrado.")
+  }
+
+  const quantity = Math.max(1, params.quantity || 1)
+  const totalAmount = Number(params.unitPrice) * quantity
+
+  // Calcula comissão para o barbeiro se houver (ex: taxa padrão de comissão sobre produtos ou metade da taxa padrão)
+  let commissionAmount = 0
+  if (params.barberId) {
+    const barber = await db.barber.findFirst({
+      where: { id: params.barberId, barbershopId: params.barbershopId }
+    })
+    const rate = barber?.commissionRate ? Number(barber.commissionRate) : 20 // 20% para produtos por padrão ou rate
+    commissionAmount = (totalAmount * rate) / 100
+  }
+
+  // Cria a venda
+  const sale = await db.productSale.create({
+    data: {
+      barbershopId: params.barbershopId,
+      productId: product.id,
+      productName: product.name,
+      barberId: params.barberId || null,
+      clientName: params.clientName || "Cliente",
+      quantity,
+      unitPrice: params.unitPrice,
+      totalAmount,
+      commissionAmount,
+      date: params.date ? new Date(params.date) : new Date(),
+      bookingId: params.bookingId || null
+    }
+  })
+
+  // Decrementa o estoque do produto
+  if (product.stock >= quantity) {
+    await db.product.update({
+      where: { id: product.id },
+      data: { stock: product.stock - quantity }
+    })
+  }
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return sale
+}
+
+// 13. Transações Financeiras Manuais (Despesas, Receitas manuais, Vales)
+export async function createFinancialTransactionAction(params: {
+  barbershopId: string
+  barberId?: string | null
+  type: "RECEITA" | "DESPESA" | "COMISSAO_PAGA" | "VALE"
+  category: string
+  description: string
+  amount: number
+  date?: Date | string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const transaction = await db.financialTransaction.create({
+    data: {
+      barbershopId: params.barbershopId,
+      barberId: params.barberId || null,
+      type: params.type,
+      category: params.category,
+      description: params.description,
+      amount: params.amount,
+      date: params.date ? new Date(params.date) : new Date()
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return transaction
+}
+
+// 14. Dar Baixa nas Comissões dos Colaboradores
+export async function payBarberCommissionsAction(params: {
+  barbershopId: string
+  barberId: string
+  amount: number
+  description?: string
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const barber = await db.barber.findFirst({
+    where: { id: params.barberId, barbershopId: params.barbershopId }
+  })
+  if (!barber) {
+    throw new Error("Colaborador não encontrado.")
+  }
+
+  const transaction = await db.financialTransaction.create({
+    data: {
+      barbershopId: params.barbershopId,
+      barberId: params.barberId,
+      type: "COMISSAO_PAGA",
+      category: "Comissões",
+      description: params.description || `Pagamento de comissão para ${barber.name}`,
+      amount: params.amount,
+      date: new Date()
+    }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return transaction
+}
+
+// 15. Atualizar Taxa de Comissão do Barbeiro
+export async function updateBarberCommissionRateAction(params: {
+  barbershopId: string
+  barberId: string
+  commissionRate: number
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  const updated = await db.barber.update({
+    where: { id: params.barberId, barbershopId: params.barbershopId },
+    data: { commissionRate: params.commissionRate }
+  })
+
+  revalidatePath(`/${barbershop.slug}/admin`)
+  return updated
+}
+
+// 16. Configuração Rápida da Unidade (Logo em botões, Horários de Trabalho, Serviços Rápidos)
+export async function quickSetupBarbershopAction(params: {
+  barbershopId: string
+  name: string
+  address: string
+  city?: string
+  state?: string
+  phones: string[]
+  openingHours?: string
+  imageUrl?: string
+  selectedServices?: {
+    name: string
+    description: string
+    price: number
+    imageUrl: string
+  }[]
+}) {
+  const barbershop = await verifyOwnership(params.barbershopId)
+
+  // Atualiza dados da barbearia, logo e horários de trabalho
+  const updatedBarbershop = await db.barbershop.update({
+    where: { id: params.barbershopId },
+    data: {
+      name: params.name,
+      address: params.address,
+      city: params.city || null,
+      state: params.state || null,
+      phones: params.phones,
+      openingHours: params.openingHours || null,
+      ...(params.imageUrl ? { imageUrl: params.imageUrl } : {})
+    }
+  })
+
+  // Se selecionou serviços pré-definidos do catálogo rápido de Beleza, cria os serviços que ainda não existem
+  if (params.selectedServices && params.selectedServices.length > 0) {
+    for (const s of params.selectedServices) {
+      const exists = await db.barbershopService.findFirst({
+        where: {
+          barbershopId: params.barbershopId,
+          name: s.name
+        }
+      })
+      if (!exists) {
+        await db.barbershopService.create({
+          data: {
+            barbershopId: params.barbershopId,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            imageUrl: s.imageUrl
+          }
+        })
+      }
+    }
+  }
+
+  revalidatePath(`/${updatedBarbershop.slug}`)
+  revalidatePath(`/${updatedBarbershop.slug}/admin`)
+  return updatedBarbershop
+}
+

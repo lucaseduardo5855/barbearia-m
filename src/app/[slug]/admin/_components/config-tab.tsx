@@ -6,7 +6,9 @@ import { Card, CardContent } from "@/app/_components/ui/card"
 import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
 import { toast } from "sonner"
-import { UploadButton } from "@/app/_lib/uploadthing"
+import { Settings } from "lucide-react"
+import { AdminPageHeader } from "./admin-page-header"
+import { PhotoUploadField } from "./photo-upload-field"
 
 interface ConfigTabProps {
   barbershop: Barbershop
@@ -69,73 +71,58 @@ export default function ConfigTab({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Configurações do Perfil</h2>
-        <p className="text-xs text-muted-foreground">Atualize a identidade visual e informações de contato da sua barbearia.</p>
-      </div>
+      <AdminPageHeader icon={Settings} title="Configurações do perfil" description="Atualize identidade, endereço e meios de contato da sua barbearia." />
 
       <Card className="border-secondary">
         <CardContent className="p-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Nome do Estabelecimento *</label>
+                <label className="text-xs text-muted-foreground font-semibold">Nome do Estabelecimento *</label>
                 <Input value={shopName} onChange={(e) => setShopName(e.target.value)} required disabled={isLoading} />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Telefone de Contato *</label>
+                <label className="text-xs text-muted-foreground font-semibold">Telefone de Contato *</label>
                 <Input value={shopPhone} onChange={(e) => setShopPhone(e.target.value)} required disabled={isLoading} />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-300 font-semibold">Endereço Físico *</label>
+              <label className="text-xs text-muted-foreground font-semibold">Endereço Físico *</label>
               <Input value={shopAddress} onChange={(e) => setShopAddress(e.target.value)} required disabled={isLoading} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Cidade</label>
+                <label className="text-xs text-muted-foreground font-semibold">Cidade</label>
                 <Input value={shopCity} onChange={(e) => setShopCity(e.target.value)} placeholder="Ex.: Ponta Grossa" disabled={isLoading} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Estado (UF)</label>
+                <label className="text-xs text-muted-foreground font-semibold">Estado (UF)</label>
                 <Input value={shopState} onChange={(e) => setShopState(e.target.value.toUpperCase().slice(0, 2))} placeholder="PR" maxLength={2} disabled={isLoading} />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-300 font-semibold">Descrição / Slogan *</label>
+              <label className="text-xs text-muted-foreground font-semibold">Descrição / Slogan *</label>
               <Input value={shopDescription} onChange={(e) => setShopDescription(e.target.value)} required disabled={isLoading} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Logo da barbearia *</label>
-                <div className="rounded-lg border border-border bg-muted/40 p-3">
-                  {shopLogoUrl && <p className="mb-2 truncate text-xs text-muted-foreground">Logo selecionado</p>}
-                  <UploadButton endpoint="imageUploader" onClientUploadComplete={(res) => { if (res?.[0]) { setShopLogoUrl(res[0].url); toast.success("Logo enviado!") } }} onUploadError={(error) => { toast.error(error.message) }} content={{ button: ({ ready }) => ready ? "Selecionar logo" : "Carregando...", allowedContent: "PNG ou JPG até 4MB" }} appearance={{ button: "h-9 w-full rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-muted", allowedContent: "mt-2 text-center text-[10px] text-muted-foreground" }} />
-                </div>
-              </div>
+              <PhotoUploadField label="Logo da barbearia" value={shopLogoUrl} onChange={setShopLogoUrl} alt={shopName || "Logo da barbearia"} required disabled={isLoading} />
 
-              <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Banner superior</label>
-                <div className="rounded-lg border border-border bg-muted/40 p-3">
-                  {shopBannerUrl && <p className="mb-2 truncate text-xs text-muted-foreground">Banner selecionado</p>}
-                  <UploadButton endpoint="imageUploader" onClientUploadComplete={(res) => { if (res?.[0]) { setShopBannerUrl(res[0].url); toast.success("Banner enviado!") } }} onUploadError={(error) => { toast.error(error.message) }} content={{ button: ({ ready }) => ready ? "Selecionar banner" : "Carregando...", allowedContent: "PNG ou JPG até 4MB" }} appearance={{ button: "h-9 w-full rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-muted", allowedContent: "mt-2 text-center text-[10px] text-muted-foreground" }} />
-                </div>
-              </div>
+              <PhotoUploadField label="Imagem de destaque" value={shopBannerUrl} onChange={setShopBannerUrl} alt={`Imagem de destaque de ${shopName || "barbearia"}`} disabled={isLoading} helperText="Opcional. A página pública prioriza o logo da barbearia." />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Mensagem de Boas-Vindas</label>
+                <label className="text-xs text-muted-foreground font-semibold">Mensagem de Boas-Vindas</label>
                 <Input value={shopWelcomeMessage} onChange={(e) => setShopWelcomeMessage(e.target.value)} disabled={isLoading} />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-300 font-semibold">Link do Instagram</label>
+                <label className="text-xs text-muted-foreground font-semibold">Link do Instagram</label>
                 <Input value={shopInstagramUrl} onChange={(e) => setShopInstagramUrl(e.target.value)} disabled={isLoading} />
               </div>
             </div>

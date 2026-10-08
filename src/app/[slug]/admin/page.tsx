@@ -22,13 +22,40 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   const userId = (session.user as any).id
 
-  // 3. Busca a barbearia pelo slug, incluindo serviços e barbeiros
+  // 3. Busca a barbearia pelo slug, incluindo serviços, barbeiros, produtos, bloqueios, vendas e transações
   const barbershop = await db.barbershop.findUnique({
     where: { slug: params.slug },
     include: {
       services: true,
       barbers: true,
-    }
+      products: true,
+      blockedTimes: true,
+      productSales: {
+        include: {
+          product: true,
+          barber: true,
+        },
+        orderBy: {
+          date: "desc",
+        },
+      },
+      transactions: {
+        orderBy: {
+          date: "desc",
+        },
+      },
+      subscriptionPayments: {
+        orderBy: {
+          paidAt: "desc",
+        },
+      },
+    },
+  })
+
+  // Busca todas as unidades do proprietário para o seletor de unidades
+  const userBarbershops = await db.barbershop.findMany({
+    where: { ownerId: userId },
+    select: { id: true, name: true, slug: true, imageUrl: true, subscriptionActive: true },
   })
 
   // 4. Se a barbearia não existir, retorna erro 404
@@ -111,11 +138,13 @@ export default async function AdminPage({ params }: AdminPageProps) {
   // Serializa os dados antes de passar para o Client Component (evita warnings do Next.js sobre instâncias de Date)
   const serializedBarbershop = JSON.parse(JSON.stringify(barbershop))
   const serializedBookings = JSON.parse(JSON.stringify(bookings))
+  const serializedUserBarbershops = JSON.parse(JSON.stringify(userBarbershops))
 
   return (
     <AdminDashboardClient
       barbershop={serializedBarbershop}
       bookings={serializedBookings}
+      userBarbershops={serializedUserBarbershops}
       userRole={userRole}
     />
   )

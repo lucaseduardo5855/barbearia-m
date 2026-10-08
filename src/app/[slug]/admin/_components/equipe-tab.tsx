@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Barbershop, Barber } from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
-import { UploadButton } from "@/app/_lib/uploadthing"
 import { toast } from "sonner"
-import { Trash2Icon } from "lucide-react"
+import { Trash2Icon, Users } from "lucide-react"
+import { AdminPageHeader } from "./admin-page-header"
+import { PhotoUploadField } from "./photo-upload-field"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,19 +70,16 @@ export default function EquipeTab({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Gerenciamento da Equipe</h2>
-        <p className="text-xs text-muted-foreground">Cadastre novos barbeiros e profissionais para atender os clientes.</p>
-      </div>
+      <AdminPageHeader icon={Users} title="Equipe" description="Cadastre profissionais, fotos e contatos para organizar a agenda da sua barbearia." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
         {/* Formulário de Adicionar Barbeiro */}
-        <Card className="border-secondary h-fit">
+        <Card className="h-fit rounded-xl bg-card">
           <CardContent className="p-5">
             <h3 className="mb-4 text-sm font-bold text-primary">Contratar barbeiro</h3>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Barbeiro *</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">Nome do Barbeiro *</label>
                 <Input 
                   placeholder="Ex: João da Silva" 
                   value={newBarberName} 
@@ -91,7 +90,7 @@ export default function EquipeTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">E-mail de Login (Opcional)</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">E-mail de Login (Opcional)</label>
                 <Input 
                   type="email"
                   placeholder="Ex: joao@gmail.com" 
@@ -102,7 +101,7 @@ export default function EquipeTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Telefone (Opcional)</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">Telefone (Opcional)</label>
                 <Input 
                   type="text"
                   placeholder="Ex: 11999998888" 
@@ -112,46 +111,7 @@ export default function EquipeTab({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Foto de Perfil (Opcional)</label>
-                {newBarberImageUrl ? (
-                  <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
-                    <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setNewBarberImageUrl("")} 
-                      className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                      disabled={isLoading}
-                    >
-                      X
-                    </button>
-                  </div>
-                ) : (
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res?.[0]) {
-                        setNewBarberImageUrl(res[0].url)
-                        toast.success("Foto de perfil enviada!")
-                      }
-                    }}
-                    onUploadError={(error: Error) => {
-                      toast.error(`Erro: ${error.message}`)
-                    }}
-                    content={{
-                      button({ ready }) {
-                        if (ready) return "Enviar Foto"
-                        return "Carregando..."
-                      },
-                      allowedContent: "PNG, JPG (até 4MB)"
-                    }}
-                    appearance={{
-                      button: "border border-border bg-muted text-foreground font-medium text-xs py-2.5 w-full rounded-lg hover:bg-secondary transition-colors cursor-pointer",
-                      allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
-                    }}
-                  />
-                )}
-              </div>
+              <PhotoUploadField label="Foto de perfil" value={newBarberImageUrl} onChange={setNewBarberImageUrl} alt={newBarberName || "Foto do profissional"} disabled={isLoading} />
 
               <Button type="submit" className="w-full mt-2" disabled={isLoading}>
                 {isLoading ? "Cadastrando..." : "Cadastrar Profissional"}
@@ -161,23 +121,23 @@ export default function EquipeTab({
         </Card>
 
         {/* Listagem de Equipe */}
-        <div className="lg:col-span-2 space-y-3">
-          <h3 className="font-bold text-sm text-gray-200">Equipe Atual ({barbershop.barbers.length})</h3>
+        <div className="space-y-3 rounded-xl bg-card p-5 shadow-[0_12px_30px_hsl(var(--foreground)/0.08)] sm:p-6">
+          <div className="flex items-center justify-between border-b border-border pb-4"><h3 className="text-sm font-extrabold text-foreground">Equipe atual</h3><span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">{barbershop.barbers.length}</span></div>
 
           {barbershop.barbers.map((barber) => (
-            <Card key={barber.id} className="border-secondary bg-secondary/10">
+            <Card key={barber.id} className="bg-muted/45 shadow-none transition-colors hover:bg-secondary/70">
               <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden border border-secondary shrink-0">
-                    <img src={barber.imageUrl} alt={barber.name} className="w-full h-full object-cover" />
+                  <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-xs font-extrabold text-primary">
+                    {barber.imageUrl ? <Image src={barber.imageUrl} alt={barber.name} fill sizes="48px" className="object-cover" /> : barber.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm">{barber.name}</h4>
                     {barber.email && (
-                      <p className="text-[11px] text-gray-400">E-mail: {barber.email}</p>
+                      <p className="text-[11px] text-muted-foreground">E-mail: {barber.email}</p>
                     )}
                     {barber.phone && (
-                      <p className="text-[11px] text-gray-400">Tel: {barber.phone}</p>
+                      <p className="text-[11px] text-muted-foreground">Tel: {barber.phone}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-0.5">Profissional ativo para agendamento</p>
                   </div>
@@ -195,6 +155,7 @@ export default function EquipeTab({
               </CardContent>
             </Card>
           ))}
+          {barbershop.barbers.length === 0 && <p className="rounded-xl bg-muted px-4 py-8 text-center text-sm text-muted-foreground">Nenhum profissional cadastrado ainda.</p>}
         </div>
       </div>
 

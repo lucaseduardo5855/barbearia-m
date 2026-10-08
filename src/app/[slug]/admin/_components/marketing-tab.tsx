@@ -43,7 +43,7 @@ export default function MarketingTab({ barbershop }: MarketingTabProps) {
               Este é o seu link único que os clientes usam para agendar cortes online de forma autônoma.
             </p>
 
-            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-xs text-gray-300 truncate font-mono">
+            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-xs text-muted-foreground truncate font-mono">
               {publicBookingUrl}
             </div>
 
@@ -62,21 +62,21 @@ export default function MarketingTab({ barbershop }: MarketingTabProps) {
 
         <Card className="border-secondary">
           <CardContent className="p-5 space-y-4">
-            <h3 className="font-bold text-sm text-green-500 flex items-center gap-1">
+            <h3 className="font-bold text-sm text-success flex items-center gap-1">
               <CheckCircle2Icon className="w-4 h-4" /> Divulgar no WhatsApp
             </h3>
             <p className="text-xs text-muted-foreground">
               Abra uma mensagem pré-formatada para enviar aos seus contatos convidando-os a fazer agendamento online.
             </p>
 
-            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-xs text-gray-300 space-y-2">
-              <p className="font-semibold text-gray-400 uppercase tracking-wider text-[9px]">Mensagem que será enviada:</p>
+            <div className="bg-secondary/40 p-3 rounded-lg border border-secondary text-xs text-muted-foreground space-y-2">
+              <p className="font-semibold text-muted-foreground uppercase tracking-wider text-[9px]">Mensagem que será enviada:</p>
               <p className="italic">
                 &ldquo;Olá! Agende seu corte ou barba na barbearia *{barbershop.name}* com rapidez pelo nosso link: {publicBookingUrl}&rdquo;
               </p>
             </div>
 
-            <Button onClick={handleShareWhatsapp} size="sm" className="bg-green-600 px-5 text-xs font-medium text-white hover:bg-green-700">
+            <Button onClick={handleShareWhatsapp} size="sm" className="bg-success/60 px-5 text-xs font-medium text-foreground hover:bg-success/70">
               <Share2Icon className="w-4 h-4" /> Enviar para Contatos
             </Button>
           </CardContent>

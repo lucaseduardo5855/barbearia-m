@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Barbershop, BarbershopService } from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
-import { UploadButton } from "@/app/_lib/uploadthing"
 import { toast } from "sonner"
-import { PlusIcon, Trash2Icon } from "lucide-react"
+import { Plus, Scissors, Trash2 } from "lucide-react"
+import { AdminPageHeader } from "./admin-page-header"
+import { PhotoUploadField } from "./photo-upload-field"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -67,21 +69,18 @@ export default function ServicosTab({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Gerenciamento de Serviços</h2>
-        <p className="text-xs text-muted-foreground">Cadastre novos tipos de serviço ou gerencie os preços atuais.</p>
-      </div>
+      <AdminPageHeader icon={Scissors} title="Serviços" description="Cadastre os serviços da sua barbearia e mantenha preços, descrição e foto em um único lugar." />
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid w-full grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)]">
         {/* Formulário de Adicionar Serviço */}
-        <Card className="border-secondary h-fit">
+        <Card className="h-fit rounded-2xl border border-border bg-card shadow-none">
           <CardContent className="p-6">
-            <h3 className="font-bold text-sm text-primary mb-4 flex items-center gap-1">
-              <PlusIcon className="w-4 h-4" /> Novo Serviço
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-extrabold text-foreground">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-secondary text-primary"><Plus className="size-4" /></span> Novo serviço
             </h3>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Nome do Serviço</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">Nome do Serviço</label>
                 <Input 
                   placeholder="Ex: Luzes / Nevou" 
                   value={newServiceName} 
@@ -92,7 +91,7 @@ export default function ServicosTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Preço (R$)</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">Preço (R$)</label>
                 <Input 
                   type="number" 
                   step="0.01" 
@@ -105,7 +104,7 @@ export default function ServicosTab({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Descrição Curta</label>
+                <label className="text-[10px] text-muted-foreground font-bold uppercase">Descrição Curta</label>
                 <Input 
                   placeholder="Ex: Descoloração platinada completa" 
                   value={newServiceDescription} 
@@ -115,46 +114,7 @@ export default function ServicosTab({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-bold uppercase">Imagem do Serviço *</label>
-                {newServiceImageUrl ? (
-                  <div className="relative w-full h-[40px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
-                    <span className="text-xs text-primary font-medium truncate max-w-[80%]">Foto enviada!</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setNewServiceImageUrl("")} 
-                      className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                      disabled={isLoading}
-                    >
-                      X
-                    </button>
-                  </div>
-                ) : (
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res?.[0]) {
-                        setNewServiceImageUrl(res[0].url)
-                        toast.success("Foto do serviço enviada!")
-                      }
-                    }}
-                    onUploadError={(error: Error) => {
-                      toast.error(`Erro: ${error.message}`)
-                    }}
-                    content={{
-                      button({ ready }) {
-                        if (ready) return "Enviar Foto"
-                        return "Carregando..."
-                      },
-                      allowedContent: "PNG, JPG (até 4MB)"
-                    }}
-                    appearance={{
-                      button: "border border-border bg-muted text-foreground font-medium text-xs py-2.5 w-full rounded-lg hover:bg-secondary transition-colors cursor-pointer",
-                      allowedContent: "text-[8px] text-gray-500 mt-1 text-center"
-                    }}
-                  />
-                )}
-              </div>
+              <PhotoUploadField label="Foto do serviço" value={newServiceImageUrl} onChange={setNewServiceImageUrl} alt={newServiceName || "Foto do serviço"} required disabled={isLoading} />
 
               <Button type="submit" className="w-full mt-2 rounded-lg" disabled={isLoading}>
                 {isLoading ? "Cadastrando..." : "Cadastrar Serviço"}
@@ -164,15 +124,16 @@ export default function ServicosTab({
         </Card>
 
         {/* Listagem de Serviços Atuais */}
-        <div className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
-          <h3 className="font-bold text-sm text-gray-200">Serviços Cadastrados ({barbershop.services.length})</h3>
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3 border-b border-border pb-4"><h3 className="text-sm font-extrabold text-foreground">Serviços cadastrados</h3><span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">{barbershop.services.length}</span></div>
 
+          <div className="mt-3 space-y-2">
           {barbershop.services.map((service) => (
-            <Card key={service.id} className="border-border bg-background transition-colors hover:bg-muted/40">
+            <Card key={service.id} className="bg-muted/45 shadow-none transition-colors hover:bg-secondary/70">
               <CardContent className="flex min-h-[92px] items-center justify-between gap-4 p-4 sm:p-5">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-secondary shrink-0">
-                    <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                    <Image src={service.imageUrl} alt={service.name} fill sizes="48px" className="object-cover" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm">{service.name}</h4>
@@ -188,11 +149,13 @@ export default function ServicosTab({
                   onClick={() => setServiceToDelete(service)}
                   disabled={isLoading}
                 >
-                  <Trash2Icon className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </CardContent>
             </Card>
           ))}
+          {barbershop.services.length === 0 && <p className="rounded-xl bg-muted px-4 py-8 text-center text-sm text-muted-foreground">Nenhum serviço cadastrado ainda.</p>}
+          </div>
         </div>
       </div>
       <AlertDialog open={Boolean(serviceToDelete)} onOpenChange={(open) => !open && setServiceToDelete(null)}>

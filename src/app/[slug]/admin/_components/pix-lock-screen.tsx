@@ -2,6 +2,7 @@
 
 import { Button } from "@/app/_components/ui/button"
 import { Card, CardContent } from "@/app/_components/ui/card"
+import Image from "next/image"
 import { LockIcon, Loader2, Copy, Check } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -31,7 +32,7 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         const data = await createPixPaymentAction(barbershopId)
         setPaymentData(data)
       } catch (err: any) {
-        toast.error("Erro ao gerar o QR Code Pix. Tente novamente.")
+        toast.error("Não foi possível gerar o QR Code Pix. Tente novamente.")
       } finally {
         setIsLoading(false)
       }
@@ -85,7 +86,7 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         {/* Informações de Pagamento */}
         <div className="bg-secondary/40 p-4 rounded-xl text-left space-y-4 border border-secondary">
           <div className="flex justify-between border-b border-secondary/60 pb-2">
-            <span className="text-xs text-gray-400 font-semibold uppercase">Valor Mensal (Teste)</span>
+            <span className="text-xs text-muted-foreground font-semibold uppercase">Valor Mensal (Teste)</span>
             <span className="text-sm font-bold text-primary">R$ 49,99</span>
           </div>
 
@@ -97,17 +98,20 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
           ) : paymentData ? (
             <div className="flex flex-col items-center space-y-4">
               {/* QR Code Container */}
-              <div className="bg-white p-3 rounded-lg flex items-center justify-center shadow-md">
-                <img
+              <div className="bg-foreground p-3 rounded-lg flex items-center justify-center shadow-md">
+                <Image
                   src={`data:image/png;base64,${paymentData.qrCodeBase64}`}
                   alt="QR Code Pix"
-                  className="w-48 h-48"
+                  width={192}
+                  height={192}
+                  unoptimized
+                  className="h-48 w-48"
                 />
               </div>
 
               {/* Copia e Cola Container */}
               <div className="w-full space-y-1">
-                <span className="text-xs text-gray-400 font-semibold uppercase">Chave Copia e Cola</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase">Chave Copia e Cola</span>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-black/30 p-2 rounded border border-secondary text-xs font-mono truncate select-all">
                     {paymentData.qrCode}
@@ -119,15 +123,15 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
                     className="shrink-0"
                     type="button"
                   >
-                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                   </Button>
                 </div>
-                <p className="text-[10px] text-gray-500">Clique no botão para copiar o código Pix.</p>
+                <p className="text-[10px] text-muted-foreground/70">Selecione o botão para copiar o código Pix.</p>
               </div>
             </div>
           ) : (
             <div className="text-center py-4 text-sm text-destructive font-medium">
-              Erro ao carregar o Pix. Recarregue a página.
+              Não foi possível carregar o Pix. Recarregue a página e tente novamente.
             </div>
           )}
         </div>
@@ -136,8 +140,8 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
         <div className="space-y-2 pt-2 border-t border-secondary/40">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
             </span>
             <span>Aguardando pagamento Pix...</span>
           </div>
