@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -23,6 +23,10 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { LandingBarbershopModes } from "./landing-barbershop-modes"
 import { LandingOperationsFlow } from "./landing-operations-flow"
 import SignInDiaLog from "./sign-in-dialong"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
+
+gsap.registerPlugin(useGSAP)
 
 const features = [
   {
@@ -77,7 +81,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
 
 function AgendaPreview() {
   return (
-    <div className="landing-showcase relative mx-auto w-full max-w-[44rem]" aria-label="Prévia ilustrativa da agenda do BARBER-M">
+    <div data-gsap="hero-preview" className="landing-showcase relative mx-auto w-full max-w-[44rem]" aria-label="Prévia ilustrativa da agenda do BARBER-M">
       <div className="pointer-events-none absolute -inset-x-12 top-12 h-2/3 rounded-full bg-primary/15 blur-3xl" aria-hidden="true" />
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-[0_26px_70px_hsl(var(--foreground)/0.16)]">
         <div className="flex h-11 items-center justify-between border-b border-border bg-card px-4 sm:px-5">
@@ -206,13 +210,37 @@ function AppointmentCard({ appointment }: { appointment: (typeof appointments)[n
 }
 
 export default function LandingPage() {
+  const landingRoot = useRef<HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeFeature, setActiveFeature] = useState<(typeof features)[number]["id"]>("agenda")
   const active = features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
 
+  useGSAP(() => {
+    const media = gsap.matchMedia()
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.from("[data-gsap='hero-copy'] > *", {
+        opacity: 0,
+        y: 22,
+        duration: 0.7,
+        stagger: 0.08,
+        ease: "power3.out",
+      })
+      gsap.from("[data-gsap='hero-preview']", {
+        opacity: 0,
+        x: 28,
+        rotate: 1.5,
+        duration: 0.9,
+        delay: 0.15,
+        ease: "power3.out",
+      })
+    })
+
+    return () => media.revert()
+  }, { scope: landingRoot })
+
   return (
-    <main className="landing-opero min-h-screen overflow-hidden bg-background text-foreground">
+    <main ref={landingRoot} className="landing-opero min-h-screen overflow-hidden bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10" aria-label="Navegação principal">
           <Link href="/" className="flex items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-ring" aria-label="BARBER-M, início da página">
@@ -272,7 +300,7 @@ export default function LandingPage() {
 
       <section className="landing-opero__hero border-b border-border/70 px-5 pb-24 pt-16 sm:px-8 sm:pb-32 sm:pt-24 lg:px-10">
         <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
-          <div className="max-w-xl">
+          <div data-gsap="hero-copy" className="max-w-xl">
             <h1 className="max-w-2xl text-5xl font-extrabold leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
               Da agenda ao caixa, <span className="text-muted-foreground">sua barbearia</span> em sintonia.
             </h1>

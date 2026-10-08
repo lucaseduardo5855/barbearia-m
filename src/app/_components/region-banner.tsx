@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, ChevronRight, Loader2, MapPin } from "lucide-react"
+import { CalendarDays, ChevronRight, MapPin } from "lucide-react"
 import { toast } from "sonner"
+import LottieLoader from "./ui/lottie-loader"
 
 export default function RegionBanner() {
   const router = useRouter()
@@ -72,7 +73,7 @@ export default function RegionBanner() {
     >
       <div className="max-w-lg">
         <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <CalendarDays className="size-4" />}
+          {loading ? <LottieLoader size={18} /> : <CalendarDays className="size-4" />}
         </span>
         <h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">
           Agende nos melhores da sua região.
@@ -83,7 +84,7 @@ export default function RegionBanner() {
         </p>
       </div>
       <span className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:translate-x-1">
-        {loading ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
+        {loading ? <LottieLoader size={18} /> : <ChevronRight className="size-4" />}
       </span>
     </button>
   )
