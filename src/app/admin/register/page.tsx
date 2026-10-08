@@ -77,6 +77,7 @@ export default function RegisterBarbershopPage() {
         cortePrice,
         barbaPrice,
         sobrancelhaPrice,
+        workDays,
         barberName: barberName || undefined,
       })
 
@@ -84,7 +85,7 @@ export default function RegisterBarbershopPage() {
       router.push(`/${barbershop.slug}/admin`)
     } catch (error: any) {
       console.error(error)
-      toast.error(error.message || "Erro ao cadastrar a barbearia. Tente novamente.")
+      toast.error("Não foi possível cadastrar a barbearia. Verifique os dados e tente novamente.")
     } finally {
       setIsSubmitting(false)
     }
@@ -106,9 +107,9 @@ export default function RegisterBarbershopPage() {
       <div className="min-h-screen bg-background text-foreground grid grid-cols-1 md:grid-cols-12 overflow-hidden font-outfit">
 
         {/* PAINEL ESQUERDO: Estilo Gendo Roxo Premium */}
-        <section className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] p-12 flex-col justify-between relative text-white select-none">
-          <div className="absolute top-0 right-0 opacity-15 w-80 h-80 rounded-full bg-white/20 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-10 left-10 opacity-10 w-96 h-96 rounded-full bg-white/30 blur-2xl pointer-events-none" />
+        <section className="hidden md:flex md:col-span-5 bg-gradient-to-br from-primary to-primary/80 p-12 flex-col justify-between relative text-foreground select-none">
+          <div className="absolute top-0 right-0 opacity-15 w-80 h-80 rounded-full bg-foreground/20 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 left-10 opacity-10 w-96 h-96 rounded-full bg-foreground/30 blur-2xl pointer-events-none" />
 
           <div className="space-y-6 z-10">
             <Image src="/logo.png" alt="FSW Barber" width={130} height={22} className="invert brightness-0" />
@@ -121,7 +122,6 @@ export default function RegisterBarbershopPage() {
 
           {/* Lista de Passos Lateral */}
           <div className="relative flex flex-col justify-center my-auto pl-2 py-8 z-10">
-            <div className="absolute left-[22px] top-8 bottom-8 w-0.5 bg-white/25 -z-10" />
 
             <div className="space-y-5">
               {stepsList.map((s) => {
@@ -131,20 +131,20 @@ export default function RegisterBarbershopPage() {
                   <div key={s.id} className="flex items-center gap-4">
 
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-base border-2 transition-all duration-300 shrink-0 ${isCompleted
-                      ? "bg-white text-[#4f46e5] border-white shadow-lg"
+                      ? "bg-foreground text-primary border-foreground shadow-lg"
                       : isActive
-                        ? "bg-white/20 text-white border-white scale-105 shadow-md font-extrabold"
-                        : "bg-transparent text-white/50 border-white/30"
+                        ? "bg-foreground/20 text-foreground border-foreground scale-105 shadow-md font-extrabold"
+                        : "bg-transparent text-foreground/50 border-foreground/30"
                       }`}>
                       {isCompleted ? <CheckIcon className="w-5 h-5 stroke-[3.5]" /> : s.id}
                     </div>
 
                     <div>
-                      <p className={`text-base font-bold transition-all duration-300 leading-tight ${isActive ? "text-white" : isCompleted ? "text-white/90" : "text-white/40"
+                      <p className={`text-base font-bold transition-all duration-300 leading-tight ${isActive ? "text-foreground" : isCompleted ? "text-foreground/90" : "text-foreground/40"
                         }`}>
                         {s.title}
                       </p>
-                      <p className={`text-xs transition-all duration-300 ${isActive ? "text-white/80" : isCompleted ? "text-white/60" : "text-white/30"
+                      <p className={`text-xs transition-all duration-300 ${isActive ? "text-foreground/80" : isCompleted ? "text-foreground/60" : "text-foreground/30"
                         }`}>
                         {s.desc}
                       </p>
@@ -155,7 +155,7 @@ export default function RegisterBarbershopPage() {
             </div>
           </div>
 
-          <div className="text-xs text-white/60 z-10 font-medium">
+          <div className="text-xs text-foreground/60 z-10 font-medium">
             © FSW Barber SaaS • Período de Testes de 7 Dias
           </div>
         </section>
@@ -167,7 +167,7 @@ export default function RegisterBarbershopPage() {
             {/* Header Responsivo para Mobile */}
             <div className="flex flex-col items-center text-center md:hidden mb-4">
               <Image src="/logo.png" alt="FSW Barber" width={110} height={18} className="object-contain mb-3" />
-              <h2 className="text-xl font-bold text-white">Configurar sua Barbearia</h2>
+              <h2 className="text-xl font-bold text-foreground">Configurar sua Barbearia</h2>
               <span className="text-[10px] bg-primary/20 text-primary px-3 py-0.5 rounded-full font-bold uppercase tracking-wider mt-2">
                 Passo {step} de 6
               </span>
@@ -175,7 +175,7 @@ export default function RegisterBarbershopPage() {
 
             {/* Cabeçalho da Etapa Corrente */}
             <div>
-              <h3 className="text-2xl font-extrabold tracking-tight text-white hidden md:block">
+              <h3 className="text-2xl font-extrabold tracking-tight text-foreground hidden md:block">
                 {step === 1 && "Com qual perfil você se encaixa?"}
                 {step === 2 && "Sobre o seu negócio"}
                 {step === 3 && "Onde fica?"}
@@ -243,11 +243,11 @@ export default function RegisterBarbershopPage() {
 
                   {/* Campo complementar: Onde nos conheceu? */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Onde nos conheceu?</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Onde nos conheceu?</label>
                     <select
                       value={heardFrom}
                       onChange={(e) => setHeardFrom(e.target.value)}
-                      className="w-full py-3.5 px-3 rounded-lg border border-secondary bg-secondary/15 text-sm outline-none text-white focus:border-primary"
+                      className="w-full py-3.5 px-3 rounded-lg border border-secondary bg-secondary/15 text-sm outline-none text-foreground focus:border-primary"
                     >
                       <option value="" disabled hidden className="bg-background text-foreground">Selecione uma categoria</option>
                       <option value="instagram" className="bg-background text-foreground">Instagram</option>
@@ -277,7 +277,7 @@ export default function RegisterBarbershopPage() {
               {step === 2 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Nome da Barbearia *</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Nome da Barbearia *</label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -287,7 +287,7 @@ export default function RegisterBarbershopPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Mensagem de Boas-Vindas</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Mensagem de Boas-Vindas</label>
                     <Input
                       placeholder="Ex: Estilo e tradição com os melhores profissionais"
                       value={welcomeMessage}
@@ -297,9 +297,9 @@ export default function RegisterBarbershopPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Descrição / Sobre a Barbearia *</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Descrição / Sobre a Barbearia *</label>
                     <textarea
-                      className="w-full min-h-[90px] rounded-lg border border-secondary bg-secondary/15 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary text-white"
+                      className="w-full min-h-[90px] rounded-lg border border-secondary bg-secondary/15 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary text-foreground"
                       placeholder="Conte um pouco sobre as especialidades da barbearia..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -310,7 +310,7 @@ export default function RegisterBarbershopPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Upload de Logo */}
                     <div className="space-y-1.5 flex flex-col justify-end">
-                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Logo da Barbearia *</label>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Logo da Barbearia *</label>
                       {imageUrl ? (
                         <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
                           <span className="text-xs text-primary font-medium truncate max-w-[80%]">Logo enviada!</span>
@@ -332,7 +332,7 @@ export default function RegisterBarbershopPage() {
                             }
                           }}
                           onUploadError={(error: Error) => {
-                            toast.error(`Erro: ${error.message}`)
+                            toast.error("Não foi possível enviar a logo. Tente novamente.")
                           }}
                           content={{
                             button({ ready }) {
@@ -342,8 +342,8 @@ export default function RegisterBarbershopPage() {
                             allowedContent: "PNG, JPG (até 4MB)"
                           }}
                           appearance={{
-                            button: "bg-primary text-black font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
-                            allowedContent: "text-[10px] text-gray-400 mt-1 text-center"
+                            button: "bg-primary text-primary-foreground font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
+                            allowedContent: "text-[10px] text-muted-foreground mt-1 text-center"
                           }}
                         />
                       )}
@@ -351,7 +351,7 @@ export default function RegisterBarbershopPage() {
 
                     {/* Upload de Banner */}
                     <div className="space-y-1.5 flex flex-col justify-end">
-                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Banner de Capa</label>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Banner de Capa</label>
                       {bannerUrl ? (
                         <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
                           <span className="text-xs text-primary font-medium truncate max-w-[80%]">Banner enviado!</span>
@@ -373,7 +373,7 @@ export default function RegisterBarbershopPage() {
                             }
                           }}
                           onUploadError={(error: Error) => {
-                            toast.error(`Erro: ${error.message}`)
+                            toast.error("Não foi possível enviar o banner. Tente novamente.")
                           }}
                           content={{
                             button({ ready }) {
@@ -383,8 +383,8 @@ export default function RegisterBarbershopPage() {
                             allowedContent: "PNG, JPG (até 4MB)"
                           }}
                           appearance={{
-                            button: "bg-[#4f46e5] text-white font-extrabold text-xs py-3 w-full rounded-lg hover:bg-[#5a52e6] transition-all cursor-pointer",
-                            allowedContent: "text-[10px] text-gray-400 mt-1 text-center"
+                            button: "bg-primary text-primary-foreground font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/85 transition-all cursor-pointer",
+                            allowedContent: "text-[10px] text-muted-foreground mt-1 text-center"
                           }}
                         />
                       )}
@@ -392,7 +392,7 @@ export default function RegisterBarbershopPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Instagram da Barbearia</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Instagram da Barbearia</label>
                     <Input
                       placeholder="Ex: https://instagram.com/sua_barbearia"
                       value={instagramUrl}
@@ -431,7 +431,7 @@ export default function RegisterBarbershopPage() {
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Digite seu endereço... *</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Digite seu endereço... *</label>
                     <Input
                       placeholder="Ex: Avenida dos Cortes, 123 - Centro"
                       value={address}
@@ -442,7 +442,7 @@ export default function RegisterBarbershopPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Telefone / WhatsApp de Contato *</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Telefone / WhatsApp de Contato *</label>
                     <Input
                       placeholder="Ex: (11) 98765-4321"
                       value={phone}
@@ -486,8 +486,8 @@ export default function RegisterBarbershopPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
                       <div>
-                        <h4 className="text-sm font-bold text-white">Corte de Cabelo</h4>
-                        <p className="text-xs text-gray-400">Tempo estimado: 30 minutos</p>
+                        <h4 className="text-sm font-bold text-foreground">Corte de Cabelo</h4>
+                        <p className="text-xs text-muted-foreground">Tempo estimado: 30 minutos</p>
                       </div>
                       <div className="w-24">
                         <Input
@@ -501,8 +501,8 @@ export default function RegisterBarbershopPage() {
 
                     <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
                       <div>
-                        <h4 className="text-sm font-bold text-white">Barba</h4>
-                        <p className="text-xs text-gray-400">Tempo estimado: 30 minutos</p>
+                        <h4 className="text-sm font-bold text-foreground">Barba</h4>
+                        <p className="text-xs text-muted-foreground">Tempo estimado: 30 minutos</p>
                       </div>
                       <div className="w-24">
                         <Input
@@ -516,8 +516,8 @@ export default function RegisterBarbershopPage() {
 
                     <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
                       <div>
-                        <h4 className="text-sm font-bold text-white">Sobrancelha</h4>
-                        <p className="text-xs text-gray-400">Tempo estimado: 15 minutos</p>
+                        <h4 className="text-sm font-bold text-foreground">Sobrancelha</h4>
+                        <p className="text-xs text-muted-foreground">Tempo estimado: 15 minutos</p>
                       </div>
                       <div className="w-24">
                         <Input
@@ -564,7 +564,7 @@ export default function RegisterBarbershopPage() {
                           type="button"
                           className={`p-3 text-xs font-bold rounded-lg border transition-all text-center ${isSelected
                             ? "bg-primary/20 text-primary border-primary"
-                            : "bg-secondary/15 border-secondary text-gray-400 hover:border-gray-500"
+                            : "bg-secondary/15 border-secondary text-muted-foreground hover:border-muted-foreground/70"
                             }`}
                           onClick={() => {
                             if (isSelected) {
@@ -611,14 +611,14 @@ export default function RegisterBarbershopPage() {
               {step === 6 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-300 uppercase tracking-wide">Nome do Primeiro Barbeiro (Opcional)</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Nome do Primeiro Barbeiro (Opcional)</label>
                     <Input
                       placeholder="Ex: Roberto Barbeiro / Nome do seu colega"
                       value={barberName}
                       onChange={(e) => setBarberName(e.target.value)}
                       className="py-5 bg-secondary/20 border-secondary text-sm"
                     />
-                    <p className="text-[10px] text-gray-500">Você poderá gerenciar e convidar mais profissionais no seu painel depois.</p>
+                    <p className="text-[10px] text-muted-foreground/70">Você poderá gerenciar e convidar mais profissionais no seu painel depois.</p>
                   </div>
 
                   <div className="flex gap-3 pt-4">
@@ -633,7 +633,7 @@ export default function RegisterBarbershopPage() {
                     <button id="submit-onboarding" type="submit" className="hidden" />
                     <Button
                       type="submit"
-                      className="flex-1 py-6 text-sm font-extrabold bg-[#4f46e5] hover:bg-[#5a52e6] text-white"
+                      className="flex-1 py-6 text-sm font-extrabold bg-primary hover:bg-primary/85 text-primary-foreground"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? "Finalizando..." : "Finalizar e Entrar"}

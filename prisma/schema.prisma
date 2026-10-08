@@ -71,54 +71,62 @@ model VerificationToken {
 }
 
 model Barbershop {
-  id             String              @id @default(uuid())
-  name           String
-  address        String
-  city           String?
-  state          String?
-  phones         String[]
-  description    String
-  imageUrl       String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  bannerUrl      String?
-  slug           String?             @unique
-  welcomeMessage String?
-  instagramUrl   String?
-  ownerId        String?             @unique
-  owner          User?               @relation(fields: [ownerId], references: [id])
-  subscriptionActive Boolean         @default(true)
-  trialEndsAt    DateTime?
-  barbers        Barber[]
-  services       BarbershopService[]
+  id                   String                 @id @default(uuid())
+  name                 String
+  address              String
+  phones               String[]
+  description          String
+  imageUrl             String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  bannerUrl            String?
+  slug                 String?                @unique
+  welcomeMessage       String?
+  instagramUrl         String?
+  ownerId              String?                @unique
+  subscriptionActive   Boolean                @default(true)
+  trialEndsAt          DateTime?
+  city                 String?
+  state                String?
+  openingHours         String?
+  barbers              Barber[]
+  owner                User?                  @relation(fields: [ownerId], references: [id])
+  services             BarbershopService[]
   subscriptionPayments SubscriptionPayment[]
+  products             Product[]
+  productSales         ProductSale[]
+  blockedTimes         BlockedTime[]
+  transactions         FinancialTransaction[]
 }
 
 model SubscriptionPayment {
   id                   String     @id @default(uuid())
   barbershopId         String
-  barbershop           Barbershop @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
   amount               Decimal    @db.Decimal(10, 2)
   paymentMethod        String     @default("PIX")
   mercadopagoPaymentId String     @unique
   status               String
   paidAt               DateTime   @default(now())
   createdAt            DateTime   @default(now())
+  barbershop           Barbershop @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
 }
 
-
 model Barber {
-  id           String     @id @default(uuid())
-  name         String
-  imageUrl     String
-  email        String?    @unique
-  phone        String?    @unique 
-  barbershopId String
-  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
-  bookings     Booking[]
-  userId       String?    @unique
-  user         User?      @relation(fields: [userId], references: [id])
-  role         BarberRole @default(EMPLOYEE)
+  id             String                 @id @default(uuid())
+  name           String
+  imageUrl       String
+  barbershopId   String
+  role           BarberRole             @default(EMPLOYEE)
+  commissionRate Decimal?               @default(50) @db.Decimal(5, 2)
+  userId         String?                @unique
+  email          String?                @unique
+  phone          String?                @unique
+  barbershop     Barbershop             @relation(fields: [barbershopId], references: [id])
+  user           User?                  @relation(fields: [userId], references: [id])
+  bookings       Booking[]
+  productSales   ProductSale[]
+  blockedTimes   BlockedTime[]
+  transactions   FinancialTransaction[]
 }
 
 model BarbershopService {
@@ -132,22 +140,89 @@ model BarbershopService {
   bookings     Booking[]
 }
 
-model Booking {
-  id              String            @id @default(uuid())
-  userId          String
-  serviceId       String
-  date            DateTime
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  paymentMethod   PaymentMethod     @default(ON_SITE)
-  paymentStatus   PaymentStatus     @default(PENDING)
-  status          BookingStatus     @default(CONFIRMED)
-  stripeSessionId String?           @unique
-  barberId        String?
-  barber          Barber?           @relation(fields: [barberId], references: [id])
-  service         BarbershopService @relation(fields: [serviceId], references: [id])
-  user            User              @relation(fields: [userId], references: [id])
+model Product {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  price        Decimal       @db.Decimal(10, 2)
+  costPrice    Decimal?      @db.Decimal(10, 2)
+  stock        Int           @default(0)
+  imageUrl     String?
+  category     String?       @default("Geral")
+  barbershopId String
+  barbershop   Barbershop    @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  sales        ProductSale[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
+
+model ProductSale {
+  id               String      @id @default(uuid())
+  barbershopId     String
+  productId        String?
+  productName      String
+  barberId         String?
+  clientName       String?
+  quantity         Int         @default(1)
+  unitPrice        Decimal     @db.Decimal(10, 2)
+  totalAmount      Decimal     @db.Decimal(10, 2)
+  commissionAmount Decimal     @default(0) @db.Decimal(10, 2)
+  date             DateTime    @default(now())
+  bookingId        String?
+  createdAt        DateTime    @default(now())
+  product          Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  barber           Barber?     @relation(fields: [barberId], references: [id], onDelete: SetNull)
+  barbershop       Barbershop  @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+}
+
+model BlockedTime {
+  id           String      @id @default(uuid())
+  barbershopId String
+  barberId     String?
+  date         DateTime
+  reason       String?     @default("Horário Bloqueado")
+  createdAt    DateTime    @default(now())
+  barbershop   Barbershop  @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  barber       Barber?     @relation(fields: [barberId], references: [id], onDelete: SetNull)
+}
+
+model FinancialTransaction {
+  id           String      @id @default(uuid())
+  barbershopId String
+  barberId     String?
+  type         String      // RECEITA | DESPESA | COMISSAO_PAGA | VALE
+  category     String      // Comissões | Aluguel | Produtos | Despesa Operacional | Lançamento Manual
+  description  String
+  amount       Decimal     @db.Decimal(10, 2)
+  date         DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  barbershop   Barbershop  @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  barber       Barber?     @relation(fields: [barberId], references: [id], onDelete: SetNull)
+}
+
+model Booking {
+  id                     String            @id @default(uuid())
+  userId                 String
+  serviceId              String
+  date                   DateTime
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  paymentMethod          PaymentMethod     @default(ON_SITE)
+  paymentStatus          PaymentStatus     @default(PENDING)
+  status                 BookingStatus     @default(CONFIRMED)
+  stripeSessionId        String?           @unique
+  barberId               String?
+  bookingType            String?           @default("PADRAO")
+  orderNumber            String?
+  extraServices          String?
+  extraProducts          String?
+  barberCommissionAmount Decimal?          @db.Decimal(10, 2)
+  totalPrice             Decimal?          @db.Decimal(10, 2)
+  barber                 Barber?           @relation(fields: [barberId], references: [id])
+  service                BarbershopService @relation(fields: [serviceId], references: [id])
+  user                   User              @relation(fields: [userId], references: [id])
+}
+
 
 enum BookingStatus {
   PENDING
@@ -158,7 +233,6 @@ enum BookingStatus {
 
 enum PaymentMethod {
   ON_SITE
-  ONLINE
 }
 
 enum PaymentStatus {

@@ -18,6 +18,7 @@ const registerBarbershopSchema = z.object({
   cortePrice: z.string().min(1, "Preço do corte é obrigatório"),
   barbaPrice: z.string().min(1, "Preço da barba é obrigatório"),
   sobrancelhaPrice: z.string().min(1, "Preço da sobrancelha é obrigatório"),
+  workDays: z.array(z.string()).default([]),
   barberName: z.string().optional(),
 })
 
@@ -33,6 +34,7 @@ interface RegisterBarbershopParams {
   cortePrice: string
   barbaPrice: string
   sobrancelhaPrice: string
+  workDays: string[]
   barberName?: string
 }
 
@@ -80,6 +82,23 @@ export async function registerBarbershop(params: RegisterBarbershopParams) {
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + 7)
 
+  const dayKeys: Record<string, string> = {
+    Segunda: "seg",
+    "Terça": "ter",
+    Quarta: "qua",
+    Quinta: "qui",
+    Sexta: "sex",
+    "Sábado": "sab",
+    Domingo: "dom",
+  }
+  const openingHours = Object.fromEntries(
+    Object.entries(dayKeys).map(([label, key]) => [key, {
+      active: params.workDays.includes(label),
+      start: "09:00",
+      end: key === "sab" ? "17:00" : "19:00",
+    }]),
+  )
+
   // 5. Cria a barbearia e atualiza a role do usuário para ADMIN em uma transação
   const result = await db.$transaction(async (tx) => {
     const barbershop = await tx.barbershop.create({
@@ -96,6 +115,7 @@ export async function registerBarbershop(params: RegisterBarbershopParams) {
         ownerId: userId,
         subscriptionActive: false, // Começa como falso pois está usando o Trial de 7 dias
         trialEndsAt,
+        openingHours: JSON.stringify(openingHours),
       }
     })
 
