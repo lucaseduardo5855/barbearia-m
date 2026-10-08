@@ -58,14 +58,14 @@ const outcomes: FlowCardProps[] = [
 
 function FlowCard({ icon: Icon, label, title, copy, detail }: FlowCardProps) {
   return (
-    <article className="landing-flow__card min-h-44 rounded-2xl border border-primary/20 bg-card p-4 shadow-[0_14px_28px_hsl(var(--foreground)/0.07)] transition-transform duration-200 hover:-translate-y-1">
+    <article className="landing-flow__card group min-h-44 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_hsl(var(--foreground)/0.05)] transition-all duration-200 hover:-translate-y-1 hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-[0_18px_34px_hsl(var(--primary)/0.12)]">
       <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Icon className="size-3.5" aria-hidden="true" /></span>
+        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:rotate-[-6deg] group-hover:scale-110"><Icon className="size-3.5" aria-hidden="true" /></span>
         {label}
       </div>
       <h3 className="mt-3 text-sm font-extrabold tracking-[-0.015em] text-foreground">{title}</h3>
       <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy}</p>
-      <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-[11px] font-semibold text-foreground">{detail}</p>
+      <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-[11px] font-semibold text-foreground transition-colors group-hover:bg-primary/10">{detail}</p>
     </article>
   )
 }
@@ -76,7 +76,7 @@ export function LandingOperationsFlow() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-bold text-primary">Uma operação conectada</p>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-foreground sm:text-5xl">O que acontece na cadeira aparece no painel.</h2>
+          <h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-foreground sm:text-5xl">O que acontece na cadeira aparece no painel.</h2>
           <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">Agenda, serviços, vendas e comissão trabalham com a mesma informação para evitar lançamentos repetidos.</p>
         </div>
 

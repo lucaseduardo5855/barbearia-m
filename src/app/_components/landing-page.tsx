@@ -220,7 +220,7 @@ const marketplaceBarbershops = [
 
 function MarketplacePreview() {
   return (
-    <div data-gsap="marketplace-preview" className="relative w-full max-w-[32rem] rounded-2xl border border-border bg-card p-3 shadow-[0_24px_60px_hsl(var(--foreground)/0.14)] sm:p-4" aria-label="Prévia ilustrativa do marketplace para clientes">
+    <div data-gsap="marketplace-preview" className="relative w-full max-w-[25rem] rounded-2xl border border-border bg-card p-3 shadow-[0_22px_48px_hsl(var(--foreground)/0.13)] sm:p-3.5" aria-label="Prévia ilustrativa do marketplace para clientes">
       <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
         <div className="flex items-center gap-2">
           <BrandMark compact />
@@ -243,13 +243,13 @@ function MarketplacePreview() {
       <div className="mt-3 grid grid-cols-3 gap-2">
         {marketplaceBarbershops.map((barbershop) => (
           <div key={barbershop.name} className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
-            <div className="h-16 bg-muted">
+            <div className="h-14 bg-muted">
               <img src={barbershop.image} alt="" className="h-full w-full object-cover" />
             </div>
-            <div className="p-2">
+            <div className="p-1.5">
               <p className="truncate text-[9px] font-bold">{barbershop.name}</p>
               <p className="mt-0.5 truncate text-[8px] text-muted-foreground">{barbershop.meta}</p>
-              <span className="mt-2 block rounded-md bg-primary px-2 py-1 text-center text-[8px] font-bold text-primary-foreground">Ver perfil</span>
+              <span className="mt-1.5 block rounded-md bg-primary px-2 py-1 text-center text-[8px] font-bold text-primary-foreground transition-colors hover:bg-primary/90">Ver perfil</span>
             </div>
           </div>
         ))}
@@ -405,7 +405,7 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
           <div data-gsap="hero-copy" className="max-w-xl">
             <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">Agenda + marketplace para barbearias</span>
-            <h1 className="mt-5 max-w-2xl text-4xl font-extrabold leading-[0.98] tracking-[-0.045em] sm:text-5xl lg:text-[4.4rem]">
+            <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-[1.02] tracking-[-0.038em] sm:text-5xl lg:text-[4.2rem]">
               Da agenda ao caixa, <span className="text-muted-foreground">sua barbearia</span> em sintonia.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
@@ -428,7 +428,7 @@ export default function LandingPage() {
           </div>
           <div data-gsap="hero-showcase" className="relative pb-10 lg:pb-0">
             <AgendaPreview />
-            <div className="relative mt-4 lg:absolute lg:-bottom-10 lg:-left-12 lg:mt-0">
+            <div className="relative z-10 mt-4 lg:absolute lg:-bottom-8 lg:-right-8 lg:mt-0 lg:scale-[0.78] lg:origin-bottom-right">
               <MarketplacePreview />
             </div>
             <span className="absolute right-3 top-3 hidden rounded-full border border-border bg-background/90 px-3 py-1.5 text-[10px] font-bold text-muted-foreground shadow-sm sm:inline-flex">Duas experiências, um produto</span>
@@ -460,9 +460,9 @@ export default function LandingPage() {
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveFeature(feature.id)}
-                    className={`group flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-[background-color,color,transform] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring ${selected ? "bg-primary text-primary-foreground shadow-[0_12px_24px_hsl(var(--primary)/0.18)]" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                    className={`group flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring hover:-translate-y-0.5 hover:border-primary/25 hover:bg-card hover:text-foreground hover:shadow-[0_10px_22px_hsl(var(--foreground)/0.06)] ${selected ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_24px_hsl(var(--primary)/0.18)]" : "border-transparent text-muted-foreground"}`}
                   >
-                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-primary-foreground/15" : "bg-card border border-border"}`}><Icon className="size-4" /></span>
+                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${selected ? "bg-primary-foreground/15" : "border border-border bg-card"}`}><Icon className="size-4" /></span>
                     <span className="flex-1 text-sm font-bold">{feature.label}</span>
                     <ChevronRight className={`size-4 transition-transform duration-200 ${selected ? "translate-x-0" : "-translate-x-1 group-hover:translate-x-0"}`} />
                   </button>
@@ -471,7 +471,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="self-start rounded-2xl bg-muted p-5 sm:p-8">
+          <div className="self-start rounded-2xl border border-border/70 bg-muted/75 p-5 shadow-[0_18px_42px_hsl(var(--foreground)/0.06)] sm:p-8">
             <div className="flex size-12 items-center justify-center rounded-xl bg-card text-primary shadow-[0_14px_30px_hsl(var(--foreground)/0.1)]"><ActiveIcon className="size-6" /></div>
             <h3 className="mt-8 max-w-xl text-2xl font-extrabold tracking-[-0.025em] sm:text-4xl">{active.title}</h3>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">{active.copy}</p>
