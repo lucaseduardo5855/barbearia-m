@@ -4,6 +4,9 @@ import { authOptions } from "@/app/_lib/auth"
 import { db } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
+import Link from "next/link"
+import { ChevronLeft } from "lucide-react"
+import { Button } from "@/app/_components/ui/button"
 
 interface ReservasPageProps {
     params: {
@@ -20,7 +23,12 @@ const ReservasPage = async ({ params }: ReservasPageProps) => {
 
     const userId = (session.user as any).id
 
-    //buscamos os agendamentos Confirmados (data futura)
+    const barbershop = await db.barbershop.findUnique({
+        where: { slug: params.slug },
+        select: { name: true, slug: true },
+    })
+
+    // Buscamos os agendamentos Confirmados (data futura)
     const confirmedBookings = await db.booking.findMany({
         where: {
             userId: userId,
@@ -29,25 +37,24 @@ const ReservasPage = async ({ params }: ReservasPageProps) => {
             },
             service: {
                 barbershop: {
-                    slug: params.slug
+                    slug: params.slug,
                 },
             },
         },
         include: {
             service: {
                 include: {
-                    barbershop: true
+                    barbershop: true,
                 },
             },
-            barber: true
+            barber: true,
         },
         orderBy: {
             date: "asc",
         },
-
     })
 
-    //Buscamos os agendamentos Concluidos/passados 
+    // Buscamos os agendamentos Concluídos/passados
     const concluedBookings = await db.booking.findMany({
         where: {
             userId: userId,
@@ -56,47 +63,88 @@ const ReservasPage = async ({ params }: ReservasPageProps) => {
             },
             service: {
                 barbershop: {
-                    slug: params.slug
+                    slug: params.slug,
                 },
             },
         },
         include: {
             service: {
                 include: {
-                    barbershop: true
-                }
+                    barbershop: true,
+                },
             },
-            barber: true
+            barber: true,
         },
         orderBy: {
-            date: "asc",
+            date: "desc",
         },
     })
 
     return (
-        <>
+        <div className="min-h-screen bg-background text-foreground">
             <Header />
-            <div className="space-y-3 p-5">
-                <h1 className="text-xl font-bold">Agendamentos</h1>
-                {confirmedBookings.length === 0 && (
-                    <p className="text-gray-400 text-center">
-                        Você não tem agendamentos confirmado nesta barbearia.
-                    </p>
+            <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-8 space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight">Agendamentos</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {barbershop?.name ? `Suas reservas em ${barbershop.name}` : "Histórico de reservas"}
+                        </p>
+                    </div>
+                    <Button asChild variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                        <Link href={`/${params.slug}`}>
+                            <ChevronLeft className="size-4" />
+                            Barbearia
+                        </Link>
+                    </Button>
+                </div>
+
+                {confirmedBookings.length === 0 && concluedBookings.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            Você não tem agendamentos nesta barbearia.
+                        </p>
+                        <Button asChild size="sm" className="mt-4">
+                            <Link href={`/${params.slug}/agendar`}>Agendar horário</Link>
+                        </Button>
+                    </div>
                 )}
+
                 {confirmedBookings.length > 0 && (
-                    <>
-                        <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">Confirmados</h2>
-                        {confirmedBookings.map(booking => (
-                            <BookingItem
-                                key={booking.id}
-                                booking={JSON.parse(JSON.stringify(booking))}
-                                hideBarberShopInfo
-                            />
-                        ))}
-                    </>
+                    <section className="space-y-3">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Confirmados
+                        </h2>
+                        <div className="space-y-3">
+                            {confirmedBookings.map((booking) => (
+                                <BookingItem
+                                    key={booking.id}
+                                    booking={JSON.parse(JSON.stringify(booking))}
+                                    hideBarberShopInfo
+                                />
+                            ))}
+                        </div>
+                    </section>
                 )}
-            </div>
-        </>
+
+                {concluedBookings.length > 0 && (
+                    <section className="space-y-3 pt-2">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Finalizados
+                        </h2>
+                        <div className="space-y-3">
+                            {concluedBookings.map((booking) => (
+                                <BookingItem
+                                    key={booking.id}
+                                    booking={JSON.parse(JSON.stringify(booking))}
+                                    hideBarberShopInfo
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </main>
+        </div>
     )
 }
 

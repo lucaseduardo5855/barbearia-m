@@ -5,7 +5,7 @@ import { Barbershop, BarbershopService, Barber } from "@prisma/client"
 import { Button } from "@/app/_components/ui/button"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Badge } from "@/app/_components/ui/badge"
-import { ChevronLeftIcon, BanknoteIcon } from "lucide-react"
+import { BanknoteIcon, CheckCircle2Icon, ChevronLeftIcon, MapPinIcon, ScissorsIcon, UserRoundIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { ptBR } from "date-fns/locale"
 import { format, isPast, isToday, set, startOfDay } from "date-fns"
@@ -14,8 +14,16 @@ import { createBooking } from "@/app/_actions/create-booking"
 import BookingSummary from "@/app/_components/booking-summary"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
-import { PaymentMethod } from "@prisma/client"
+import Image from "next/image"
+import { useSession } from "next-auth/react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import SignInDiaLog from "@/app/_components/sign-in-dialong"
 
+const TIME_LIST = [
+    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
+]
+
+const BOOKING_STEPS = ["Serviço", "Profissional", "Horário", "Confirmar"]
 
 // Estendemos os tipos da barbearia para incluir os serviços e barbeiros que buscamos no banco
 interface BookingFlowProps {
@@ -27,6 +35,7 @@ interface BookingFlowProps {
 
 export default function BookingFlow({ barbershop }: BookingFlowProps) {
     const searchParams = useSearchParams()
+    const { data: session } = useSession()
     
     // Estados para controlar o passo atual e as escolhas do cliente
     const [step, setStep] = useState(1)
@@ -65,32 +74,45 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
         }
     }
 
-    // Lista padrão de horários de atendimento da barbearia
-    const TIME_LIST = [
-        "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
-    ]
-
     // Estado para armazenar os agendamentos já ocupados do dia selecionado
     const [dayBookings, setDayBookings] = useState<any[]>([])
+    const [availabilityLoading, setAvailabilityLoading] = useState(false)
+    const [availabilityError, setAvailabilityError] = useState(false)
+    const [availabilityRetry, setAvailabilityRetry] = useState(0)
 
     const paymentMethod = "ON_SITE"
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [loginOpen, setLoginOpen] = useState(false)
+    const [pendingConfirmation, setPendingConfirmation] = useState(false)
     const router = useRouter()
 
     // Busca no banco de dados quais horários já estão ocupados do dia selecionado
     useEffect(() => {
         if (!selectedDate) return
 
-        const fetchBookings = async () => {
-            const bookings = await getBookings({
-                date: selectedDate,
-                serviceId: selectedService?.id || ""
-            })
-            setDayBookings(bookings)
-        }
+        let cancelled = false
+        setAvailabilityLoading(true)
+        setAvailabilityError(false)
+        setDayBookings([])
 
-        fetchBookings()
-    }, [selectedDate, selectedService])
+        getBookings({
+            date: selectedDate,
+            serviceId: selectedService?.id || ""
+        })
+            .then((bookings) => {
+                if (!cancelled) setDayBookings(bookings)
+            })
+            .catch(() => {
+                if (!cancelled) setAvailabilityError(true)
+            })
+            .finally(() => {
+                if (!cancelled) setAvailabilityLoading(false)
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [selectedDate, selectedService, availabilityRetry])
 
     // Filtra e gera apenas os horários livres
     const availableTimes = useMemo(() => {
@@ -127,10 +149,15 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
         })
     }, [selectedDate, selectedTime])
 
+    const availabilityReady = !availabilityLoading && !availabilityError
+
     // Função que é disparada ao clicar no botão final de agendamento
-    const handleCreateBooking = async () => {
+    const submitBooking = async () => {
         try {
-            if (!selectDate || !selectedService) return
+            if (!selectDate || !selectedService) {
+                toast.error("Escolha o serviço, a data e o horário antes de confirmar.")
+                return
+            }
             setIsSubmitting(true) // Ativa a trava de segurança para evitar cliques duplos
 
             // 1. Cria a reserva no banco de dados chamando a nossa Server Action
@@ -142,52 +169,93 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
             })
 
             // 2. Se for pagamento no local, finaliza direto
-            toast.success("Reserva realizada com sucesso!")
+            toast.success("Agendamento confirmado! Você será direcionado às suas reservas.")
 
             // Redireciona o usuário para o histórico de reservas desta barbearia
             router.push(`/${barbershop.slug}/reservas`)
         } catch (error) {
             console.error(error)
-            toast.error("Erro ao criar reserva. Tente novamente.")
+            toast.error("Não foi possível confirmar o agendamento. Verifique o horário e tente novamente.")
             setIsSubmitting(false) // Destrava o botão caso dê algum erro
         }
     }
 
+    const handleCreateBooking = async () => {
+        if (!session?.user) {
+            setPendingConfirmation(true)
+            setLoginOpen(true)
+            return
+        }
+
+        await submitBooking()
+    }
+
+    useEffect(() => {
+        if (pendingConfirmation && session?.user && !loginOpen) {
+            setPendingConfirmation(false)
+            void submitBooking()
+        }
+    }, [loginOpen, pendingConfirmation, session?.user])
+
 
     return (
-        <div className="space-y-6">
-            {/* Indicador de Progresso & Botão Voltar */}
-            <div className="flex items-center justify-between">
-                <Button variant="outline" size="icon" className="h-10 w-10 hover:bg-secondary transition-all" onClick={handleBack}>
-                    <ChevronLeftIcon className="h-5 w-5 text-white" />
+        <div className="space-y-7">
+            <div className="flex items-center justify-between gap-3">
+                <Button aria-label="Voltar para a etapa anterior" variant="outline" size="icon" className="shrink-0" onClick={handleBack}>
+                    <ChevronLeftIcon className="h-5 w-5 text-foreground" />
                 </Button>
+                <p className="text-sm font-semibold text-muted-foreground">Etapa {step} de {BOOKING_STEPS.length}</p>
             </div>
+
+            <ol className="grid grid-cols-4 gap-2" aria-label="Etapas do agendamento">
+                {BOOKING_STEPS.map((label, index) => {
+                    const isCurrent = index + 1 === step
+                    const isComplete = index + 1 < step
+                    return (
+                        <li key={label} className="min-w-0">
+                            <div className={`h-1.5 rounded-full ${isCurrent || isComplete ? "bg-primary" : "bg-muted"}`} aria-current={isCurrent ? "step" : undefined} />
+                            <span className={`mt-2 block truncate text-[10px] font-semibold sm:text-xs ${isCurrent ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+                        </li>
+                    )
+                })}
+            </ol>
 
             {/* Renderização Condicional da Etapa Ativa */}
             {step === 1 && (
                 <div className="space-y-4">
-                    <h2 className="text-lg font-semibold">Selecione o Serviço</h2>
-                    <p className="text-sm text-muted-foreground">Escolha o serviço que você deseja agendar hoje.</p>
+                    <h2 className="text-lg font-semibold">Escolha um serviço</h2>
+                    <p className="text-sm text-muted-foreground">Selecione o serviço que você quer agendar.</p>
 
                     {/* Aqui vamos listar os serviços da barbearia no próximo passo */}
                     <div className="space-y-3">
                         {barbershop.services.map((service) => (
                             <Card
                                 key={service.id}
-                                className="cursor-pointer hover:border-primary transition-all"
+                                className="cursor-pointer rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 hover:border-border/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-none"
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => {
                                     setSelectedService(service)
                                     setStep(2) // Avança para o Passo 2 após escolher o serviço
                                 }}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault()
+                                        setSelectedService(service)
+                                        setStep(2)
+                                    }
+                                }}
                             >
-                                <CardContent className="p-4 flex justify-between items-center">
-                                    <div>
+                                <CardContent className="flex min-h-24 items-center gap-4 p-4">
+                                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><ScissorsIcon className="size-5" /></span>
+                                    <div className="min-w-0 flex-1">
                                         <h3 className="font-semibold text-sm">{service.name}</h3>
                                         <p className="text-xs text-muted-foreground line-clamp-2">{service.description}</p>
-                                        <p className="text-sm font-bold mt-2 text-primary">
+                                        <p className="text-sm font-semibold mt-2 text-foreground">
                                             {Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(service.price))}
                                         </p>
                                     </div>
+                                    <ChevronLeftIcon className="size-4 rotate-180 text-muted-foreground" />
                                 </CardContent>
                             </Card>
                         ))}
@@ -197,25 +265,34 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
 
             {step === 2 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
-                    <h2 className="text-lg font-semibold">Escolha o Profissional</h2>
-                    <p className="text-sm text-muted-foreground">Serviço selecionado: <strong className="text-primary">{selectedService?.name}</strong></p>
+                    <h2 className="text-lg font-semibold">Escolha um profissional</h2>
+                    <p className="text-sm text-muted-foreground">Serviço: <strong className="font-semibold text-foreground">{selectedService?.name}</strong></p>
 
                     <div className="space-y-3">
                         {/* Opção para escolher qualquer profissional */}
                         <Card
-                            className="cursor-pointer hover:border-primary transition-all"
+                            className="cursor-pointer rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 hover:border-border/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-none"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => {
                                 setSelectedBarber(null) // null significa "Qualquer Profissional"
                                 setStep(3)              // Avança para o passo 3 (calendário)
                             }}
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault()
+                                    setSelectedBarber(null)
+                                    setStep(3)
+                                }
+                            }}
                         >
-                            <CardContent className="p-4 flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center font-semibold text-xs text-primary">
-                                    Qualquer
+                            <CardContent className="flex min-h-20 items-center gap-3 p-4">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
+                                    <UserRoundIcon className="size-5" />
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-sm">Qualquer Profissional</h3>
-                                    <p className="text-xs text-muted-foreground">O barbeiro mais rápido disponível</p>
+                                    <p className="text-xs text-muted-foreground">Encontre o primeiro horário disponível.</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -224,19 +301,30 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                         {barbershop.barbers.map((barber) => (
                             <Card
                                 key={barber.id}
-                                className="cursor-pointer hover:border-primary transition-all"
+                            className="cursor-pointer rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 hover:border-border/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-none"
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => {
                                     setSelectedBarber(barber) // Guarda o barbeiro selecionado
                                     setStep(3)                // Avança para o calendário
                                 }}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault()
+                                        setSelectedBarber(barber)
+                                        setStep(3)
+                                    }
+                                }}
                             >
-                                <CardContent className="p-4 flex items-center gap-3">
+                                <CardContent className="flex min-h-20 items-center gap-3 p-4">
                                     {/* Imagem do profissional */}
                                     <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                                        <img
+                                        <Image
                                             src={barber.imageUrl}
                                             alt={barber.name}
-                                            className="object-cover w-full h-full"
+                                            fill
+                                            sizes="48px"
+                                            className="object-cover"
                                         />
                                     </div>
                                     <div>
@@ -252,25 +340,25 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
 
             {step === 3 && (
                 <div className="space-y-6 animate-in fade-in duration-300">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Selecione o Dia e Horário</h2>
+                    <div className="flex flex-col items-start gap-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
+                        <h2 className="text-lg font-semibold">Escolha uma data e um horário</h2>
                         
                         {/* Botão para abrir o seletor de calendário tradicional caso o cliente prefira */}
                         <Button 
                             variant="outline" 
                             size="sm"
-                            className="text-xs border-primary text-primary hover:bg-primary/10"
+                            className="text-xs text-primary hover:bg-primary/10"
                             onClick={() => {
                                 // Se já tiver uma data customizada, limpa para voltar à lista sugerida, senão define hoje
                                 if (selectedDate && !isToday(selectedDate)) {
                                     setSelectedDate(new Date())
-                                    toast.info("Voltando para as datas sugeridas.")
+                                    toast.info("Próximas datas disponíveis novamente.")
                                 } else {
                                     // Define uma data de amanhã temporária para abrir o calendário
                                     const tomorrow = new Date()
                                     tomorrow.setDate(tomorrow.getDate() + 1)
                                     setSelectedDate(tomorrow)
-                                    toast.info("Selecione um dia específico no calendário.")
+                                    toast.info("Escolha uma data no calendário.")
                                 }
                             }}
                         >
@@ -278,11 +366,30 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                         </Button>
                     </div>
 
+                    {availabilityLoading && (
+                            <p role="status" className="text-sm text-muted-foreground">
+                            Buscando horários disponíveis...
+                        </p>
+                    )}
+
+                    {availabilityError && (
+                        <div role="alert" className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+                            <p className="text-sm text-destructive">
+                                Não foi possível carregar os horários. Tente novamente.
+                            </p>
+                            <Button type="button" variant="outline" onClick={() => setAvailabilityRetry((value) => value + 1)}>
+                                Tentar novamente
+                            </Button>
+                        </div>
+                    )}
+
+                    {availabilityReady && (
+                        <>
                     {/* SELETOR DE CALENDÁRIO TRADICIONAL (Caso o cliente queira uma data distante específica) */}
                     {selectedDate && !isToday(selectedDate) && selectedDate.getDate() !== new Date().getDate() ? (
                         <div className="space-y-6">
                             <div className="flex justify-center">
-                                <div className="w-[300px] bg-card p-3 rounded-xl border border-solid border-secondary">
+                                <div className="w-full max-w-[320px] rounded-xl bg-muted/45 p-3 ring-1 ring-border">
                                     <Calendar
                                         mode="single"
                                         locale={ptBR}
@@ -303,14 +410,14 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                 </h3>
 
                                 {availableTimes.length > 0 ? (
-                                    <div className="grid grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4 sm:gap-3">
                                         {availableTimes.map((time) => (
                                             <Button
                                                 key={time}
                                                 variant={selectedTime === time ? "default" : "outline"}
-                                                className={`rounded-full py-4 transition-all ${selectedTime === time
+                                                className={`min-h-11 rounded-lg py-4 transition-colors ${selectedTime === time
                                                     ? "bg-primary text-primary-foreground font-semibold"
-                                                    : "hover:border-primary text-gray-300"
+                                                    : "hover:border-primary text-secondary-foreground"
                                                     }`}
                                                 onClick={() => {
                                                     setSelectedTime(time)
@@ -323,7 +430,7 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                     </div>
                                 ) : (
                                     <p className="text-xs text-muted-foreground text-center py-4">
-                                        Não há horários disponíveis para este dia.
+                                        Nenhum horário disponível nesta data. Escolha outro dia.
                                     </p>
                                 )}
                             </div>
@@ -363,11 +470,11 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                 return (
                                     <div 
                                         key={daysToAdd} 
-                                        className="bg-card p-4 rounded-xl border border-secondary space-y-3"
+                                        className="space-y-3 rounded-xl bg-muted/45 p-3 ring-1 ring-border sm:p-4"
                                     >
                                         {/* Cabeçalho do Dia (Ex: Quinta-feira, 18 de Junho) */}
                                         <div className="flex justify-between items-center border-b border-secondary/50 pb-2">
-                                            <span className="text-sm font-bold capitalize text-gray-200">
+                                            <span className="text-sm font-bold capitalize text-foreground">
                                                 {format(targetDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                                             </span>
                                             {daysToAdd === 0 && (
@@ -379,12 +486,12 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
 
                                         {/* Grade Estilo Grid de Horários Livres (Sem Barra de Rolar) */}
                                         {dayTimes.length > 0 ? (
-                                            <div className="grid grid-cols-4 gap-2 pt-1">
+                                            <div className="grid grid-cols-2 gap-2 pt-1 min-[360px]:grid-cols-3 sm:grid-cols-4">
                                                 {dayTimes.map((time) => (
                                                     <Button
                                                         key={time}
                                                         variant="outline"
-                                                        className="rounded-lg py-2 text-xs hover:border-primary text-gray-300 w-full"
+                                                className="min-h-11 w-full rounded-lg py-2 text-xs text-secondary-foreground hover:border-primary"
                                                         onClick={() => {
                                                             setSelectedDate(targetDate)
                                                             setSelectedTime(time)
@@ -397,7 +504,7 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                                             </div>
                                         ) : (
                                             <p className="text-xs text-muted-foreground py-1">
-                                                Nenhum horário disponível para este dia.
+                                                Nenhum horário disponível nesta data. Escolha outro dia.
                                             </p>
                                         )}
                                     </div>
@@ -405,40 +512,46 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                             })}
                         </div>
                     )}
+                        </>
+                    )}
                 </div>
             )}
 
             {step === 4 && (
                 <div className="space-y-6 animate-in fade-in duration-300">
-                    <h2 className="text-lg font-semibold">Resumo do Agendamento</h2>
-                    <p className="text-sm text-muted-foreground -mt-4">Revise os dados antes de confirmar o seu agendamento.</p>
+                    <h2 className="text-lg font-semibold">Revise e confirme seu agendamento</h2>
+                    <p className="text-sm text-muted-foreground -mt-4">Confira o serviço, profissional, data e horário antes de confirmar.</p>
 
                     {/* 1. Componente de Resumo Reutilizado do seu projeto */}
                     {selectedService && selectDate && (
-                        <div className="border border-solid border-secondary rounded-xl overflow-hidden bg-card p-4">
-                            <BookingSummary
-                                barbershop={barbershop}
-                                service={selectedService}
-                                selectDay={selectDate}
-                                barber={selectedBarber}
-                                paymentMethod="Pagar no local"
-                            />
-                        </div>
+                        <BookingSummary
+                            barbershop={barbershop}
+                            service={selectedService}
+                            selectDay={selectDate}
+                            barber={selectedBarber}
+                            paymentMethod="Pagar no local"
+                        />
                     )}
 
                     {/* 2. Informações Claras de Pagamento Presencial */}
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+                    <Button asChild variant="outline" className="w-full justify-start gap-2">
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(barbershop.address)}`} target="_blank" rel="noopener noreferrer">
+                            <MapPinIcon className="size-4 text-primary" /> Ver localização no Google Maps
+                        </a>
+                    </Button>
+
+                    <div className="space-y-2 rounded-xl bg-success/10 p-4 ring-1 ring-success/20">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                                <BanknoteIcon className="h-4 w-4 text-emerald-400" />
-                                <span>Pagamento no Estabelecimento</span>
+                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <BanknoteIcon className="h-4 w-4 text-success" />
+                                <span>Pagamento no local</span>
                             </div>
-                            <Badge className="bg-emerald-500/20 text-emerald-400 border-none hover:bg-emerald-500/20 text-xs font-semibold">
-                                Pagar no Local
+                            <Badge className="bg-success/20 text-success border-none hover:bg-success/20 text-xs font-semibold">
+                                Pagar no local
                             </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                            Nenhum valor será cobrado agora pelo site. Você realiza o pagamento presencialmente na barbearia no momento do atendimento (via Pix, Cartão ou Dinheiro).
+                            Nenhum valor será cobrado agora. Você paga presencialmente na barbearia, no momento do atendimento.
                         </p>
                     </div>
 
@@ -446,12 +559,22 @@ export default function BookingFlow({ barbershop }: BookingFlowProps) {
                     <Button 
                         onClick={handleCreateBooking} 
                         disabled={isSubmitting} 
-                        className="w-full py-6 text-lg font-bold"
+                        className="w-full py-6 text-base font-bold"
                     >
-                        {isSubmitting ? "Finalizando agendamento..." : "Confirmar e Agendar"}
+                        <CheckCircle2Icon className="size-4" />
+                        {isSubmitting ? "Confirmando agendamento..." : "Confirmar agendamento"}
                     </Button>
                 </div>
             )}
+
+            <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+                <DialogContent className="w-[90%] sm:max-w-md">
+                    <SignInDiaLog
+                        redirectAfterLogin={false}
+                        onLoginSuccess={() => setLoginOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
