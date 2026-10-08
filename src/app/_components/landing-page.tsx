@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -12,6 +12,7 @@ import {
   Clock3,
   LayoutDashboard,
   Menu,
+  Pause,
   Play,
   Scissors,
   Search,
@@ -306,8 +307,21 @@ export default function LandingPage() {
   const landingRoot = useRef<HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeFeature, setActiveFeature] = useState<(typeof features)[number]["id"]>("agenda")
+  const [featurePaused, setFeaturePaused] = useState(false)
   const active = features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
+
+  useEffect(() => {
+    if (featurePaused) return
+    const timer = window.setInterval(() => {
+      setActiveFeature((current) => {
+        const index = features.findIndex((feature) => feature.id === current)
+        return features[(index + 1) % features.length].id
+      })
+    }, 5200)
+
+    return () => window.clearInterval(timer)
+  }, [featurePaused])
 
   useGSAP(() => {
     const media = gsap.matchMedia()
@@ -460,19 +474,27 @@ export default function LandingPage() {
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveFeature(feature.id)}
-                    className={`group flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring hover:-translate-y-0.5 hover:border-primary/25 hover:bg-card hover:text-foreground hover:shadow-[0_10px_22px_hsl(var(--foreground)/0.06)] ${selected ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_24px_hsl(var(--primary)/0.18)]" : "border-transparent text-muted-foreground"}`}
+                    onMouseEnter={() => setFeaturePaused(true)}
+                    onMouseLeave={() => setFeaturePaused(false)}
+                    className={`group relative flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring hover:-translate-y-0.5 hover:border-primary/25 hover:bg-card hover:text-foreground hover:shadow-[0_10px_22px_hsl(var(--foreground)/0.06)] ${selected ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_24px_hsl(var(--primary)/0.18)]" : "border-transparent text-muted-foreground"}`}
                   >
                     <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${selected ? "bg-primary-foreground/15" : "border border-border bg-card"}`}><Icon className="size-4" /></span>
                     <span className="flex-1 text-sm font-bold">{feature.label}</span>
                     <ChevronRight className={`size-4 transition-transform duration-200 ${selected ? "translate-x-0" : "-translate-x-1 group-hover:translate-x-0"}`} />
+                    {selected && <span className="absolute inset-x-3 bottom-0 h-0.5 overflow-hidden rounded-full bg-primary-foreground/20"><span className="block h-full origin-left animate-[landing-feature-progress_5.2s_linear] bg-primary-foreground" /></span>}
                   </button>
                 )
               })}
             </div>
           </div>
 
-          <div className="self-start rounded-2xl border border-border/70 bg-muted/75 p-5 shadow-[0_18px_42px_hsl(var(--foreground)/0.06)] sm:p-8">
-            <div className="flex size-12 items-center justify-center rounded-xl bg-card text-primary shadow-[0_14px_30px_hsl(var(--foreground)/0.1)]"><ActiveIcon className="size-6" /></div>
+          <div key={active.id} className="landing-mode-preview__content self-start rounded-2xl border border-border/70 bg-muted/75 p-5 shadow-[0_18px_42px_hsl(var(--foreground)/0.06)] sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-card text-primary shadow-[0_14px_30px_hsl(var(--foreground)/0.1)]"><ActiveIcon className="size-6" /></div>
+              <button type="button" onClick={() => setFeaturePaused((paused) => !paused)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground" aria-pressed={featurePaused}>
+                <Pause className="size-3" /> {featurePaused ? "Retomar demo" : "Pausar demo"}
+              </button>
+            </div>
             <h3 className="mt-8 max-w-xl text-2xl font-extrabold tracking-[-0.025em] sm:text-4xl">{active.title}</h3>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">{active.copy}</p>
             <div className="mt-10 grid gap-3 sm:grid-cols-3">

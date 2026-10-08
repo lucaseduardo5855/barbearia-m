@@ -294,6 +294,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes landing-feature-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 @layer base {
   ::selection {
     @apply bg-primary/30 text-foreground;
