@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "set \"BARBER_NEXT_DIST_DIR=.next-dev\"&& next dev",
+    "dev:landing": "set \"BARBER_LANDING_MODE=true\"&& set \"BARBER_NEXT_DIST_DIR=.next-landing\"&& next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

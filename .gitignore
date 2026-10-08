@@ -11,6 +11,7 @@
 
 # next.js
 /.next/
+/.next-*/
 /out/
 
 # production
@@ -46,3 +47,11 @@ estudo_plataforma_saas.md
 certificates
 scratch/
 backups/
+
+# local coding-agent metadata and preview artifacts
+.agent/
+.agents/
+.codex/
+.cursor/
+.gemini/
+.impeccable/
