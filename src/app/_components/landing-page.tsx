@@ -524,22 +524,28 @@ function CustomerFlowPreview() {
             return (
               <div
                 key={step.title}
-                className="relative rounded-2xl border border-border bg-background p-5"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-background p-5 transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-within:border-primary/30 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.025] hover:shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)]"
               >
+                <span
+                  className="pointer-events-none absolute inset-x-5 top-0 h-px origin-left scale-x-0 bg-primary/70 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
+                  aria-hidden="true"
+                />
                 <div className="flex items-center justify-between">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="size-5" />
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-[-5deg] group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
+                    <Icon className="size-5 transition-transform duration-500 group-hover:scale-105" />
                   </span>
-                  <span className="text-xs font-extrabold text-muted-foreground">
+                  <span className="text-xs font-extrabold text-muted-foreground transition-colors duration-500 group-hover:text-primary">
                     0{index + 1}
                   </span>
                 </div>
-                <h3 className="mt-6 text-lg font-extrabold">{step.title}</h3>
+                <h3 className="mt-6 text-lg font-extrabold transition-colors duration-500 group-hover:text-primary">
+                  {step.title}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {step.copy}
                 </p>
                 {index < steps.length - 1 && (
-                  <ArrowRight className="absolute -right-4 top-1/2 z-10 hidden size-7 -translate-y-1/2 rounded-full border border-border bg-card p-1.5 text-primary md:block" />
+                  <ArrowRight className="absolute -right-4 top-1/2 z-10 hidden size-7 -translate-y-1/2 rounded-full border border-border bg-card p-1.5 text-primary transition-[transform,box-shadow] duration-500 group-hover:translate-x-1 group-hover:shadow-[0_8px_18px_-10px_hsl(var(--primary)/0.6)] md:block" />
                 )}
               </div>
             )

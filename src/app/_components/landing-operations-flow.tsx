@@ -110,9 +110,9 @@ function FlowCard({
             <span className="font-bold text-primary">3 profissionais</span>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-1.5" aria-hidden="true">
-            <span className="h-1.5 rounded-full bg-primary" />
-            <span className="h-1.5 rounded-full bg-info" />
-            <span className="h-1.5 rounded-full bg-success" />
+            <span className="h-1.5 origin-left rounded-full bg-primary transition-transform duration-700 ease-out group-hover:scale-x-105" />
+            <span className="h-1.5 origin-left rounded-full bg-info transition-transform delay-75 duration-700 ease-out group-hover:scale-x-105" />
+            <span className="h-1.5 origin-left rounded-full bg-success transition-transform delay-150 duration-700 ease-out group-hover:scale-x-105" />
           </div>
         </div>
       )}
