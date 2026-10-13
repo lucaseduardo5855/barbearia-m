@@ -1,25 +1,60 @@
 "use client"
+import { MoneyInput } from "@/components/ui/money-input"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
-import { registerBarbershop } from "@/app/_actions/register-barbershop"
+import {
+  registerBarbershop,
+  getOwnedBarbershop,
+} from "@/app/_actions/register-barbershop"
 import { toast } from "sonner"
-import Image from "next/image"
-import { CheckIcon, UserIcon, UsersIcon, BuildingIcon, StoreIcon, X } from "lucide-react"
+import { BrandLogo } from "@/app/_components/brand-logo"
+import {
+  CheckIcon,
+  UserIcon,
+  UsersIcon,
+  BuildingIcon,
+  StoreIcon,
+  Plus,
+  Trash2,
+  ArrowLeft,
+} from "lucide-react"
 import ProfileCard from "@/app/_components/profilecard"
-import { UploadButton } from "@/app/_lib/uploadthing"
-
-const fontStyle = `
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-  .font-outfit {
-    font-family: 'Outfit', sans-serif;
-  }
-`
+import { PhotoUploadField } from "@/app/[slug]/admin/_components/photo-upload-field"
+import { defaultOpeningDays } from "@/lib/opening-hours"
+import { registrationSchema } from "@/lib/registration-schema"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import SignInDialog from "@/app/_components/sign-in-dialong"
 
 export default function RegisterBarbershopPage() {
   const router = useRouter()
+  const { data: session } = useSession()
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [existingSlug, setExistingSlug] = useState<string | null>(null)
+  useEffect(() => {
+    if (!session?.user) return
+    let active = true
+    void getOwnedBarbershop()
+      .then((shop) => {
+        if (active && shop) {
+          setExistingSlug(shop.slug)
+          setErrorMessage(
+            "Esta conta já possui a barbearia " +
+              shop.name +
+              ". Abra seu painel para atualizar os dados.",
+          )
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [session?.user])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Controle de passos (1: Perfil, 2: Dados Básicos, 3: Localização, 4: Serviços, 5: Expediente, 6: Convite)
@@ -27,7 +62,9 @@ export default function RegisterBarbershopPage() {
 
   // --- ESTADOS DO FORMULÁRIO ---
   // Passo 1: Perfil
-  const [businessProfile, setBusinessProfile] = useState<"alone" | "team" | "small" | "medium" | "">("")
+  const [businessProfile, setBusinessProfile] = useState<
+    "alone" | "team" | "small" | "medium" | ""
+  >("")
   const [heardFrom, setHeardFrom] = useState("")
 
   // Passo 2: Sobre o Negócio
@@ -35,7 +72,6 @@ export default function RegisterBarbershopPage() {
   const [description, setDescription] = useState("")
   const [welcomeMessage, setWelcomeMessage] = useState("")
   const [imageUrl, setImageUrl] = useState("")
-  const [bannerUrl, setBannerUrl] = useState("")
   const [instagramUrl, setInstagramUrl] = useState("")
 
   // Passo 3: Localização
@@ -43,49 +79,92 @@ export default function RegisterBarbershopPage() {
   const [phone, setPhone] = useState("")
 
   // Passo 4: Serviços sugeridos
-  const [cortePrice, setCortePrice] = useState("40.00")
-  const [barbaPrice, setBarbaPrice] = useState("30.00")
-  const [sobrancelhaPrice, setSobrancelhaPrice] = useState("20.00")
-
-  // Passo 5: Expediente
-  const [workDays, setWorkDays] = useState(["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"])
+  const [services, setServices] = useState([
+    { name: "Corte de cabelo", price: "40.00", description: "" },
+    { name: "Barba", price: "30.00", description: "" },
+    { name: "Sobrancelha", price: "20.00", description: "" },
+  ])
+  const [openingHours, setOpeningHours] = useState(
+    defaultOpeningDays.map((day) => ({ ...day })),
+  )
+  const updateService = (
+    index: number,
+    field: "name" | "price",
+    value: string,
+  ) =>
+    setServices((current) =>
+      current.map((service, i) =>
+        i === index ? { ...service, [field]: value } : service,
+      ),
+    )
 
   // Passo 6: Convite
   const [barberName, setBarberName] = useState("")
+  const [barberEmail, setBarberEmail] = useState("")
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
-    if (!name || !address || !phone || !description || !imageUrl) {
-      toast.error("Por favor, preencha todas as informações obrigatórias nos passos anteriores.")
-      setStep(2) // Volta para o passo dos dados obrigatórios
+    if (!session?.user) {
+      setLoginOpen(true)
       return
     }
-
+    setErrorMessage("")
+    setExistingSlug(null)
+    const payload = {
+      name,
+      address,
+      phones: [phone],
+      description,
+      imageUrl,
+      welcomeMessage: welcomeMessage || undefined,
+      instagramUrl: instagramUrl || undefined,
+      services,
+      openingHours,
+      barberName: barberName || undefined,
+      barberEmail: barberEmail || undefined,
+    }
+    const parsed = registrationSchema.safeParse(payload)
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]
+      const message = issue.message
+      setErrorMessage(message)
+      toast.error(message)
+      const field = issue.path[0]
+      setStep(
+        field === "services"
+          ? 4
+          : field === "openingHours"
+            ? 5
+            : field === "phones" || field === "address"
+              ? 3
+              : field === "barberEmail"
+                ? 6
+                : 2,
+      )
+      return
+    }
     try {
       setIsSubmitting(true)
-
-      const barbershop = await registerBarbershop({
-        name,
-        address,
-        phones: [phone],
-        description,
-        imageUrl,
-        bannerUrl: bannerUrl || undefined,
-        welcomeMessage: welcomeMessage || undefined,
-        instagramUrl: instagramUrl || undefined,
-        cortePrice,
-        barbaPrice,
-        sobrancelhaPrice,
-        workDays,
-        barberName: barberName || undefined,
-      })
-
-      toast.success("Barbearia cadastrada com sucesso! Iniciando seu período de testes de 7 dias.")
-      router.push(`/${barbershop.slug}/admin`)
-    } catch (error: any) {
-      console.error(error)
-      toast.error("Não foi possível cadastrar a barbearia. Verifique os dados e tente novamente.")
+      const result = await registerBarbershop(payload)
+      if (!result.ok) {
+        setErrorMessage(result.message)
+        setExistingSlug(
+          "existingSlug" in result ? result.existingSlug || null : null,
+        )
+        if ("needsLogin" in result && result.needsLogin) setLoginOpen(true)
+        toast.error(result.message)
+        return
+      }
+      toast.success(
+        "Barbearia cadastrada! Seu período de testes de 7 dias começou.",
+      )
+      router.push(`/${result.slug}/admin`)
+    } catch {
+      const message =
+        "Não foi possível conectar ao servidor. Tente novamente; seus dados foram mantidos."
+      setErrorMessage(message)
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -93,59 +172,96 @@ export default function RegisterBarbershopPage() {
 
   // Lista dos Passos da Barra Lateral (Mapeando com a estética do Gendo)
   const stepsList = [
-    { id: 1, title: "Perfil do Negócio", desc: "Escolha o modelo do seu negócio" },
-    { id: 2, title: "Sobre o seu negócio", desc: "Começando a conhecer sua barbearia" },
-    { id: 3, title: "Localização", desc: "Endereço e contato do estabelecimento" },
-    { id: 4, title: "Serviços sugeridos", desc: "Defina os preços básicos de serviços" },
+    {
+      id: 1,
+      title: "Perfil do Negócio",
+      desc: "Escolha o modelo do seu negócio",
+    },
+    {
+      id: 2,
+      title: "Sobre o seu negócio",
+      desc: "Começando a conhecer sua barbearia",
+    },
+    {
+      id: 3,
+      title: "Localização",
+      desc: "Endereço e contato do estabelecimento",
+    },
+    {
+      id: 4,
+      title: "Serviços sugeridos",
+      desc: "Defina os preços básicos de serviços",
+    },
     { id: 5, title: "Expediente", desc: "Dias e horários de atendimento" },
-    { id: 6, title: "Convite", desc: "Convide seus colaboradores" }
+    {
+      id: 6,
+      title: "Concluir",
+      desc: "Revise e adicione um profissional, se quiser",
+    },
   ]
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: fontStyle }} />
-      <div className="min-h-screen bg-background text-foreground grid grid-cols-1 md:grid-cols-12 overflow-hidden font-outfit">
-
+      <div className="grid min-h-screen grid-cols-1 overflow-hidden bg-background text-foreground md:grid-cols-12">
         {/* PAINEL ESQUERDO: Estilo Gendo Roxo Premium */}
-        <section className="hidden md:flex md:col-span-5 bg-gradient-to-br from-primary to-primary/80 p-12 flex-col justify-between relative text-foreground select-none">
-          <div className="absolute top-0 right-0 opacity-15 w-80 h-80 rounded-full bg-foreground/20 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-10 left-10 opacity-10 w-96 h-96 rounded-full bg-foreground/30 blur-2xl pointer-events-none" />
+        <section className="relative hidden select-none flex-col justify-between border-r border-border bg-card p-12 text-foreground md:col-span-5 md:flex">
+          <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-foreground/20 opacity-0 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-10 left-10 h-96 w-96 rounded-full bg-foreground/30 opacity-0 blur-2xl" />
 
-          <div className="space-y-6 z-10">
-            <Image src="/logo.png" alt="FSW Barber" width={130} height={22} className="invert brightness-0" />
+          <div className="z-10 space-y-6">
+            <BrandLogo />
             <div className="space-y-3 pt-4">
-              <h2 className="text-4xl font-extrabold tracking-tight leading-tight max-w-sm">
+              <h2 className="max-w-sm text-4xl font-extrabold leading-tight tracking-tight">
                 Poucos passos para transformar seu negócio
               </h2>
             </div>
           </div>
 
           {/* Lista de Passos Lateral */}
-          <div className="relative flex flex-col justify-center my-auto pl-2 py-8 z-10">
-
+          <div className="relative z-10 my-auto flex flex-col justify-center py-8 pl-2">
             <div className="space-y-5">
               {stepsList.map((s) => {
                 const isActive = step === s.id
                 const isCompleted = step > s.id
                 return (
                   <div key={s.id} className="flex items-center gap-4">
-
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-base border-2 transition-all duration-300 shrink-0 ${isCompleted
-                      ? "bg-foreground text-primary border-foreground shadow-lg"
-                      : isActive
-                        ? "bg-foreground/20 text-foreground border-foreground scale-105 shadow-md font-extrabold"
-                        : "bg-transparent text-foreground/50 border-foreground/30"
-                      }`}>
-                      {isCompleted ? <CheckIcon className="w-5 h-5 stroke-[3.5]" /> : s.id}
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold transition-all duration-300 ${
+                        isCompleted
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : isActive
+                            ? "border-primary bg-primary/10 font-medium text-primary"
+                            : "border-foreground/30 bg-transparent text-muted-foreground"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckIcon className="h-5 w-5 stroke-[3.5]" />
+                      ) : (
+                        s.id
+                      )}
                     </div>
 
                     <div>
-                      <p className={`text-base font-bold transition-all duration-300 leading-tight ${isActive ? "text-foreground" : isCompleted ? "text-foreground/90" : "text-foreground/40"
-                        }`}>
+                      <p
+                        className={`text-base font-bold leading-tight transition-all duration-300 ${
+                          isActive
+                            ? "text-foreground"
+                            : isCompleted
+                              ? "text-foreground/90"
+                              : "text-muted-foreground"
+                        }`}
+                      >
                         {s.title}
                       </p>
-                      <p className={`text-xs transition-all duration-300 ${isActive ? "text-foreground/80" : isCompleted ? "text-foreground/60" : "text-foreground/30"
-                        }`}>
+                      <p
+                        className={`text-xs transition-all duration-300 ${
+                          isActive
+                            ? "text-muted-foreground"
+                            : isCompleted
+                              ? "text-muted-foreground"
+                              : "text-muted-foreground"
+                        }`}
+                      >
                         {s.desc}
                       </p>
                     </div>
@@ -155,50 +271,76 @@ export default function RegisterBarbershopPage() {
             </div>
           </div>
 
-          <div className="text-xs text-foreground/60 z-10 font-medium">
-            © FSW Barber SaaS • Período de Testes de 7 Dias
+          <div className="z-10 text-xs font-medium text-foreground/60">
+            © Barber-M • 7 dias para testar
           </div>
         </section>
 
         {/* PAINEL DIREITO: Formulário Interativo com as Etapas */}
-        <section className="col-span-12 md:col-span-7 flex flex-col justify-center p-6 md:p-16 overflow-y-auto">
-          <div className="max-w-xl mx-auto w-full space-y-6">
-
+        <section className="col-span-12 flex flex-col justify-center overflow-y-auto p-6 md:col-span-7 md:p-16">
+          <div className="mx-auto w-full max-w-xl space-y-6">
             {/* Header Responsivo para Mobile */}
-            <div className="flex flex-col items-center text-center md:hidden mb-4">
-              <Image src="/logo.png" alt="FSW Barber" width={110} height={18} className="object-contain mb-3" />
-              <h2 className="text-xl font-bold text-foreground">Configurar sua Barbearia</h2>
-              <span className="text-[10px] bg-primary/20 text-primary px-3 py-0.5 rounded-full font-bold uppercase tracking-wider mt-2">
+            <div className="mb-4 flex flex-col items-center text-center md:hidden">
+              <BrandLogo />
+              <h2 className="text-xl font-bold text-foreground">
+                Configurar sua Barbearia
+              </h2>
+              <span className="mt-2 rounded-full bg-primary/20 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
                 Passo {step} de 6
               </span>
             </div>
 
             {/* Cabeçalho da Etapa Corrente */}
             <div>
-              <h3 className="text-2xl font-extrabold tracking-tight text-foreground hidden md:block">
+              <h3 className="text-2xl font-medium tracking-tight text-foreground">
                 {step === 1 && "Com qual perfil você se encaixa?"}
                 {step === 2 && "Sobre o seu negócio"}
                 {step === 3 && "Onde fica?"}
                 {step === 4 && "Serviços sugeridos"}
                 {step === 5 && "Horário de funcionamento"}
-                {step === 6 && "Convide sua equipe"}
+                {step === 6 && "Tudo pronto para começar"}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                {step === 1 && "Para começar, é importante que você escolha o modelo que mais se encaixa ao seu negócio."}
-                {step === 2 && "Preencha o nome, logo e descrição da sua barbearia para configurarmos sua página."}
-                {step === 3 && "Conte-nos onde é seu negócio. Esta localização posicionará você nas ferramentas de busca."}
-                {step === 4 && "De acordo com o seu negócio, pré-definimos alguns preços e serviços. Você pode ajustá-los."}
-                {step === 5 && "Para finalizar, configure os dias e horários de atendimento da sua barbearia."}
-                {step === 6 && "Adicione outros profissionais para compartilhar sua agenda e recursos da barbearia."}
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {step === 1 &&
+                  "Para começar, é importante que você escolha o modelo que mais se encaixa ao seu negócio."}
+                {step === 2 &&
+                  "Preencha o nome, logo e descrição da sua barbearia para configurarmos sua página."}
+                {step === 3 &&
+                  "Conte-nos onde é seu negócio. Esta localização posicionará você nas ferramentas de busca."}
+                {step === 4 &&
+                  "De acordo com o seu negócio, pré-definimos alguns preços e serviços. Você pode ajustá-los."}
+                {step === 5 &&
+                  "Para finalizar, configure os dias e horários de atendimento da sua barbearia."}
+                {step === 6 &&
+                  "Confira o cadastro. Você pode adicionar o primeiro profissional agora ou depois pelo painel."}
               </p>
             </div>
 
+            {errorMessage && (
+              <div
+                role="alert"
+                className="rounded-lg border border-border bg-secondary/30 p-4 text-sm"
+              >
+                <p>{errorMessage}</p>
+                {existingSlug && (
+                  <Button asChild variant="outline" className="mt-3">
+                    <Link href={`/${existingSlug}/admin`}>
+                      Abrir meu painel
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
+            <Button asChild variant="ghost" className="gap-2">
+              <Link href="/">
+                <ArrowLeft className="size-4" /> Voltar ao início
+              </Link>
+            </Button>
             <form onSubmit={handleSubmit} className="space-y-5">
-
               {/* ETAPA 1: ESCOLHA DE PERFIL (Estilo Gendo Cards) */}
               {step === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {/* Card 1: Trabalho Sozinho */}
                     <ProfileCard
                       id="alone"
@@ -229,7 +371,6 @@ export default function RegisterBarbershopPage() {
                       description="Entre 5 a 10 funcionários"
                     />
 
-
                     {/* Card 4: Média / Grande Empresa */}
                     <ProfileCard
                       id="medium"
@@ -243,26 +384,57 @@ export default function RegisterBarbershopPage() {
 
                   {/* Campo complementar: Onde nos conheceu? */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Onde nos conheceu?</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Onde nos conheceu?
+                    </label>
                     <select
                       value={heardFrom}
                       onChange={(e) => setHeardFrom(e.target.value)}
-                      className="w-full py-3.5 px-3 rounded-lg border border-secondary bg-secondary/15 text-sm outline-none text-foreground focus:border-primary"
+                      className="w-full rounded-lg border border-secondary bg-secondary/15 px-3 py-3.5 text-sm text-foreground outline-none focus:border-primary"
                     >
-                      <option value="" disabled hidden className="bg-background text-foreground">Selecione uma categoria</option>
-                      <option value="instagram" className="bg-background text-foreground">Instagram</option>
-                      <option value="facebook" className="bg-background text-foreground">Facebook</option>
-                      <option value="google" className="bg-background text-foreground">Google / Busca</option>
-                      <option value="indication" className="bg-background text-foreground">Indicação de Amigo</option>
+                      <option
+                        value=""
+                        disabled
+                        hidden
+                        className="bg-background text-foreground"
+                      >
+                        Selecione uma categoria
+                      </option>
+                      <option
+                        value="instagram"
+                        className="bg-background text-foreground"
+                      >
+                        Instagram
+                      </option>
+                      <option
+                        value="facebook"
+                        className="bg-background text-foreground"
+                      >
+                        Facebook
+                      </option>
+                      <option
+                        value="google"
+                        className="bg-background text-foreground"
+                      >
+                        Google / Busca
+                      </option>
+                      <option
+                        value="indication"
+                        className="bg-background text-foreground"
+                      >
+                        Indicação de Amigo
+                      </option>
                     </select>
                   </div>
 
                   <Button
                     type="button"
-                    className="w-full py-6 text-sm font-extrabold mt-4"
+                    className="mt-4 w-full py-6 text-sm font-extrabold"
                     onClick={() => {
                       if (!businessProfile) {
-                        toast.error("Por favor, selecione um perfil para continuar.")
+                        toast.error(
+                          "Por favor, selecione um perfil para continuar.",
+                        )
                         return
                       }
                       setStep(2)
@@ -275,31 +447,37 @@ export default function RegisterBarbershopPage() {
 
               {/* ETAPA 2: SOBRE O NEGÓCIO */}
               {step === 2 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Nome da Barbearia *</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Nome da Barbearia *
+                    </label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className="py-5 bg-secondary/20 border-secondary focus-visible:ring-primary focus-visible:border-primary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm focus-visible:border-primary focus-visible:ring-primary"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Mensagem de Boas-Vindas</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Mensagem de Boas-Vindas
+                    </label>
                     <Input
                       placeholder="Ex: Estilo e tradição com os melhores profissionais"
                       value={welcomeMessage}
                       onChange={(e) => setWelcomeMessage(e.target.value)}
-                      className="py-5 bg-secondary/20 border-secondary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Descrição / Sobre a Barbearia *</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Descrição / Sobre a Barbearia *
+                    </label>
                     <textarea
-                      className="w-full min-h-[90px] rounded-lg border border-secondary bg-secondary/15 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary text-foreground"
+                      className="min-h-[90px] w-full rounded-lg border border-secondary bg-secondary/15 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                       placeholder="Conte um pouco sobre as especialidades da barbearia..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -307,97 +485,36 @@ export default function RegisterBarbershopPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Upload de Logo */}
-                    <div className="space-y-1.5 flex flex-col justify-end">
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Logo da Barbearia *</label>
-                      {imageUrl ? (
-                        <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
-                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Logo enviada!</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setImageUrl("")} 
-                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <UploadButton
-                          endpoint="imageUploader"
-                          onClientUploadComplete={(res) => {
-                            if (res?.[0]) {
-                              setImageUrl(res[0].url)
-                              toast.success("Logo enviada com sucesso!")
-                            }
-                          }}
-                          onUploadError={(error: Error) => {
-                            toast.error("Não foi possível enviar a logo. Tente novamente.")
-                          }}
-                          content={{
-                            button({ ready }) {
-                              if (ready) return "Enviar Logo"
-                              return "Carregando..."
-                            },
-                            allowedContent: "PNG, JPG (até 4MB)"
-                          }}
-                          appearance={{
-                            button: "bg-primary text-primary-foreground font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/95 transition-all cursor-pointer",
-                            allowedContent: "text-[10px] text-muted-foreground mt-1 text-center"
-                          }}
-                        />
-                      )}
+                  {session?.user ? (
+                    <PhotoUploadField
+                      label="Logo da barbearia"
+                      value={imageUrl}
+                      onChange={setImageUrl}
+                      alt={name || "Logo da barbearia"}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-border p-4">
+                      <p className="mb-3 text-sm text-muted-foreground">
+                        Entre na sua conta para enviar a logo e salvar o
+                        cadastro.
+                      </p>
+                      <Button onClick={() => setLoginOpen(true)}>
+                        Entrar na minha conta
+                      </Button>
                     </div>
-
-                    {/* Upload de Banner */}
-                    <div className="space-y-1.5 flex flex-col justify-end">
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Banner de Capa</label>
-                      {bannerUrl ? (
-                        <div className="relative w-full h-[46px] border border-primary/30 rounded-lg overflow-hidden flex items-center justify-between px-3 bg-primary/5">
-                          <span className="text-xs text-primary font-medium truncate max-w-[80%]">Banner enviado!</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setBannerUrl("")} 
-                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <UploadButton
-                          endpoint="imageUploader"
-                          onClientUploadComplete={(res) => {
-                            if (res?.[0]) {
-                              setBannerUrl(res[0].url)
-                              toast.success("Banner enviado com sucesso!")
-                            }
-                          }}
-                          onUploadError={(error: Error) => {
-                            toast.error("Não foi possível enviar o banner. Tente novamente.")
-                          }}
-                          content={{
-                            button({ ready }) {
-                              if (ready) return "Enviar Banner"
-                              return "Carregando..."
-                            },
-                            allowedContent: "PNG, JPG (até 4MB)"
-                          }}
-                          appearance={{
-                            button: "bg-primary text-primary-foreground font-extrabold text-xs py-3 w-full rounded-lg hover:bg-primary/85 transition-all cursor-pointer",
-                            allowedContent: "text-[10px] text-muted-foreground mt-1 text-center"
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
+                  )}
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Instagram da Barbearia</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Instagram da Barbearia
+                    </label>
                     <Input
                       placeholder="Ex: https://instagram.com/sua_barbearia"
                       value={instagramUrl}
                       onChange={(e) => setInstagramUrl(e.target.value)}
-                      className="py-5 bg-secondary/20 border-secondary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm"
                     />
                   </div>
 
@@ -415,7 +532,9 @@ export default function RegisterBarbershopPage() {
                       className="flex-1 py-6 text-sm font-bold"
                       onClick={() => {
                         if (!name || !description || !imageUrl) {
-                          toast.error("Preencha o nome, descrição e logo para continuar.")
+                          toast.error(
+                            "Preencha o nome, descrição e logo para continuar.",
+                          )
                           return
                         }
                         setStep(3)
@@ -429,26 +548,30 @@ export default function RegisterBarbershopPage() {
 
               {/* ETAPA 3: LOCALIZAÇÃO */}
               {step === 3 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Digite seu endereço... *</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Digite seu endereço... *
+                    </label>
                     <Input
                       placeholder="Ex: Avenida dos Cortes, 123 - Centro"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       required
-                      className="py-5 bg-secondary/20 border-secondary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Telefone / WhatsApp de Contato *</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Telefone / WhatsApp de Contato *
+                    </label>
                     <Input
                       placeholder="Ex: (11) 98765-4321"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
-                      className="py-5 bg-secondary/20 border-secondary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm"
                     />
                   </div>
 
@@ -466,7 +589,9 @@ export default function RegisterBarbershopPage() {
                       className="flex-1 py-6 text-sm font-bold"
                       onClick={() => {
                         if (!address || !phone) {
-                          toast.error("Preencha o endereço e telefone para continuar.")
+                          toast.error(
+                            "Preencha o endereço e telefone para continuar.",
+                          )
                           return
                         }
                         setStep(4)
@@ -478,127 +603,212 @@ export default function RegisterBarbershopPage() {
                 </div>
               )}
 
-              {/* ETAPA 4: SERVIÇOS SUGERIDOS */}
               {step === 4 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <p className="text-xs text-muted-foreground">Defina o preço dos serviços que serão oferecidos aos clientes:</p>
-
+                <div className="space-y-5">
+                  <p className="text-sm text-muted-foreground">
+                    Use as sugestões, ajuste os preços ou adicione outros
+                    serviços.
+                  </p>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">Corte de Cabelo</h4>
-                        <p className="text-xs text-muted-foreground">Tempo estimado: 30 minutos</p>
+                    {services.map((service, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-[minmax(0,1fr)_7rem_2.5rem] items-end gap-2 rounded-lg border border-border p-3"
+                      >
+                        <div className="space-y-1">
+                          <label htmlFor={`service-name-${index}`}>
+                            Serviço
+                          </label>
+                          <Input
+                            id={`service-name-${index}`}
+                            value={service.name}
+                            onChange={(e) =>
+                              updateService(index, "name", e.target.value)
+                            }
+                            placeholder="Nome do serviço"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label htmlFor={`service-price-${index}`}>
+                            Preço (R$)
+                          </label>
+                          <MoneyInput
+                            id={`service-price-${index}`}
+                            value={Number(service.price || 0)}
+                            onValueChange={(value) =>
+                              updateService(index, "price", String(value))
+                            }
+                          />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remover ${service.name || "serviço"}`}
+                          onClick={() =>
+                            setServices((current) =>
+                              current.filter((_, i) => i !== index),
+                            )
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          value={cortePrice}
-                          onChange={(e) => setCortePrice(e.target.value)}
-                          className="h-9 text-center bg-black/40 text-sm font-bold"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">Barba</h4>
-                        <p className="text-xs text-muted-foreground">Tempo estimado: 30 minutos</p>
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          value={barbaPrice}
-                          onChange={(e) => setBarbaPrice(e.target.value)}
-                          className="h-9 text-center bg-black/40 text-sm font-bold"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3.5 bg-secondary/20 border border-secondary rounded-lg">
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">Sobrancelha</h4>
-                        <p className="text-xs text-muted-foreground">Tempo estimado: 15 minutos</p>
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          value={sobrancelhaPrice}
-                          onChange={(e) => setSobrancelhaPrice(e.target.value)}
-                          className="h-9 text-center bg-black/40 text-sm font-bold"
-                        />
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setServices((current) => [
+                        ...current,
+                        { name: "", price: "", description: "" },
+                      ])
+                    }
+                    className="gap-2"
+                  >
+                    <Plus className="size-4" /> Adicionar outro serviço
+                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Cabelo e barba",
+                      "Acabamento",
+                      "Hidratação",
+                      "Coloração",
+                      "Platinado",
+                    ].map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        variant="ghost"
+                        size="sm"
+                        disabled={services.some((s) => s.name === suggestion)}
+                        onClick={() =>
+                          setServices((current) => [
+                            ...current,
+                            { name: suggestion, price: "", description: "" },
+                          ])
+                        }
+                      >
+                        + {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex gap-3 border-t border-border pt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      className="flex-1 py-6 text-sm"
+                      className="flex-1"
                       onClick={() => setStep(3)}
                     >
                       Voltar
                     </Button>
                     <Button
                       type="button"
-                      className="flex-1 py-6 text-sm font-bold"
-                      onClick={() => setStep(5)}
+                      className="flex-1"
+                      onClick={() => {
+                        if (
+                          !services.length ||
+                          services.some(
+                            (s) =>
+                              s.name.trim().length < 2 ||
+                              !s.price.trim() ||
+                              !Number.isFinite(Number(s.price)) ||
+                              Number(s.price) < 0,
+                          )
+                        ) {
+                          toast.error(
+                            "Preencha o nome e o preço de cada serviço.",
+                          )
+                          return
+                        }
+                        setStep(5)
+                      }}
                     >
-                      Salvar e Continuar
+                      Continuar
                     </Button>
                   </div>
                 </div>
               )}
-
-              {/* ETAPA 5: EXPEDIENTE */}
               {step === 5 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <p className="text-xs text-muted-foreground">Selecione os dias da semana que sua barbearia estará aberta:</p>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"].map((day) => {
-                      const isSelected = workDays.includes(day)
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          className={`p-3 text-xs font-bold rounded-lg border transition-all text-center ${isSelected
-                            ? "bg-primary/20 text-primary border-primary"
-                            : "bg-secondary/15 border-secondary text-muted-foreground hover:border-muted-foreground/70"
-                            }`}
-                          onClick={() => {
-                            if (isSelected) {
-                              setWorkDays(workDays.filter(d => d !== day))
-                            } else {
-                              setWorkDays([...workDays, day])
+                <div className="space-y-5">
+                  <p className="text-sm text-muted-foreground">
+                    Defina a abertura e o fechamento para cada dia.
+                  </p>
+                  <div className="divide-y divide-border">
+                    {openingHours.map((day, index) => (
+                      <div
+                        key={day.key}
+                        className="grid grid-cols-[minmax(5.5rem,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 py-3"
+                      >
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={day.active}
+                            className="size-4 accent-primary"
+                            onChange={(e) =>
+                              setOpeningHours((current) =>
+                                current.map((d, i) =>
+                                  i === index
+                                    ? { ...d, active: e.target.checked }
+                                    : d,
+                                ),
+                              )
                             }
-                          }}
-                        >
-                          {day}
-                        </button>
-                      )
-                    })}
+                          />
+                          {day.label}
+                        </label>
+                        {(["start", "end"] as const).map((field) => (
+                          <div key={field}>
+                            <label
+                              htmlFor={`day-${day.key}-${field}`}
+                              className="sr-only"
+                            >
+                              {day.label}:{" "}
+                              {field === "start" ? "abertura" : "fechamento"}
+                            </label>
+                            <Input
+                              id={`day-${day.key}-${field}`}
+                              type="time"
+                              disabled={!day.active}
+                              value={day[field]}
+                              onChange={(e) =>
+                                setOpeningHours((current) =>
+                                  current.map((d, i) =>
+                                    i === index
+                                      ? { ...d, [field]: e.target.value }
+                                      : d,
+                                  ),
+                                )
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 border-t border-border pt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      className="flex-1 py-6 text-sm"
+                      className="flex-1"
                       onClick={() => setStep(4)}
                     >
                       Voltar
                     </Button>
                     <Button
                       type="button"
-                      className="flex-1 py-6 text-sm font-bold"
+                      className="flex-1"
                       onClick={() => {
-                        // Se no passo 1 escolheu "Trabalho sozinho", envia o formulário diretamente
-                        if (businessProfile === "alone") {
-                          handleSubmit()
-                        } else {
-                          setStep(6)
+                        if (
+                          !openingHours.some((day) => day.active) ||
+                          openingHours.some(
+                            (day) => day.active && day.end <= day.start,
+                          )
+                        ) {
+                          toast.error(
+                            "Escolha os dias e horários válidos de atendimento.",
+                          )
+                          return
                         }
+                        setStep(6)
                       }}
                     >
                       Continuar
@@ -609,18 +819,49 @@ export default function RegisterBarbershopPage() {
 
               {/* ETAPA 6: CONVITE DE EQUIPE */}
               {step === 6 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Nome do Primeiro Barbeiro (Opcional)</label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Nome do Primeiro Barbeiro (Opcional)
+                    </label>
                     <Input
                       placeholder="Ex: Roberto Barbeiro / Nome do seu colega"
                       value={barberName}
                       onChange={(e) => setBarberName(e.target.value)}
-                      className="py-5 bg-secondary/20 border-secondary text-sm"
+                      className="border-secondary bg-secondary/20 py-5 text-sm"
                     />
-                    <p className="text-[10px] text-muted-foreground/70">Você poderá gerenciar e convidar mais profissionais no seu painel depois.</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Este passo cadastra um profissional na agenda. Não envia
+                      convite por e-mail. Para acessar o sistema, ele deve
+                      entrar com a conta do e-mail informado. Você pode
+                      configurar a equipe depois.
+                    </p>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label htmlFor="barber-email">
+                      E-mail do profissional (opcional)
+                    </label>
+                    <Input
+                      id="barber-email"
+                      type="email"
+                      value={barberEmail}
+                      onChange={(e) => setBarberEmail(e.target.value)}
+                      placeholder="profissional@exemplo.com"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Informe o mesmo e-mail usado por ele para entrar. Acesso
+                      limitado à operação da própria agenda.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+                    <p className="text-foreground">{name}</p>
+                    <p className="mt-1">
+                      {services.length} serviço(s) ·{" "}
+                      {openingHours.filter((day) => day.active).length} dia(s)
+                      de atendimento
+                    </p>
+                  </div>
                   <div className="flex gap-3 pt-4">
                     <Button
                       type="button"
@@ -630,10 +871,14 @@ export default function RegisterBarbershopPage() {
                     >
                       Voltar
                     </Button>
-                    <button id="submit-onboarding" type="submit" className="hidden" />
+                    <button
+                      id="submit-onboarding"
+                      type="submit"
+                      className="hidden"
+                    />
                     <Button
                       type="submit"
-                      className="flex-1 py-6 text-sm font-extrabold bg-primary hover:bg-primary/85 text-primary-foreground"
+                      className="flex-1 bg-primary py-6 text-sm font-extrabold text-primary-foreground hover:bg-primary/85"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? "Finalizando..." : "Finalizar e Entrar"}
@@ -641,13 +886,18 @@ export default function RegisterBarbershopPage() {
                   </div>
                 </div>
               )}
-
             </form>
-
           </div>
         </section>
-
       </div>
+      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+        <DialogContent className="max-w-md">
+          <SignInDialog
+            redirectAfterLogin={false}
+            onLoginSuccess={() => setLoginOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

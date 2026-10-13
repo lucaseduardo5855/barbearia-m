@@ -1,12 +1,28 @@
 "use client"
 
+import { formatBRL } from "@/lib/formatters"
+import { MoneyInput } from "@/components/ui/money-input"
+
 import { useState, useMemo } from "react"
 import Image from "next/image"
-import { Booking, BarbershopService, Barber, User, ProductSale, FinancialTransaction } from "@prisma/client"
+import {
+  Booking,
+  BarbershopService,
+  Barber,
+  User,
+  ProductSale,
+  FinancialTransaction,
+} from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { format, startOfMonth, endOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
@@ -20,16 +36,17 @@ import {
   PieChart as PieChartIcon,
   Award,
   Wallet,
-  Coins
+  Coins,
 } from "lucide-react"
-import { payBarberCommissionsAction, createFinancialTransactionAction, updateBarberCommissionRateAction } from "@/app/_actions/admin-actions"
+import {
+  payBarberCommissionsAction,
+  createFinancialTransactionAction,
+  updateBarberCommissionRateAction,
+} from "@/app/_actions/admin-actions"
 import { AdminPageHeader } from "./admin-page-header"
+import { bookingAmounts } from "@/lib/financial-summary"
 
-type BookingWithDetails = Booking & {
-  service: BarbershopService
-  barber: Barber | null
-  user: User
-}
+import type { BookingWithDetails } from "@/lib/booking-types"
 
 interface RelatoriosComissoesTabProps {
   barbershop: {
@@ -47,10 +64,14 @@ export default function RelatoriosComissoesTab({
   barbershop,
   bookings,
   productSales = [],
-  transactions = []
+  transactions = [],
 }: RelatoriosComissoesTabProps) {
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"))
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"))
+  const [startDate, setStartDate] = useState(
+    format(startOfMonth(new Date()), "yyyy-MM-dd"),
+  )
+  const [endDate, setEndDate] = useState(
+    format(endOfMonth(new Date()), "yyyy-MM-dd"),
+  )
   const [searchTerm, setSearchTerm] = useState("")
 
   // Modais
@@ -97,23 +118,52 @@ export default function RelatoriosComissoesTab({
       const rate = barber.commissionRate ? Number(barber.commissionRate) : 50
 
       // Agendamentos deste barbeiro
-      const barberBookings = filteredBookings.filter((b) => b.barberId === barber.id)
+      const barberBookings = filteredBookings.filter(
+        (b) => b.barberId === barber.id,
+      )
       const finishedBookings = barberBookings.filter((b) => b.status === "DONE")
 
       // Vendas de serviços (total e comissão)
       const vendasServicos = finishedBookings.reduce(
-        (acc, b) => acc + Number(b.totalPrice || b.service.price),
-        0
+        (acc, b) => acc + bookingAmounts(b).services,
+        0,
       )
       const comissaoServicos = finishedBookings.reduce((acc, b) => {
-        if (b.barberCommissionAmount) return acc + Number(b.barberCommissionAmount)
-        return acc + (Number(b.totalPrice || b.service.price) * rate) / 100
+        const amounts = bookingAmounts(b)
+        const commission = Number(
+          b.barberCommissionAmount ?? (amounts.total * rate) / 100,
+        )
+        return (
+          acc +
+          (amounts.total > 0
+            ? (commission * amounts.services) / amounts.total
+            : 0)
+        )
       }, 0)
 
       // Vendas de produtos deste barbeiro
-      const barberSales = filteredSales.filter((ps) => ps.barberId === barber.id)
-      const vendasProdutos = barberSales.reduce((acc, ps) => acc + Number(ps.totalAmount), 0)
-      const comissaoProdutos = barberSales.reduce((acc, ps) => acc + Number(ps.commissionAmount), 0)
+      const barberSales = filteredSales.filter(
+        (ps) => ps.barberId === barber.id && !ps.bookingId,
+      )
+      const vendasProdutos =
+        finishedBookings.reduce(
+          (sum, b) => sum + bookingAmounts(b).products,
+          0,
+        ) + barberSales.reduce((acc, ps) => acc + Number(ps.totalAmount), 0)
+      const comissaoProdutos =
+        finishedBookings.reduce((sum, b) => {
+          const amounts = bookingAmounts(b)
+          const commission = Number(
+            b.barberCommissionAmount ?? (amounts.total * rate) / 100,
+          )
+          return (
+            sum +
+            (amounts.total > 0
+              ? (commission * amounts.products) / amounts.total
+              : 0)
+          )
+        }, 0) +
+        barberSales.reduce((acc, ps) => acc + Number(ps.commissionAmount), 0)
 
       // Total de Vendas
       const vendasTotal = vendasServicos + vendasProdutos
@@ -131,7 +181,10 @@ export default function RelatoriosComissoesTab({
       const comissaoTotalBruta = comissaoServicos + comissaoProdutos
 
       // Comissão Líquida Pendente a Pagar
-      const comissaoPendente = Math.max(0, comissaoTotalBruta - comissoesPagas - vales)
+      const comissaoPendente = Math.max(
+        0,
+        comissaoTotalBruta - comissoesPagas - vales,
+      )
 
       return {
         barber,
@@ -148,7 +201,7 @@ export default function RelatoriosComissoesTab({
         comissoesPagas,
         comissaoTotalBruta,
         comissaoPendente,
-        rate
+        rate,
       }
     })
   }, [barbershop.barbers, periodData])
@@ -156,16 +209,39 @@ export default function RelatoriosComissoesTab({
   // Métricas Consolidadas (Cards do Topo - Idêntico à Imagem 4)
   const consolidatedMetrics = useMemo(() => {
     const vendasTotal = barbersData.reduce((acc, b) => acc + b.vendasTotal, 0)
-    const vendasServicos = barbersData.reduce((acc, b) => acc + b.vendasServicos, 0)
-    const vendasProdutos = barbersData.reduce((acc, b) => acc + b.vendasProdutos, 0)
-    const comissoesNormais = barbersData.reduce((acc, b) => acc + b.comissaoServicos, 0)
-    const comissoesTotal = barbersData.reduce((acc, b) => acc + b.comissaoTotalBruta, 0)
-    const comissoesPagas = barbersData.reduce((acc, b) => acc + b.comissoesPagas, 0)
-    const comissoesPendentes = barbersData.reduce((acc, b) => acc + b.comissaoPendente, 0)
-    const valesPagos = barbersData.reduce((acc, b) => acc + b.comprasProdutosVales, 0)
+    const vendasServicos = barbersData.reduce(
+      (acc, b) => acc + b.vendasServicos,
+      0,
+    )
+    const vendasProdutos = barbersData.reduce(
+      (acc, b) => acc + b.vendasProdutos,
+      0,
+    )
+    const comissoesNormais = barbersData.reduce(
+      (acc, b) => acc + b.comissaoServicos,
+      0,
+    )
+    const comissoesTotal = barbersData.reduce(
+      (acc, b) => acc + b.comissaoTotalBruta,
+      0,
+    )
+    const comissoesPagas = barbersData.reduce(
+      (acc, b) => acc + b.comissoesPagas,
+      0,
+    )
+    const comissoesPendentes = barbersData.reduce(
+      (acc, b) => acc + b.comissaoPendente,
+      0,
+    )
+    const valesPagos = barbersData.reduce(
+      (acc, b) => acc + b.comprasProdutosVales,
+      0,
+    )
 
     const totalBookingsCount = periodData.filteredBookings.length
-    const finishedBookingsCount = periodData.filteredBookings.filter((b) => b.status === "DONE").length
+    const finishedBookingsCount = periodData.filteredBookings.filter(
+      (b) => b.status === "DONE",
+    ).length
 
     return {
       vendasTotal,
@@ -178,16 +254,25 @@ export default function RelatoriosComissoesTab({
       valesPagos,
       totalBookingsCount,
       finishedBookingsCount,
-      comissoesAssinaturas: 0
+      comissoesAssinaturas: 0,
     }
   }, [barbersData, periodData])
 
   // Cores do gráfico Donut
-  const DONUT_COLORS = ["hsl(var(--info))", "hsl(var(--success))", "hsl(var(--primary))", "hsl(var(--warning))", "hsl(var(--primary) / 0.75)", "hsl(var(--info) / 0.75)", "hsl(var(--destructive) / 0.85)"]
+  const DONUT_COLORS = [
+    "hsl(var(--info))",
+    "hsl(var(--success))",
+    "hsl(var(--primary))",
+    "hsl(var(--warning))",
+    "hsl(var(--primary) / 0.75)",
+    "hsl(var(--info) / 0.75)",
+    "hsl(var(--destructive) / 0.85)",
+  ]
 
   // Exportar Excel/CSV
   const handleExportExcel = () => {
-    let csv = "Colaborador,Taxa Comissão,Agendamentos,Vendas Serviços,Vendas Produtos,Vendas Total,Comissão Serviços,Comissão Produtos,Comissão Bruta,Vales/Descontos,Comissão Paga,Comissão Pendente\n"
+    let csv =
+      "Colaborador,Taxa Comissão,Agendamentos,Vendas Serviços,Vendas Produtos,Vendas Total,Comissão Serviços,Comissão Produtos,Comissão Bruta,Vales/Descontos,Comissão Paga,Comissão Pendente\n"
     barbersData.forEach((b) => {
       csv += `"${b.barber.name}","${b.rate}%",${b.agendamentosCount},"R$ ${b.vendasServicos.toFixed(2)}","R$ ${b.vendasProdutos.toFixed(2)}","R$ ${b.vendasTotal.toFixed(2)}","R$ ${b.comissaoServicos.toFixed(2)}","R$ ${b.comissaoProdutos.toFixed(2)}","R$ ${b.comissaoTotalBruta.toFixed(2)}","R$ ${b.comprasProdutosVales.toFixed(2)}","R$ ${b.comissoesPagas.toFixed(2)}","R$ ${b.comissaoPendente.toFixed(2)}"\n`
     })
@@ -196,7 +281,10 @@ export default function RelatoriosComissoesTab({
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.setAttribute("download", `relatorio_colaboradores_comissoes_${startDate}_a_${endDate}.csv`)
+    link.setAttribute(
+      "download",
+      `relatorio_colaboradores_comissoes_${startDate}_a_${endDate}.csv`,
+    )
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -220,14 +308,17 @@ export default function RelatoriosComissoesTab({
         barbershopId: barbershop.id,
         barberId: selectedBarberToPay,
         amount: payAmount,
-        description: `Baixa de comissão paga em ${format(new Date(), "dd/MM/yyyy")}`
+        description: `Baixa de comissão paga em ${format(new Date(), "dd/MM/yyyy")}`,
       })
 
       toast.success("Baixa na comissão realizada com sucesso!")
       setIsPayCommissionOpen(false)
       setPayAmount(0)
     } catch (err: any) {
-    toast.error(err.message || "Não foi possível registrar a baixa da comissão. Tente novamente.")
+      toast.error(
+        err.message ||
+          "Não foi possível registrar a baixa da comissão. Tente novamente.",
+      )
     } finally {
       setIsSubmittingPay(false)
     }
@@ -251,9 +342,11 @@ export default function RelatoriosComissoesTab({
         barberId: bonusBarberId,
         type: bonusType,
         category: "Comissões",
-        description: bonusDesc.trim() || (bonusType === "VALE" ? "Adiantamento / Vale" : "Comissão Extra"),
+        description:
+          bonusDesc.trim() ||
+          (bonusType === "VALE" ? "Adiantamento / Vale" : "Comissão Extra"),
         amount: bonusAmount,
-        date: new Date()
+        date: new Date(),
       })
 
       toast.success("Lançamento adicionado ao colaborador!")
@@ -261,7 +354,10 @@ export default function RelatoriosComissoesTab({
       setBonusAmount(0)
       setBonusDesc("")
     } catch (err: any) {
-    toast.error(err.message || "Não foi possível adicionar o lançamento. Tente novamente.")
+      toast.error(
+        err.message ||
+          "Não foi possível adicionar o lançamento. Tente novamente.",
+      )
     } finally {
       setIsSubmittingBonus(false)
     }
@@ -273,123 +369,156 @@ export default function RelatoriosComissoesTab({
         icon={Coins}
         title="Relatório de colaboradores"
         description="Acompanhe o faturamento por barbeiro, comissões normais, vales e repasses pendentes."
-        actions={<>
-          <Button
-            onClick={() => {
-              if (barbershop.barbers.length > 0) {
-                setSelectedBarberToPay(barbershop.barbers[0].id)
-                const bData = barbersData.find((b) => b.barber.id === barbershop.barbers[0].id)
-                setPayAmount(bData?.comissaoPendente || 0)
-              }
-              setIsPayCommissionOpen(true)
-            }}
-            className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold gap-2 text-xs h-9 px-4 rounded-lg shadow-sm"
-          >
-            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-            Dar baixa nas comissões
-          </Button>
+        actions={
+          <>
+            <Button
+              onClick={() => {
+                if (barbershop.barbers.length > 0) {
+                  setSelectedBarberToPay(barbershop.barbers[0].id)
+                  const bData = barbersData.find(
+                    (b) => b.barber.id === barbershop.barbers[0].id,
+                  )
+                  setPayAmount(bData?.comissaoPendente || 0)
+                }
+                setIsPayCommissionOpen(true)
+              }}
+              className="h-9 gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              <CheckCircle2 className="h-4 w-4 stroke-[1.75]" />
+              Dar baixa nas comissões
+            </Button>
 
-          <Button
-            onClick={handleExportExcel}
-            className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold gap-2 text-xs h-9 px-4 rounded-lg shadow-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 stroke-[2.5]" />
-            Exportar em excel
-          </Button>
-        </>}
+            <Button
+              onClick={handleExportExcel}
+              className="h-9 gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              <FileSpreadsheet className="h-4 w-4 stroke-[1.75]" />
+              Exportar CSV
+            </Button>
+          </>
+        }
       />
 
       {/* 📊 GRID DE 10 CARDS DE MÉTRICAS + GRÁFICO DONUT (Idêntico à Imagem 4) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Bloco de 10 Cards */}
-        <div className="grid grid-cols-2 gap-3 lg:col-span-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 lg:col-span-2">
           {/* Linha 1 */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.vendasTotal.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.vendasTotal)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Vendas Total</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Vendas Total
+            </span>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.vendasServicos.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.vendasServicos)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Total Vendas serviços</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Total Vendas serviços
+            </span>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.comissoesAssinaturas.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.comissoesAssinaturas)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Comissões Assinaturas</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Comissões Assinaturas
+            </span>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.comissoesPagas.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.comissoesPagas)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Comissões Pagas</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Comissões Pagas
+            </span>
           </div>
 
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
-            <p className="text-lg font-black text-destructive">
-              R$ {consolidatedMetrics.comissoesPendentes.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-destructive">
+              {formatBRL(consolidatedMetrics.comissoesPendentes)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-destructive">Comissões Pendentes</span>
+            <span className="mt-1 block text-xs font-semibold text-destructive">
+              Comissões Pendentes
+            </span>
           </div>
 
           {/* Linha 2 */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-foreground">{consolidatedMetrics.totalBookingsCount}</p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Vendas Total (Qtd)</span>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-foreground">{consolidatedMetrics.finishedBookingsCount}</p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Vendas Finalizados</span>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.vendasProdutos.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {consolidatedMetrics.totalBookingsCount}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Total Vendas produto</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Vendas Total (Qtd)
+            </span>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-success">
-              R$ {consolidatedMetrics.comissoesNormais.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {consolidatedMetrics.finishedBookingsCount}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Comissões Normais</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Vendas Finalizados
+            </span>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-lg font-black text-warning">
-              R$ {consolidatedMetrics.comissoesTotal.toFixed(2).replace(".", ",")}
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.vendasProdutos)}
             </p>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">Comissões Total</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Total Vendas produto
+            </span>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-lg font-medium text-foreground">
+              {formatBRL(consolidatedMetrics.comissoesNormais)}
+            </p>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Comissões Normais
+            </span>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-lg font-medium text-warning">
+              {formatBRL(consolidatedMetrics.comissoesTotal)}
+            </p>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              Comissões Total
+            </span>
           </div>
         </div>
 
         {/* Gráfico Donut: Detalhamento de Comissões */}
         <div className="flex flex-col items-center justify-between rounded-xl border border-border bg-card p-5 text-center">
-          <div className="w-full text-left mb-2">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-              <PieChartIcon className="w-4 h-4 text-warning" /> Detalhamento de comissões
+          <div className="mb-2 w-full text-left">
+            <h3 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+              <PieChartIcon className="h-4 w-4 text-warning" /> Detalhamento de
+              comissões
             </h3>
-            <p className="text-[10px] text-muted-foreground">Distribuição entre profissionais</p>
+            <p className="text-[10px] text-muted-foreground">
+              Distribuição entre profissionais
+            </p>
           </div>
 
-          <div className="relative w-44 h-44 my-2">
-            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+          <div className="relative my-2 h-44 w-44">
+            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
               {(() => {
                 let accumulatedPercent = 0
                 return barbersData.map((b, idx) => {
                   const percent =
                     consolidatedMetrics.comissoesTotal > 0
-                      ? (b.comissaoTotalBruta / consolidatedMetrics.comissoesTotal) * 100
-                      : 100 / Math.max(1, barbersData.length)
+                      ? (b.comissaoTotalBruta /
+                          consolidatedMetrics.comissoesTotal) *
+                        100
+                      : 0
                   const strokeDasharray = `${percent} ${100 - percent}`
                   const strokeDashoffset = -accumulatedPercent
                   accumulatedPercent += percent
@@ -400,6 +529,7 @@ export default function RelatoriosComissoesTab({
                       cx="50"
                       cy="50"
                       r="38"
+                      pathLength="100"
                       fill="transparent"
                       stroke={DONUT_COLORS[idx % DONUT_COLORS.length]}
                       strokeWidth="24"
@@ -411,8 +541,10 @@ export default function RelatoriosComissoesTab({
                 })
               })()}
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xs font-extrabold text-warning">Comissões</span>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-xs font-extrabold text-warning">
+                Comissões
+              </span>
             </div>
           </div>
 
@@ -420,8 +552,10 @@ export default function RelatoriosComissoesTab({
             {barbersData.map((b, idx) => (
               <span key={b.barber.id} className="flex items-center gap-1">
                 <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: DONUT_COLORS[idx % DONUT_COLORS.length] }}
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    backgroundColor: DONUT_COLORS[idx % DONUT_COLORS.length],
+                  }}
                 />
                 {b.barber.name}
               </span>
@@ -439,7 +573,7 @@ export default function RelatoriosComissoesTab({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-secondary/40 h-8 text-xs font-semibold w-36"
+              className="h-8 w-36 bg-secondary/40 text-xs font-semibold"
             />
           </div>
 
@@ -449,17 +583,17 @@ export default function RelatoriosComissoesTab({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-secondary/40 h-8 text-xs font-semibold w-36"
+              className="h-8 w-36 bg-secondary/40 text-xs font-semibold"
             />
           </div>
 
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2.5" />
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Pesquisar barbeiro..."
-              className="bg-secondary/40 h-8 text-xs pl-8 w-44"
+              className="h-8 w-44 bg-secondary/40 pl-8 text-xs"
             />
           </div>
         </div>
@@ -472,9 +606,9 @@ export default function RelatoriosComissoesTab({
             }
             setIsAddBonusOpen(true)
           }}
-          className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold gap-2 text-xs h-8 px-3 rounded-lg shadow-sm"
+          className="h-8 gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
         >
-          <Coins className="w-3.5 h-3.5 stroke-[2.5]" />
+          <Coins className="h-3.5 w-3.5 stroke-[1.75]" />
           Adicionar lançamento para o barbeiro
         </Button>
       </div>
@@ -483,7 +617,7 @@ export default function RelatoriosComissoesTab({
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-secondary/40 border-b border-border/80 text-muted-foreground uppercase font-bold text-[10px]">
+            <thead className="border-b border-border/80 bg-secondary/40 text-[10px] font-bold uppercase text-muted-foreground">
               <tr>
                 <th className="p-3.5">Colaborador</th>
                 <th className="p-3.5">Total em Vendas</th>
@@ -498,20 +632,35 @@ export default function RelatoriosComissoesTab({
             </thead>
             <tbody className="divide-y divide-border/60">
               {barbersData
-                .filter((b) => b.barber.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .filter((b) =>
+                  b.barber.name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()),
+                )
                 .map((item) => (
-                  <tr key={item.barber.id} className="hover:bg-secondary/20 transition-colors">
+                  <tr
+                    key={item.barber.id}
+                    className="transition-colors hover:bg-secondary/20"
+                  >
                     <td className="p-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="relative w-8 h-8 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-warning/40 bg-warning/10">
                           {item.barber.imageUrl ? (
-                            <Image src={item.barber.imageUrl} alt={item.barber.name} fill sizes="32px" className="object-cover" />
+                            <Image
+                              src={item.barber.imageUrl}
+                              alt={item.barber.name}
+                              fill
+                              sizes="32px"
+                              className="object-cover"
+                            />
                           ) : (
-                            <UserCheck className="w-4 h-4 text-warning" />
+                            <UserCheck className="h-4 w-4 text-warning" />
                           )}
                         </div>
                         <div>
-                          <strong className="text-foreground font-bold block">{item.barber.name}</strong>
+                          <strong className="block font-bold text-foreground">
+                            {item.barber.name}
+                          </strong>
                           <span className="text-[10px] text-muted-foreground">
                             {item.agendamentosCount} agendamentos • {item.rate}%
                           </span>
@@ -520,31 +669,31 @@ export default function RelatoriosComissoesTab({
                     </td>
 
                     <td className="p-3.5 font-bold text-foreground">
-                      R$ {item.vendasTotal.toFixed(2).replace(".", ",")}
+                      {formatBRL(item.vendasTotal)}
                     </td>
 
                     <td className="p-3.5 font-bold text-foreground">
-                      R$ {item.comissaoServicos.toFixed(2).replace(".", ",")}
+                      {formatBRL(item.comissaoServicos)}
                     </td>
 
                     <td className="p-3.5 font-bold text-foreground">
-                      R$ {item.comissaoProdutos.toFixed(2).replace(".", ",")}
+                      {formatBRL(item.comissaoProdutos)}
                     </td>
 
                     <td className="p-3.5 text-muted-foreground">
-                      R$ {item.comissaoAssinatura.toFixed(2).replace(".", ",")}
+                      {formatBRL(item.comissaoAssinatura)}
                     </td>
 
                     <td className="p-3.5 text-muted-foreground">
-                      R$ {item.totalExtras.toFixed(2).replace(".", ",")}
+                      {formatBRL(item.totalExtras)}
                     </td>
 
                     <td className="p-3.5 font-semibold text-destructive">
-                      -R$ {item.comprasProdutosVales.toFixed(2).replace(".", ",")}
+                      -{formatBRL(item.comprasProdutosVales)}
                     </td>
 
-                    <td className="p-3.5 text-right font-extrabold text-sm text-success">
-                      R$ {item.comissaoPendente.toFixed(2).replace(".", ",")}
+                    <td className="p-3.5 text-right text-sm font-extrabold text-foreground">
+                      {formatBRL(item.comissaoPendente)}
                     </td>
 
                     <td className="p-3.5 text-center">
@@ -555,7 +704,7 @@ export default function RelatoriosComissoesTab({
                           setPayAmount(item.comissaoPendente)
                           setIsPayCommissionOpen(true)
                         }}
-                        className="bg-success/60 hover:bg-success/70 text-foreground font-bold text-[11px] h-11 md:h-7 px-3 rounded-md"
+                        className="h-11 rounded-md bg-primary px-3 text-[11px] font-bold text-primary-foreground hover:bg-primary/90 md:h-7"
                       >
                         Pagar
                       </Button>
@@ -569,10 +718,11 @@ export default function RelatoriosComissoesTab({
 
       {/* 💳 MODAL: DAR BAIXA NAS COMISSÕES */}
       <Dialog open={isPayCommissionOpen} onOpenChange={setIsPayCommissionOpen}>
-        <DialogContent className="max-w-md bg-card border-border p-6 text-foreground">
+        <DialogContent className="max-w-md border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-success">
-              <CheckCircle2 className="w-5 h-5" /> Registrar Pagamento de Comissão
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <CheckCircle2 className="h-5 w-5" /> Registrar Pagamento de
+              Comissão
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Dê baixa no saldo de comissão pendente do colaborador selecionado.
@@ -581,15 +731,19 @@ export default function RelatoriosComissoesTab({
 
           <div className="space-y-3.5 py-3 text-xs">
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Colaborador</label>
+              <label className="font-semibold text-muted-foreground">
+                Colaborador
+              </label>
               <select
                 value={selectedBarberToPay}
                 onChange={(e) => {
                   setSelectedBarberToPay(e.target.value)
-                  const b = barbersData.find((item) => item.barber.id === e.target.value)
+                  const b = barbersData.find(
+                    (item) => item.barber.id === e.target.value,
+                  )
                   if (b) setPayAmount(b.comissaoPendente)
                 }}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 {barbershop.barbers.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -600,27 +754,31 @@ export default function RelatoriosComissoesTab({
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Valor a Pagar (R$)</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={payAmount || ""}
-                onChange={(e) => setPayAmount(Number(e.target.value))}
-                className="bg-secondary/40 font-bold text-success text-base"
+              <label className="font-semibold text-muted-foreground">
+                Valor a Pagar (R$)
+              </label>
+              <MoneyInput
+                value={payAmount}
+                onValueChange={setPayAmount}
+                className="bg-secondary/40 text-base font-bold text-foreground"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsPayCommissionOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPayCommissionOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
               onClick={handlePayCommission}
               disabled={isSubmittingPay || payAmount <= 0}
-              className="bg-success/60 hover:bg-success/70 text-foreground font-bold text-xs"
+              className="bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmittingPay ? "Processando..." : "Confirmar Baixa"}
             </Button>
@@ -630,10 +788,10 @@ export default function RelatoriosComissoesTab({
 
       {/* ➕ MODAL: ADICIONAR LANÇAMENTO / VALE / BÔNUS */}
       <Dialog open={isAddBonusOpen} onOpenChange={setIsAddBonusOpen}>
-        <DialogContent className="max-w-md bg-card border-border p-6 text-foreground">
+        <DialogContent className="max-w-md border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-warning">
-              <Coins className="w-5 h-5" /> Adicionar Lançamento para o Barbeiro
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-warning">
+              <Coins className="h-5 w-5" /> Adicionar Lançamento para o Barbeiro
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Cadastre um adiantamento (vale) ou bonificação/comissão extra.
@@ -642,11 +800,13 @@ export default function RelatoriosComissoesTab({
 
           <div className="space-y-3.5 py-3 text-xs">
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Colaborador</label>
+              <label className="font-semibold text-muted-foreground">
+                Colaborador
+              </label>
               <select
                 value={bonusBarberId}
                 onChange={(e) => setBonusBarberId(e.target.value)}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 {barbershop.barbers.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -660,7 +820,7 @@ export default function RelatoriosComissoesTab({
               <button
                 type="button"
                 onClick={() => setBonusType("VALE")}
-                className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                className={`rounded-lg px-3 py-2 text-center font-bold transition-all ${
                   bonusType === "VALE"
                     ? "bg-destructive text-destructive-foreground shadow-sm"
                     : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
@@ -671,7 +831,7 @@ export default function RelatoriosComissoesTab({
               <button
                 type="button"
                 onClick={() => setBonusType("COMISSAO_PAGA")}
-                className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                className={`rounded-lg px-3 py-2 text-center font-bold transition-all ${
                   bonusType === "COMISSAO_PAGA"
                     ? "bg-warning text-warning-foreground shadow-sm"
                     : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
@@ -682,20 +842,21 @@ export default function RelatoriosComissoesTab({
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Valor (R$)</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={bonusAmount || ""}
-                onChange={(e) => setBonusAmount(Number(e.target.value))}
+              <label className="font-semibold text-muted-foreground">
+                Valor (R$)
+              </label>
+              <MoneyInput
+                value={bonusAmount}
+                onValueChange={setBonusAmount}
                 placeholder="0,00"
                 className="bg-secondary/40 font-bold"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Descrição / Motivo</label>
+              <label className="font-semibold text-muted-foreground">
+                Descrição / Motivo
+              </label>
               <Input
                 value={bonusDesc}
                 onChange={(e) => setBonusDesc(e.target.value)}
@@ -705,15 +866,20 @@ export default function RelatoriosComissoesTab({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsAddBonusOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAddBonusOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
               onClick={handleAddBonus}
               disabled={isSubmittingBonus || bonusAmount <= 0}
-              className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold text-xs"
+              className="bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmittingBonus ? "Salvando..." : "Confirmar Lançamento"}
             </Button>

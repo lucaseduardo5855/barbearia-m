@@ -1,8 +1,16 @@
 "use client"
 
+import { formatBRL } from "@/lib/formatters"
+
 import { useState } from "react"
 import Image from "next/image"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
 import { toast } from "sonner"
@@ -19,7 +27,7 @@ import {
   Calendar,
   Layers,
   Flame,
-  Award
+  Award,
 } from "lucide-react"
 import { quickSetupBarbershopAction } from "@/app/_actions/admin-actions"
 import { PhotoUploadField } from "./photo-upload-field"
@@ -30,38 +38,38 @@ const PRESET_LOGOS = [
     id: "classic_barber",
     name: "Barber Pole Retrô",
     url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=400&q=80",
-    badge: "💈 Clássico"
+    badge: "💈 Clássico",
   },
   {
     id: "scissors_gold",
     name: "Tesoura & Navalha Gold",
     url: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=400&q=80",
-    badge: "✂️ Premium"
+    badge: "✂️ Premium",
   },
   {
     id: "skull_vintage",
     name: "Vintage Skull Barbershop",
     url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=400&q=80",
-    badge: "💀 Vintage"
+    badge: "💀 Vintage",
   },
   {
     id: "crown_luxury",
     name: "Crown Gentlemen Club",
     url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=400&q=80",
-    badge: "👑 Luxo"
+    badge: "👑 Luxo",
   },
   {
     id: "modern_fade",
     name: "Studio Modern Fade",
     url: "https://images.unsplash.com/photo-1512690459411-b9245aed614b?auto=format&fit=crop&w=400&q=80",
-    badge: "⚡ Moderno"
+    badge: "⚡ Moderno",
   },
   {
     id: "black_white",
     name: "Minimalist Barber Black",
     url: "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=400&q=80",
-    badge: "🖤 Minimalista"
-  }
+    badge: "🖤 Minimalista",
+  },
 ]
 
 // Catálogo de Serviços rápidos - Beleza / Barbearia
@@ -72,7 +80,8 @@ const SERVICE_TEMPLATES = [
     category: "Cabelo",
     price: 35,
     description: "Corte tesoura e máquina com finalização e lavagem rápida.",
-    imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "corte_fade",
@@ -80,7 +89,8 @@ const SERVICE_TEMPLATES = [
     category: "Cabelo",
     price: 45,
     description: "Degradê moderno navalhado ou na shaver com alinhamento.",
-    imageUrl: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "barba_terapia",
@@ -88,7 +98,8 @@ const SERVICE_TEMPLATES = [
     category: "Barba",
     price: 35,
     description: "Modelagem, toalha quente aromática e hidratação de barba.",
-    imageUrl: "https://images.unsplash.com/photo-1517832606589-7629c3397143?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1517832606589-7629c3397143?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "pezinho",
@@ -96,7 +107,8 @@ const SERVICE_TEMPLATES = [
     category: "Acabamento",
     price: 15,
     description: "Alinhamento de contorno do cabelo e costeletas com navalha.",
-    imageUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "escova",
@@ -104,7 +116,8 @@ const SERVICE_TEMPLATES = [
     category: "Cabelo",
     price: 25,
     description: "Lavagem capilar, escovação e modelagem com pomada matte.",
-    imageUrl: "https://images.unsplash.com/photo-1512690459411-b9245aed614b?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1512690459411-b9245aed614b?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "sobrancelha",
@@ -112,7 +125,8 @@ const SERVICE_TEMPLATES = [
     category: "Beleza",
     price: 15,
     description: "Design e limpeza de sobrancelhas masculinas na lâmina.",
-    imageUrl: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "hidratacao",
@@ -120,7 +134,8 @@ const SERVICE_TEMPLATES = [
     category: "Tratamento",
     price: 40,
     description: "Tratamento intensivo de fios com máscara reconstrutora.",
-    imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "selagem",
@@ -128,16 +143,19 @@ const SERVICE_TEMPLATES = [
     category: "Tratamento",
     price: 90,
     description: "Alinhamento e redução de volume para fios disciplinados.",
-    imageUrl: "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80"
+    imageUrl:
+      "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "combo_corte_barba",
     name: "Combo Corte + Barba",
     category: "Combos",
     price: 70,
-    description: "Experiência completa de corte de cabelo e barba com toalha quente.",
-    imageUrl: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=600&q=80"
-  }
+    description:
+      "Experiência completa de corte de cabelo e barba com toalha quente.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=600&q=80",
+  },
 ]
 
 interface QuickSetupModalProps {
@@ -155,14 +173,20 @@ interface QuickSetupModalProps {
   }
 }
 
-export default function QuickSetupModal({ open, onOpenChange, barbershop }: QuickSetupModalProps) {
+export default function QuickSetupModal({
+  open,
+  onOpenChange,
+  barbershop,
+}: QuickSetupModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [name, setName] = useState(barbershop.name || "")
   const [address, setAddress] = useState(barbershop.address || "")
   const [city, setCity] = useState(barbershop.city || "São Paulo")
   const [state, setState] = useState(barbershop.state || "SP")
   const [phone, setPhone] = useState(barbershop.phones?.[0] || "")
-  const [selectedLogo, setSelectedLogo] = useState(barbershop.imageUrl || PRESET_LOGOS[0].url)
+  const [selectedLogo, setSelectedLogo] = useState(
+    barbershop.imageUrl || PRESET_LOGOS[0].url,
+  )
   const [customLogoUrl, setCustomLogoUrl] = useState("")
 
   // Horários de trabalho padrão
@@ -173,7 +197,7 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
     qui: { active: true, start: "09:00", end: "19:00" },
     sex: { active: true, start: "09:00", end: "20:00" },
     sab: { active: true, start: "08:30", end: "19:00" },
-    dom: { active: false, start: "09:00", end: "14:00" }
+    dom: { active: false, start: "09:00", end: "14:00" },
   })
 
   // Serviços selecionados por botões
@@ -182,14 +206,14 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
     "corte_social",
     "barba_terapia",
     "pezinho",
-    "combo_corte_barba"
+    "combo_corte_barba",
   ])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const toggleService = (id: string) => {
     setSelectedServiceIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     )
   }
 
@@ -201,7 +225,7 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
       qui: { ...prev.qui, start, end },
       sex: { ...prev.sex, start, end },
       sab: { ...prev.sab, start, end },
-      dom: prev.dom
+      dom: prev.dom,
     }))
     toast.success("Horário replicado de Segunda a Sábado!")
   }
@@ -213,12 +237,12 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
       const finalLogo = customLogoUrl.trim() || selectedLogo
 
       const selectedServicesList = SERVICE_TEMPLATES.filter((s) =>
-        selectedServiceIds.includes(s.id)
+        selectedServiceIds.includes(s.id),
       ).map((s) => ({
         name: s.name,
         description: s.description,
         price: s.price,
-        imageUrl: s.imageUrl
+        imageUrl: s.imageUrl,
       }))
 
       await quickSetupBarbershopAction({
@@ -230,13 +254,15 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
         phones: phone ? [phone] : barbershop.phones,
         openingHours: JSON.stringify(workDays),
         imageUrl: finalLogo,
-        selectedServices: selectedServicesList
+        selectedServices: selectedServicesList,
       })
 
       toast.success("Unidade configurada com sucesso!")
       onOpenChange(false)
     } catch (error: any) {
-      toast.error("Não foi possível salvar as configurações da unidade. Tente novamente.")
+      toast.error(
+        "Não foi possível salvar as configurações da unidade. Tente novamente.",
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -244,55 +270,56 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border p-6 text-foreground">
-        <DialogHeader className="pb-4 border-b border-border/50">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto border-border bg-card p-6 text-foreground">
+        <DialogHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-warning/20 text-warning">
-              <Store className="w-5 h-5" />
+            <span className="rounded-xl bg-primary/20 p-2 text-primary">
+              <Store className="h-5 w-5" />
             </span>
             <div>
               <DialogTitle className="text-xl font-bold text-foreground">
                 Configuração Rápida da Unidade
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Selecione a unidade, defina o horário, escolha uma logo e ative os serviços que oferece.
+                Selecione a unidade, defina o horário, escolha uma logo e ative
+                os serviços que oferece.
               </DialogDescription>
             </div>
           </div>
 
           {/* Stepper Tabs */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-2">
+          <div className="mt-4 grid grid-cols-3 gap-2 pt-2">
             <button
               onClick={() => setStep(1)}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                 step === 1
-                  ? "bg-warning text-warning-foreground shadow-md shadow-warning/20"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
               }`}
             >
-              <Crown className="w-3.5 h-3.5" />
+              <Crown className="h-3.5 w-3.5" />
               1. Unidade & Logo
             </button>
             <button
               onClick={() => setStep(2)}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                 step === 2
-                  ? "bg-warning text-warning-foreground shadow-md shadow-warning/20"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className="h-3.5 w-3.5" />
               2. Horários
             </button>
             <button
               onClick={() => setStep(3)}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                 step === 3
-                  ? "bg-warning text-warning-foreground shadow-md shadow-warning/20"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
               }`}
             >
-              <Scissors className="w-3.5 h-3.5" />
+              <Scissors className="h-3.5 w-3.5" />
               3. Serviços (Beleza)
             </button>
           </div>
@@ -300,11 +327,12 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
 
         {/* STEP 1: Unidade e Logo */}
         {step === 1 && (
-          <div className="space-y-5 py-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="animate-in fade-in space-y-5 py-4 duration-200">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Store className="w-3.5 h-3.5 text-warning" /> Nome da Unidade / Barbearia
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <Store className="h-3.5 w-3.5 text-primary" /> Nome da Unidade
+                  / Barbearia
                 </label>
                 <Input
                   value={name}
@@ -315,8 +343,9 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-warning" /> WhatsApp / Telefone
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5 text-primary" /> WhatsApp /
+                  Telefone
                 </label>
                 <Input
                   value={phone}
@@ -327,8 +356,9 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               </div>
 
               <div className="space-y-1.5 md:col-span-2">
-                <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-warning" /> Endereço Completo
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-primary" /> Endereço
+                  Completo
                 </label>
                 <Input
                   value={address}
@@ -340,11 +370,12 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
             </div>
 
             {/* SELEÇÃO DE LOGO EM BOTÕES */}
-            <div className="space-y-3 pt-3 border-t border-border/40">
+            <div className="space-y-3 border-t border-border/40 pt-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-warning" /> Escolha uma logo
+                  <h4 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                    <Sparkles className="h-4 w-4 text-primary" /> Escolha uma
+                    logo
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
                     Selecione um estilo pronto ou envie a logo da sua barbearia.
@@ -352,7 +383,7 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {PRESET_LOGOS.map((logo) => {
                   const isSelected = selectedLogo === logo.url && !customLogoUrl
                   return (
@@ -363,28 +394,30 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                         setSelectedLogo(logo.url)
                         setCustomLogoUrl("")
                       }}
-                      className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all text-center ${
+                      className={`relative flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all ${
                         isSelected
-                          ? "border-warning bg-warning/10 shadow-lg shadow-warning/10 ring-2 ring-warning/50"
-                          : "border-border/60 bg-secondary/20 hover:border-warning/40 hover:bg-secondary/40"
+                          ? "border-primary bg-primary/10 shadow-lg shadow-primary/10 ring-2 ring-primary/50"
+                          : "border-border/60 bg-secondary/20 hover:border-primary/40 hover:bg-secondary/40"
                       }`}
                     >
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-border shadow-inner">
+                      <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-border shadow-inner">
                         <Image
                           src={logo.url}
                           alt={logo.name}
                           fill
                           sizes="64px"
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       </div>
-                      <span className="text-xs font-semibold text-foreground">{logo.name}</span>
-                      <span className="text-[10px] text-warning font-medium px-2 py-0.5 rounded-full bg-warning/10">
+                      <span className="text-xs font-semibold text-foreground">
+                        {logo.name}
+                      </span>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                         {logo.badge}
                       </span>
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-warning text-warning-foreground flex items-center justify-center font-bold">
-                          <Check className="w-3 h-3 stroke-[3]" />
+                        <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+                          <Check className="h-3 w-3 stroke-[3]" />
                         </div>
                       )}
                     </button>
@@ -393,16 +426,22 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               </div>
 
               <div className="pt-2">
-                <PhotoUploadField label="Logo personalizada" value={customLogoUrl} onChange={setCustomLogoUrl} alt={barbershop.name} helperText="PNG ou JPG, até 4 MB" />
+                <PhotoUploadField
+                  label="Logo personalizada"
+                  value={customLogoUrl}
+                  onChange={setCustomLogoUrl}
+                  alt={barbershop.name}
+                  helperText="PNG ou JPG, até 4 MB"
+                />
               </div>
             </div>
 
             <div className="flex justify-end pt-3">
               <Button
                 onClick={() => setStep(2)}
-                className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold gap-2"
+                className="gap-2 bg-primary font-bold text-primary-foreground hover:bg-primary/85"
               >
-                Próximo: Horários <Clock className="w-4 h-4" />
+                Próximo: Horários <Clock className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -410,10 +449,10 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
 
         {/* STEP 2: Horários de Trabalho */}
         {step === 2 && (
-          <div className="space-y-5 py-4 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-warning/10 border border-warning/20">
+          <div className="animate-in fade-in space-y-5 py-4 duration-200">
+            <div className="flex flex-col justify-between gap-3 rounded-xl border border-primary/20 bg-primary/10 p-3 sm:flex-row sm:items-center">
               <div className="space-y-0.5">
-                <span className="text-xs font-bold text-warning uppercase tracking-wide">
+                <span className="text-xs font-bold uppercase tracking-wide text-primary">
                   Atalho Rápido
                 </span>
                 <p className="text-xs text-muted-foreground">
@@ -424,7 +463,7 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                 type="button"
                 size="sm"
                 onClick={() => applyScheduleToAll("09:00", "19:00")}
-                className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold text-xs"
+                className="bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/85"
               >
                 Replicar Padrão (09h - 19h)
               </Button>
@@ -438,13 +477,13 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                 { key: "qui", label: "Quinta-feira" },
                 { key: "sex", label: "Sexta-feira" },
                 { key: "sab", label: "Sábado" },
-                { key: "dom", label: "Domingo" }
+                { key: "dom", label: "Domingo" },
               ].map(({ key, label }) => {
                 const day = workDays[key as keyof typeof workDays]
                 return (
                   <div
                     key={key}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    className={`flex flex-col items-stretch gap-3 rounded-xl border p-3 transition-all sm:flex-row sm:items-center sm:justify-between ${
                       day.active
                         ? "border-border bg-secondary/20"
                         : "border-border/40 bg-secondary/5 opacity-50"
@@ -458,47 +497,49 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                         onChange={(e) =>
                           setWorkDays((prev) => ({
                             ...prev,
-                            [key]: { ...day, active: e.target.checked }
+                            [key]: { ...day, active: e.target.checked },
                           }))
                         }
-                        className="w-4 h-4 rounded border-border accent-warning cursor-pointer"
+                        className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
                       />
                       <label
                         htmlFor={`check-${key}`}
-                        className="text-xs font-semibold text-foreground cursor-pointer select-none"
+                        className="cursor-pointer select-none text-xs font-semibold text-foreground"
                       >
                         {label}
                       </label>
                     </div>
 
                     {day.active ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2">
                         <Input
                           type="time"
                           value={day.start}
                           onChange={(e) =>
                             setWorkDays((prev) => ({
                               ...prev,
-                              [key]: { ...day, start: e.target.value }
+                              [key]: { ...day, start: e.target.value },
                             }))
                           }
-                          className="h-8 w-24 text-xs font-bold bg-background text-center"
+                          className="h-11 w-36 min-w-0 bg-background text-center text-sm"
                         />
-                        <span className="text-xs text-muted-foreground font-semibold">até</span>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          até
+                        </span>
                         <Input
                           type="time"
                           value={day.end}
                           onChange={(e) =>
                             setWorkDays((prev) => ({
                               ...prev,
-                              [key]: { ...day, end: e.target.value }
+                              [key]: { ...day, end: e.target.value },
                             }))
                           }
-                          className="h-8 w-24 text-xs font-bold bg-background text-center"
+                          className="h-11 w-36 min-w-0 bg-background text-center text-sm"
                         />
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground italic font-medium">
+                      <span className="text-xs font-medium italic text-muted-foreground">
                         Fechado
                       </span>
                     )}
@@ -517,9 +558,9 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold gap-2 text-xs"
+                className="gap-2 bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/85"
               >
-                Próximo: Catálogo de Serviços <Scissors className="w-4 h-4" />
+                Próximo: Catálogo de Serviços <Scissors className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -527,23 +568,24 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
 
         {/* STEP 3: Escolha de Serviços Rápidos em Botões */}
         {step === 3 && (
-          <div className="space-y-5 py-4 animate-in fade-in duration-200">
+          <div className="animate-in fade-in space-y-5 py-4 duration-200">
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <Scissors className="w-4 h-4 text-warning" />
+              <div className="mb-1 flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                  <Scissors className="h-4 w-4 text-primary" />
                   Catálogo de Serviços - Beleza & Barbearia
                 </h4>
-                <span className="text-xs font-bold text-warning">
+                <span className="text-xs font-bold text-primary">
                   {selectedServiceIds.length} selecionados
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Selecione os serviços que você oferece para adicioná-los ao catálogo.
+                Selecione os serviços que você oferece para adicioná-los ao
+                catálogo.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
               {SERVICE_TEMPLATES.map((item) => {
                 const isSelected = selectedServiceIds.includes(item.id)
                 return (
@@ -551,40 +593,42 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
                     key={item.id}
                     type="button"
                     onClick={() => toggleService(item.id)}
-                    className={`relative p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2.5 ${
+                    className={`relative flex flex-col justify-between gap-2.5 rounded-xl border p-3.5 text-left transition-all ${
                       isSelected
-                        ? "border-warning bg-warning/10 shadow-md shadow-warning/10 ring-1 ring-warning"
-                        : "border-border/60 bg-secondary/15 hover:border-warning/40 hover:bg-secondary/30"
+                        ? "border-primary bg-primary/10 shadow-md shadow-primary/10 ring-1 ring-primary"
+                        : "border-border/60 bg-secondary/15 hover:border-primary/40 hover:bg-secondary/30"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-[10px] font-bold text-warning uppercase tracking-wide">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-primary">
                           {item.category}
                         </span>
-                        <h5 className="font-bold text-sm text-foreground leading-tight">
+                        <h5 className="text-sm font-bold leading-tight text-foreground">
                           {item.name}
                         </h5>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                           isSelected
-                            ? "bg-warning text-warning-foreground"
+                            ? "bg-primary text-primary-foreground"
                             : "border border-muted-foreground/40 text-transparent"
                         }`}
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-muted-foreground line-clamp-2">
+                    <p className="line-clamp-2 text-[11px] text-muted-foreground">
                       {item.description}
                     </p>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-border/40">
-                      <span className="text-xs text-muted-foreground font-medium">Sugerido:</span>
+                    <div className="flex items-center justify-between border-t border-border/40 pt-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Sugerido:
+                      </span>
                       <strong className="text-sm font-bold text-success">
-                        R$ {item.price.toFixed(2).replace(".", ",")}
+                        {formatBRL(item.price)}
                       </strong>
                     </div>
                   </button>
@@ -592,7 +636,7 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               })}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-border/50">
+            <div className="flex items-center justify-between border-t border-border/50 pt-4">
               <Button
                 variant="outline"
                 onClick={() => setStep(2)}
@@ -603,13 +647,13 @@ export default function QuickSetupModal({ open, onOpenChange, barbershop }: Quic
               <Button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold gap-2 text-xs h-10 px-6 shadow-lg shadow-warning/20"
+                className="h-10 gap-2 bg-primary px-6 text-xs font-bold text-primary-foreground hover:bg-primary/85"
               >
                 {isSubmitting ? (
                   "Salvando configurações..."
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                     Concluir e Salvar Unidade
                   </>
                 )}

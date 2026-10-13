@@ -1,17 +1,39 @@
 "use client"
+import { MoneyInput } from "@/components/ui/money-input"
 
 import { useState, useMemo } from "react"
-import { Booking, BarbershopService, Barber, User, ProductSale, FinancialTransaction, SubscriptionPayment } from "@prisma/client"
-import { Button } from "@/app/_components/ui/button"
+import type {
+  Booking,
+  BarbershopService,
+  Barber,
+  User,
+  ProductSale,
+  FinancialTransaction,
+  SubscriptionPayment,
+} from "@prisma/client"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/app/_components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { addMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  addMonths,
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfDay,
+  endOfDay,
+} from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
 import {
   DollarSign,
   TrendingUp,
-  TrendingDown,
   PlusCircle,
   QrCode,
   ShieldCheck,
@@ -20,20 +42,18 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Wallet,
-  Receipt,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Users,
+  Receipt,
 } from "lucide-react"
 import { createFinancialTransactionAction } from "@/app/_actions/admin-actions"
-import { AdminPageHeader } from "./admin-page-header"
+import { summarizeFinance } from "@/lib/financial-summary"
 import { formatBRL } from "@/lib/formatters"
+import { AdminPageHeader } from "./admin-page-header"
+import { AdminMetricCard } from "./admin-metric-card"
 
-type BookingWithDetails = Booking & {
-  service: BarbershopService
-  barber: Barber | null
-  user: User
-}
-
+import type { BookingWithDetails } from "@/lib/booking-types"
 interface FinanceiroTabProps {
   barbershopId: string
   barbershopName?: string
@@ -45,58 +65,6 @@ interface FinanceiroTabProps {
   trialEndsAt?: Date | string | null
 }
 
-type FinancePeriodSummaryProps = {
-  currentDate: Date
-  saldoPeriodo: number
-  totalRecebimentos: number
-  previsaoTotalBruto: number
-  comissoesPagas: number
-  totalSaidas: number
-}
-
-function FinancePeriodSummary({
-  currentDate,
-  saldoPeriodo,
-  totalRecebimentos,
-  previsaoTotalBruto,
-  comissoesPagas,
-  totalSaidas,
-}: FinancePeriodSummaryProps) {
-  const items = [
-    { label: "Saldo do período", value: saldoPeriodo, detail: "Entradas menos saídas", tone: "success", icon: Wallet },
-    { label: "Recebimentos", value: totalRecebimentos, detail: "Vendas concluídas", tone: "success", icon: ArrowUpRight },
-    { label: "Previsão", value: previsaoTotalBruto, detail: "Inclui comandas em aberto", tone: "default", icon: TrendingUp },
-    { label: "Comissões pagas", value: comissoesPagas, detail: "Repasses no período", tone: "info", icon: Receipt },
-    { label: "Saídas", value: totalSaidas, detail: "Despesas e comissões", tone: "destructive", icon: ArrowDownRight },
-  ] as const
-
-  return (
-    <section aria-label="Resumo financeiro do período" className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
-      <div className="flex flex-col gap-1 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-sm font-extrabold text-foreground">Resumo do período</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">Os valores abaixo usam os mesmos lançamentos e comandas mostrados nos detalhes.</p>
-        </div>
-        <span className="text-xs font-semibold capitalize text-muted-foreground">{format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}</span>
-      </div>
-      <div className="grid lg:grid-cols-5">
-        {items.map((item, index) => {
-          const Icon = item.icon
-          const valueClass = item.tone === "destructive" ? "text-destructive" : item.tone === "success" ? "text-success" : "text-foreground"
-          const iconClass = item.tone === "destructive" ? "text-destructive" : item.tone === "success" ? "text-success" : item.tone === "info" ? "text-info" : "text-primary"
-          return (
-            <div key={item.label} className={`min-w-0 px-5 py-4 ${index < items.length - 1 ? "border-b border-border lg:border-b-0 lg:border-r" : ""}`}>
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground"><Icon className={`size-3.5 ${iconClass}`} aria-hidden="true" />{item.label}</div>
-              <p className={`mt-2 truncate text-xl font-extrabold tracking-[-0.02em] tabular-nums ${valueClass}`}>{formatBRL(item.value)}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{item.detail}</p>
-            </div>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
 export default function FinanceiroTab({
   barbershopId,
   barbershopName,
@@ -105,180 +73,116 @@ export default function FinanceiroTab({
   transactions = [],
   subscriptionPayments = [],
   subscriptionActive = true,
-  trialEndsAt
+  trialEndsAt,
 }: FinanceiroTabProps) {
-  // Controle de sub-aba do financeiro
   const [subTab, setSubTab] = useState<"dashboard" | "assinaturas">("dashboard")
-
-  // Filtro de mês/ano atual
-  const [currentDate, setCurrentDate] = useState<Date>(new Date())
-
-  // Modal de lançamento de despesa/receita manual
+  const [currentDate, setCurrentDate] = useState(new Date())
   const [isNewTxOpen, setIsNewTxOpen] = useState(false)
   const [txType, setTxType] = useState<"RECEITA" | "DESPESA">("DESPESA")
   const [txCategory, setTxCategory] = useState("Lançamento Manual")
   const [txDescription, setTxDescription] = useState("")
-  const [txAmount, setTxAmount] = useState<number>(0)
+  const [txAmount, setTxAmount] = useState(0)
+  const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [isSubmittingTx, setIsSubmittingTx] = useState(false)
+  const [entryPage, setEntryPage] = useState(1)
+  const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate])
+  const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate])
+  const summary = useMemo(
+    () =>
+      summarizeFinance(
+        bookings,
+        productSales,
+        transactions,
+        monthStart,
+        monthEnd,
+      ),
+    [bookings, productSales, transactions, monthStart, monthEnd],
+  )
+  const days = useMemo(
+    () =>
+      eachDayOfInterval({ start: monthStart, end: monthEnd }).map((day) => ({
+        day,
+        value: summarizeFinance(
+          bookings,
+          productSales,
+          transactions,
+          startOfDay(day),
+          endOfDay(day),
+        ).revenue,
+      })),
+    [bookings, productSales, transactions, monthStart, monthEnd],
+  )
+  const maxRevenue = Math.max(...days.map((day) => day.value), 1)
+  const entries = useMemo(
+    () =>
+      [
+        ...summary.completed.map((b) => ({
+          id: b.id,
+          date: b.date,
+          name: b.user.name || "Cliente",
+          category: "Atendimento concluído",
+          amount: Number(b.totalPrice ?? b.service.price),
+          income: true,
+        })),
+        ...summary.standalone.map((s) => ({
+          id: s.id,
+          date: s.date,
+          name: s.productName,
+          category: "Venda avulsa de produto",
+          amount: Number(s.totalAmount),
+          income: true,
+        })),
+        ...summary.entries.map((t) => ({
+          id: t.id,
+          date: t.date,
+          name: t.description,
+          category: t.category,
+          amount: Number(t.amount),
+          income: t.type === "RECEITA",
+        })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [summary],
+  )
+  const pageCount = Math.max(1, Math.ceil(entries.length / 10))
+  const currentPage = Math.min(entryPage, pageCount)
+  const pageEntries = entries.slice((currentPage - 1) * 10, currentPage * 10)
+  const changeMonth = (offset: number) => {
+    setCurrentDate((date) => addMonths(date, offset))
+    setEntryPage(1)
+  }
 
-  // Intervalo do mês selecionado
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(currentDate)
-
-  // 1. Cálculos de métricas do período selecionado
-  const metrics = useMemo(() => {
-    // Comandas finalizadas do período
-    const completedBookings = bookings.filter((b) => {
-      const bDate = new Date(b.date)
-      return bDate >= monthStart && bDate <= monthEnd && b.status === "DONE"
-    })
-
-    // Comandas em aberto
-    const openBookings = bookings.filter((b) => {
-      const bDate = new Date(b.date)
-      return bDate >= monthStart && bDate <= monthEnd && (b.status === "CONFIRMED" || b.status === "PENDING")
-    })
-
-    // Vendas de produtos do período
-    const monthProductSales = productSales.filter((ps) => {
-      const psDate = new Date(ps.date)
-      return psDate >= monthStart && psDate <= monthEnd
-    })
-
-    // Faturamento dos cortes/serviços finalizados
-    const totalServicosFinalizados = completedBookings.reduce(
-      (acc, b) => acc + Number(b.totalPrice || b.service.price),
-      0
-    )
-
-    // Faturamento das vendas de produtos
-    const totalVendasProdutos = monthProductSales.reduce(
-      (acc, ps) => acc + Number(ps.totalAmount),
-      0
-    )
-
-    // Total Bruto de vendas no período (finalizados + produtos)
-    const totalBrutoVendas = totalServicosFinalizados + totalVendasProdutos
-
-    // Comandas em aberto (valor)
-    const totalComandasAberto = openBookings.reduce(
-      (acc, b) => acc + Number(b.totalPrice || b.service.price),
-      0
-    )
-
-    // Previsão do total bruto de vendas no período (finalizadas + em aberto)
-    const previsaoTotalBruto = totalBrutoVendas + totalComandasAberto
-
-    // Clientes atendidos no mês
-    const totalClientesAtendidos = completedBookings.length
-    const daysPassedInMonth = Math.max(1, new Date().getDate())
-    const mediaClientesPorDia = Number((totalClientesAtendidos / daysPassedInMonth).toFixed(2))
-
-    // Despesas e Saídas
-    const monthTransactions = transactions.filter((t) => {
-      const tDate = new Date(t.date)
-      return tDate >= monthStart && tDate <= monthEnd
-    })
-
-    // Comissões pagas registradas
-    const comissoesPagas = monthTransactions
-      .filter((t) => t.type === "COMISSAO_PAGA")
-      .reduce((acc, t) => acc + Number(t.amount), 0)
-
-    // Despesas manuais
-    const despesasManuais = monthTransactions
-      .filter((t) => t.type === "DESPESA")
-      .reduce((acc, t) => acc + Number(t.amount), 0)
-
-    const totalSaidas = comissoesPagas + despesasManuais
-
-    // Recebimentos no período
-    const totalRecebimentos = totalBrutoVendas
-    const saldoPeriodo = totalRecebimentos - totalSaidas
-
-    // Valores a receber
-    const receitasManuais = monthTransactions
-      .filter((t) => t.type === "RECEITA")
-      .reduce((acc, t) => acc + Number(t.amount), 0)
-
-    const pacotesAssinaturas = 0 // Reserva para pacotes
-    const totalLiquidoReceber = totalRecebimentos + receitasManuais
-
-    return {
-      totalBrutoVendas,
-      totalComandasAberto,
-      totalClientesAtendidos,
-      mediaClientesPorDia,
-      previsaoTotalBruto,
-      totalRecebimentos,
-      totalSaidas,
-      saldoPeriodo,
-      totalServicosFinalizados,
-      totalVendasProdutos,
-      receitasManuais,
-      pacotesAssinaturas,
-      totalLiquidoReceber,
-      comissoesPagas,
-      despesasManuais
-    }
-  }, [bookings, productSales, transactions, monthStart, monthEnd])
-
-  // 2. Dados diários para o gráfico "Total de receita bruta por dia"
-  const chartDays = useMemo(() => {
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
-    return days.map((day) => {
-      const dayBookings = bookings.filter((b) => {
-        const bDate = new Date(b.date)
-        return isSameDay(bDate, day) && b.status === "DONE"
-      })
-      const daySales = productSales.filter((ps) => {
-        const psDate = new Date(ps.date)
-        return isSameDay(psDate, day)
-      })
-
-      const totalServicos = dayBookings.reduce((acc, b) => acc + Number(b.totalPrice || b.service.price), 0)
-      const totalProdutos = daySales.reduce((acc, ps) => acc + Number(ps.totalAmount), 0)
-      const totalDia = totalServicos + totalProdutos
-
-      return {
-        dateStr: format(day, "dd/MM"),
-        dayNum: format(day, "dd"),
-        total: totalDia
-      }
-    })
-  }, [bookings, productSales, monthStart, monthEnd])
-
-  const maxDailyRevenue = Math.max(...chartDays.map((d) => d.total), 100)
-
-  // Handler: Novo Lançamento Manual (Despesa / Receita)
   const handleCreateTransaction = async () => {
+    if (
+      !txDescription.trim() ||
+      !Number.isFinite(txAmount) ||
+      txAmount <= 0 ||
+      !txDate
+    ) {
+      toast.error("Informe a descrição, uma data e um valor maior que zero.")
+      return
+    }
+    setIsSubmittingTx(true)
     try {
-      if (!txDescription.trim()) {
-        toast.error("Informe a descrição.")
-        return
-      }
-      if (txAmount <= 0) {
-        toast.error("Informe um valor válido.")
-        return
-      }
-
-      setIsSubmittingTx(true)
-
       await createFinancialTransactionAction({
         barbershopId,
         type: txType,
         category: txCategory,
         description: txDescription.trim(),
         amount: txAmount,
-        date: new Date()
+        date: new Date(txDate + "T12:00:00"),
       })
-
-      toast.success(`${txType === "DESPESA" ? "Despesa" : "Receita"} lançada com sucesso!`)
+      setCurrentDate(new Date(txDate + "T12:00:00"))
+      setEntryPage(1)
       setIsNewTxOpen(false)
       setTxDescription("")
       setTxAmount(0)
-    } catch (err: any) {
-      toast.error(err.message || "Não foi possível registrar a transação. Tente novamente.")
+      toast.success("Lançamento registrado.")
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar o lançamento.",
+      )
     } finally {
       setIsSubmittingTx(false)
     }
@@ -286,366 +190,315 @@ export default function FinanceiroTab({
 
   return (
     <div className="space-y-6">
-      {/* 🧭 Navegação Superior entre Sub-Abas: Dashboard | Histórico Assinatura */}
       <AdminPageHeader
-        icon={DollarSign}
-        title="Visão financeira"
-        description={`Acompanhe entradas, saídas e o saldo ${barbershopName ? `da ${barbershopName}` : "da sua barbearia"} no período selecionado.`}
+        icon={Wallet}
+        title="Financeiro"
+        description={`Entradas, saídas e atendimentos ${barbershopName ? "da " + barbershopName : "da sua barbearia"}.`}
         actions={
           <>
-            <div className="flex items-center rounded-lg bg-secondary p-1">
-              <Button variant="ghost" size="icon-sm" aria-label="Ver mês anterior" onClick={() => setCurrentDate((date) => addMonths(date, -1))}><ChevronLeft className="size-3.5" /></Button>
-              <span className="min-w-28 px-2 text-center text-xs font-bold capitalize text-foreground">{format(currentDate, "MMM yyyy", { locale: ptBR })}</span>
-              <Button variant="ghost" size="icon-sm" aria-label="Ver próximo mês" onClick={() => setCurrentDate((date) => addMonths(date, 1))}><ChevronRight className="size-3.5" /></Button>
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Mês anterior"
+                onClick={() => changeMonth(-1)}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <span className="min-w-28 text-center text-sm capitalize">
+                {format(currentDate, "MMM yyyy", { locale: ptBR })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Próximo mês"
+                onClick={() => changeMonth(1)}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
             </div>
-            <div className="flex rounded-lg bg-secondary p-1">
-              <Button variant={subTab === "dashboard" ? "default" : "ghost"} size="sm" onClick={() => setSubTab("dashboard")} className="gap-1.5 font-bold"><TrendingUp className="size-3.5" /> Financeiro</Button>
-              <Button variant={subTab === "assinaturas" ? "default" : "ghost"} size="sm" onClick={() => setSubTab("assinaturas")} className="gap-1.5 font-bold"><QrCode className="size-3.5" /> Assinatura</Button>
-            </div>
-            <Button onClick={() => setIsNewTxOpen(true)} className="gap-1.5 font-bold"><PlusCircle className="size-3.5" /> Novo lançamento</Button>
+            <Button
+              variant={subTab === "dashboard" ? "secondary" : "ghost"}
+              onClick={() => setSubTab("dashboard")}
+            >
+              Financeiro
+            </Button>
+            <Button
+              variant={subTab === "assinaturas" ? "secondary" : "ghost"}
+              onClick={() => setSubTab("assinaturas")}
+            >
+              Meu plano
+            </Button>
+            <Button onClick={() => setIsNewTxOpen(true)} className="gap-2">
+              <PlusCircle className="size-4" /> Novo lançamento
+            </Button>
           </>
         }
       />
-
       {subTab === "dashboard" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <FinancePeriodSummary
-            currentDate={currentDate}
-            saldoPeriodo={metrics.saldoPeriodo}
-            totalRecebimentos={metrics.totalRecebimentos}
-            previsaoTotalBruto={metrics.previsaoTotalBruto}
-            comissoesPagas={metrics.comissoesPagas}
-            totalSaidas={metrics.totalSaidas}
-          />
-          {/* 📊 SEÇÃO SUPERIOR: Gráfico "Total de receita bruta por dia" + Cards laterais (Idêntico à Imagem 2) */}
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-            {/* Gráfico SVG no Topo Esquerdo */}
-            <div className="flex flex-col justify-between rounded-xl bg-card p-5 shadow-[0_12px_30px_hsl(var(--foreground)/0.08)] lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminMetricCard
+              icon={ArrowUpRight}
+              label="Entradas realizadas"
+              value={formatBRL(summary.revenue)}
+              description="Atendimentos concluídos, produtos e receitas manuais."
+            />
+            <AdminMetricCard
+              icon={ArrowDownRight}
+              label="Saídas registradas"
+              value={formatBRL(summary.outflows)}
+              description="Despesas, comissões pagas e vales."
+            />
+            <AdminMetricCard
+              icon={Wallet}
+              label="Saldo do período"
+              value={formatBRL(summary.balance)}
+              description="Entradas menos saídas registradas. Não representa lucro."
+            />
+            <AdminMetricCard
+              icon={TrendingUp}
+              label="Comandas em aberto"
+              value={formatBRL(summary.openRevenue)}
+              description={`${summary.open.length} atendimento(s) aguardando conclusão.`}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminMetricCard
+              icon={CheckCircle2}
+              label="Atendimentos concluídos"
+              value={String(summary.completed.length)}
+              description={`Ticket médio: ${formatBRL(summary.completed.length ? summary.completed.reduce((sum, booking) => sum + Number(booking.totalPrice ?? booking.service.price), 0) / summary.completed.length : 0)}.`}
+            />
+            <AdminMetricCard
+              icon={Users}
+              label="Clientes atendidos"
+              value={String(
+                new Set(summary.completed.map((booking) => booking.userId))
+                  .size,
+              )}
+              description="Clientes distintos com atendimento concluído no período."
+            />
+            <AdminMetricCard
+              icon={Receipt}
+              label="Comissões pagas"
+              value={formatBRL(summary.paidCommissions)}
+              description={`Adiantamentos e vales: ${formatBRL(summary.advances)}.`}
+            />
+            <AdminMetricCard
+              icon={TrendingUp}
+              label="Receita prevista"
+              value={formatBRL(summary.projectedRevenue)}
+              description="Entradas realizadas mais comandas abertas. Não é dinheiro recebido."
+            />
+          </div>
+
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-success" />
-                    Total de receita bruta por dia
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    Faturamento diário consolidado de cortes, serviços e produtos
+                  <h2 className="text-lg">Entradas por dia</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Movimento realizado no mês selecionado.
                   </p>
                 </div>
-                <span className="text-xs font-bold text-success bg-success/10 px-2.5 py-1 rounded-lg border border-success/20">
-                  {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                <span className="text-sm capitalize text-muted-foreground">
+                  {format(currentDate, "MMMM yyyy", { locale: ptBR })}
                 </span>
               </div>
-
-              {/* Área do Gráfico */}
-              <div className="relative h-56 w-full pt-4">
-                {/* Linhas de Grade de Fundo */}
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-                  <div className="border-b border-dashed border-muted-foreground w-full" />
-                  <div className="border-b border-dashed border-muted-foreground w-full" />
-                  <div className="border-b border-dashed border-muted-foreground w-full" />
-                  <div className="border-b border-dashed border-muted-foreground w-full" />
+              <div className="mt-6 flex gap-3">
+                <div className="flex h-60 shrink-0 flex-col justify-between pb-6 text-xs tabular-nums text-muted-foreground">
+                  <span>{formatBRL(maxRevenue === 1 ? 0 : maxRevenue)}</span>
+                  <span>
+                    {formatBRL(maxRevenue === 1 ? 0 : maxRevenue / 2)}
+                  </span>
+                  <span>R$ 0</span>
                 </div>
-
-                {/* SVG Line / Area com Neon Green Glow */}
-                <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${chartDays.length * 20} 140`} preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="neonGreenGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity="0.45" />
-                      <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Curva Suave preenchida */}
-                  {(() => {
-                    const points = chartDays.map((d, idx) => {
-                      const x = idx * 20 + 10
-                      const y = 130 - (d.total / maxDailyRevenue) * 110
-                      return { x, y }
-                    })
-
-                    if (points.length < 2) return null
-
-                    let pathD = `M ${points[0].x} ${points[0].y}`
-                    for (let i = 1; i < points.length; i++) {
-                      const prev = points[i - 1]
-                      const curr = points[i]
-                      const midX = (prev.x + curr.x) / 2
-                      pathD += ` C ${midX} ${prev.y}, ${midX} ${curr.y}, ${curr.x} ${curr.y}`
-                    }
-
-                    const areaD = `${pathD} L ${points[points.length - 1].x} 140 L ${points[0].x} 140 Z`
-
-                    return (
-                      <>
-                        <path d={areaD} fill="url(#neonGreenGradient)" />
-                        <path
-                          d={pathD}
-                          fill="none"
-                          stroke="hsl(var(--success))"
-                          strokeWidth="2.5"
-                          className="drop-shadow-[0_4px_8px_hsl(var(--success)/0.3)]"
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="relative flex h-60 items-end gap-1 border-b border-border pb-6"
+                    role="img"
+                    aria-label="Gráfico de entradas diárias"
+                  >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-border" />
+                    <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
+                    {days.map(({ day, value }) => (
+                      <div
+                        key={day.toISOString()}
+                        className="group relative flex h-full min-w-0 flex-1 items-end"
+                        title={format(day, "dd/MM") + ": " + formatBRL(value)}
+                      >
+                        <div
+                          className="w-full rounded-t-sm bg-primary/70 transition-colors group-hover:bg-primary"
+                          style={{
+                            height: value
+                              ? Math.max(2, (value / maxRevenue) * 100) + "%"
+                              : "0",
+                          }}
                         />
-                        {points.map((p, idx) => (
-                          <circle
-                            key={idx}
-                            cx={p.x}
-                            cy={p.y}
-                            r="3"
-                            fill="hsl(var(--success))"
-                            stroke="hsl(var(--background))"
-                            strokeWidth="1.5"
-                            className="transition-transform hover:scale-150 cursor-pointer"
-                          >
-                            <title>{`${chartDays[idx].dateStr}: R$ ${chartDays[idx].total.toFixed(2)}`}</title>
-                          </circle>
-                        ))}
-                      </>
-                    )
-                  })()}
-                </svg>
-              </div>
-
-              {/* Rótulos do Eixo X */}
-              <div className="flex justify-between pt-2 text-[10px] font-semibold tabular-nums text-muted-foreground">
-                <span>01/{format(currentDate, "MM")}</span>
-                <span>08/{format(currentDate, "MM")}</span>
-                <span>15/{format(currentDate, "MM")}</span>
-                <span>22/{format(currentDate, "MM")}</span>
-                <span>{chartDays.length}/{format(currentDate, "MM")}</span>
-              </div>
-            </div>
-
-            {/* Coluna de Cards Laterais (Idêntica à Imagem 2) */}
-            <div className="space-y-3.5 flex flex-col justify-between">
-              {/* Card 1: Total bruto de vendas no período */}
-              <div className="rounded-xl bg-card p-4 ring-1 ring-border">
-                <span className="text-[11px] font-bold text-success uppercase tracking-wider block">
-                  Total bruto de vendas no período
-                </span>
-                <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">
-                  R$ {metrics.totalBrutoVendas.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Valor total bruto das comandas finalizadas no período selecionado
-                </p>
-              </div>
-
-              {/* Card Duplo: Total comandas em aberto | Total clientes Atendidos | Por dia */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-card p-3 ring-1 ring-border">
-                  <span className="text-[10px] font-semibold text-warning uppercase block">Em Aberto</span>
-                  <strong className="text-sm font-bold text-foreground mt-1 block">
-                    R$ {metrics.totalComandasAberto.toFixed(2).replace(".", ",")}
-                  </strong>
-                  <span className="text-[9px] text-muted-foreground">Comandas</span>
-                </div>
-
-                <div className="rounded-xl bg-card p-3 text-center ring-1 ring-border">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Atendidos</span>
-                  <strong className="text-base font-extrabold text-foreground mt-1 block">
-                    {metrics.totalClientesAtendidos}
-                  </strong>
-                  <span className="text-[9px] text-muted-foreground">Clientes</span>
-                </div>
-
-                <div className="rounded-xl bg-card p-3 text-right ring-1 ring-border">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Por dia</span>
-                  <strong className="text-base font-extrabold text-success mt-1 block">
-                    {metrics.mediaClientesPorDia}
-                  </strong>
-                  <span className="text-[9px] text-muted-foreground">Média clientes</span>
+                        {[1, 8, 15, 22, monthEnd.getDate()].includes(
+                          day.getDate(),
+                        ) && (
+                          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
+                            {format(day, "dd")}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    {summary.revenue === 0 && (
+                      <p className="absolute inset-0 flex items-center justify-center pb-6 text-sm text-muted-foreground">
+                        Sem entradas neste mês
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Card 3: Previsão do total bruto de vendas */}
-              <div className="rounded-xl bg-card p-4 ring-1 ring-border">
-                <span className="text-[11px] font-bold text-success uppercase tracking-wider block">
-                  Previsão do total bruto de vendas no período
-                </span>
-                <p className="text-2xl font-extrabold text-success mt-1">
-                  R$ {metrics.previsaoTotalBruto.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Previsão do valor total bruto de todas as comandas do período
+              <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="size-2 rounded-sm bg-primary" /> Atendimentos,
+                produtos e receitas manuais
+              </div>
+            </section>
+            <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+              <h2 className="text-lg">De onde vem o movimento</h2>
+              <dl className="mt-5 divide-y divide-border text-sm">
+                {[
+                  ["Serviços concluídos", summary.serviceRevenue],
+                  ["Produtos vendidos", summary.productRevenue],
+                  ["Receitas manuais", summary.manualRevenue],
+                  ["Despesas", -summary.expenses],
+                  ["Comissões pagas", -summary.paidCommissions],
+                  ["Vales", -summary.advances],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between gap-3 py-3"
+                  >
+                    <dt className="text-muted-foreground">{label}</dt>
+                    <dd className="tabular-nums text-foreground">
+                      {formatBRL(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-4 border-t border-border pt-4">
+                <div className="flex justify-between gap-3 text-sm">
+                  <span>Comissões a repassar</span>
+                  <span className="tabular-nums">
+                    {formatBRL(summary.pendingCommissions)}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Já desconta os repasses e vales registrados. Ainda não é uma
+                  saída do caixa.
                 </p>
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* 💵 SEÇÃO: "Saldo do período" (Idêntico à Imagem 2) */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-success" />
-              Saldo do período
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Card Grande Verde: Saldo do período */}
-              <div className="flex flex-col justify-between rounded-xl bg-success/10 p-5 ring-1 ring-success/25">
-                <span className="text-xs font-extrabold text-success uppercase tracking-wider">
-                  Saldo do período
-                </span>
-                <p className="text-3xl font-black text-success my-2">
-                  R$ {metrics.saldoPeriodo.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-success/80">
-                  Total de recebimentos - Total de saídas
-                </p>
-              </div>
-
-              {/* Card: Total de Recebimentos no período */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-5 ring-1 ring-border">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <ArrowUpRight className="w-4 h-4 text-success" /> Total de Recebimentos no período
-                </span>
-                <p className="text-2xl font-bold text-success my-2">
-                  R$ {metrics.totalRecebimentos.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  (taxas de pagamento já descontadas)
-                </p>
-              </div>
-
-              {/* Card: Total de Saídas no período */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-5 ring-1 ring-border">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <ArrowDownRight className="w-4 h-4 text-destructive" /> Total de Saídas no período
-                </span>
-                <p className="text-2xl font-bold text-destructive my-2">
-                  R$ {metrics.totalSaidas.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  Total de despesas e comissões no período
-                </p>
-              </div>
+          <section className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
+              <h2 className="text-lg">Movimentações do período</h2>
+              <span className="text-sm text-muted-foreground">
+                {entries.length} registro(s)
+              </span>
             </div>
-          </div>
-
-          {/* 📥 SEÇÃO: "Valores a receber no período selecionado" (Idêntico à Imagem 2) */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-warning" />
-              Valores a receber no período selecionado
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {/* Card 1 */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-lg font-bold text-success">
-                  R$ {metrics.totalServicosFinalizados.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-                  Vendas realizadas DENTRO do período e com data de recebimento dentro período selecionado
-                </p>
-              </div>
-
-              {/* Card 2 */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-lg font-bold text-success">
-                  R$ {metrics.totalVendasProdutos.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-                  Vendas de produtos realizadas no período selecionado
-                </p>
-              </div>
-
-              {/* Card 3 */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-lg font-bold text-foreground">
-                  R$ {metrics.receitasManuais.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-                  Lançamentos manuais de receita (entradas) lançadas no período selecionado
-                </p>
-              </div>
-
-              {/* Card 4 */}
-              <div className="flex flex-col justify-between rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-lg font-bold text-foreground">
-                  R$ {metrics.pacotesAssinaturas.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-                  Venda de pacotes e planos de assinatura
-                </p>
-              </div>
-
-              {/* Card 5 (Verde destacado) */}
-              <div className="flex flex-col justify-between rounded-xl bg-success/10 p-4 ring-1 ring-success/25">
-                <p className="text-xl font-extrabold text-success">
-                  R$ {metrics.totalLiquidoReceber.toFixed(2).replace(".", ",")}
-                </p>
-                <p className="text-[10px] text-success/90 font-medium mt-2 leading-relaxed">
-                  Valor total líquido a receber no período selecionado (taxas de pagamento já descontadas)
-                </p>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="px-5 py-3">Descrição</th>
+                    <th className="px-5 py-3">Categoria</th>
+                    <th className="px-5 py-3">Data</th>
+                    <th className="px-5 py-3 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {pageEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-muted/30">
+                      <td className="px-5 py-4">{entry.name}</td>
+                      <td className="px-5 py-4 text-muted-foreground">
+                        {entry.category}
+                      </td>
+                      <td className="px-5 py-4 text-muted-foreground">
+                        {format(new Date(entry.date), "dd/MM/yyyy")}
+                      </td>
+                      <td className="px-5 py-4 text-right tabular-nums">
+                        {entry.income ? "+" : "−"} {formatBRL(entry.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-
-          {/* 📤 SEÇÃO: "Despesas pagas no período selecionado" (Idêntico à Imagem 2) */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-destructive" />
-              Despesas pagas no período selecionado
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-xl font-bold text-destructive">
-                  R$ {metrics.comissoesPagas.toFixed(2).replace(".", ",")}
-                </p>
-                <span className="text-xs font-semibold text-muted-foreground block mt-1">Total de comissões pagas</span>
-                <p className="text-[10px] text-muted-foreground">Valor total das comissões repassadas aos barbeiros no período</p>
+            {!entries.length && (
+              <p className="p-10 text-center text-sm text-muted-foreground">
+                Nenhuma movimentação neste mês.
+              </p>
+            )}
+            {entries.length > 10 && (
+              <div className="flex items-center justify-between border-t border-border px-5 py-3">
+                <span className="text-sm text-muted-foreground">
+                  Página {currentPage} de {pageCount}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === 1}
+                    onClick={() => setEntryPage(currentPage - 1)}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === pageCount}
+                    onClick={() => setEntryPage(currentPage + 1)}
+                  >
+                    Próxima
+                  </Button>
+                </div>
               </div>
-
-              <div className="rounded-xl bg-card p-4 ring-1 ring-border">
-                <p className="text-xl font-bold text-destructive">
-                  R$ {metrics.despesasManuais.toFixed(2).replace(".", ",")}
-                </p>
-                <span className="text-xs font-semibold text-muted-foreground block mt-1">Lançamentos manuais de despesas</span>
-                <p className="text-[10px] text-muted-foreground">Valor total de despesas lançadas manualmente no período</p>
-              </div>
-
-              <div className="rounded-xl bg-destructive/10 p-4 ring-1 ring-destructive/25">
-                <p className="text-xl font-bold text-destructive">
-                  R$ {metrics.totalSaidas.toFixed(2).replace(".", ",")}
-                </p>
-                <span className="text-xs font-semibold text-destructive block mt-1">Total de despesas pagas</span>
-                <p className="text-[10px] text-destructive/70">Valor total das despesas pagas no período selecionado</p>
-              </div>
-            </div>
-          </div>
-        </div>
+            )}
+          </section>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Os valores seguem a data do atendimento e dos lançamentos. Comandas
+            abertas não entram no saldo. Este resumo não desconta taxas de
+            pagamento nem custos que não tenham sido registrados.
+          </p>
+        </>
       )}
-
-      {/* 💳 SUB-ABA: HISTÓRICO DE ASSINATURA SAAS (MENSALIDADE PIX MERCADO PAGO) */}
       {subTab === "assinaturas" && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-          <div className="bg-card border border-border/50 rounded-2xl p-6 space-y-4 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/40">
+        <div className="animate-in fade-in space-y-5 duration-200">
+          <div className="space-y-4 rounded-2xl border border-border/50 bg-card p-6 shadow-md">
+            <div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-4 sm:flex-row sm:items-center">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-lg text-foreground">Status do Plano SaaS</h3>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Status do Plano SaaS
+                  </h3>
                   {subscriptionActive ? (
-                    <span className="bg-success/20 text-success text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 border border-success/30">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Assinatura Ativa
+                    <span className="flex items-center gap-1 rounded-full border border-success/30 bg-success/20 px-2.5 py-1 text-xs font-bold text-success">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Assinatura Ativa
                     </span>
                   ) : trialEndsAt && new Date() < new Date(trialEndsAt) ? (
-                    <span className="bg-info/20 text-info text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 border border-info/30">
-                      <Sparkles className="w-3.5 h-3.5" /> Período de Testes (Trial)
+                    <span className="flex items-center gap-1 rounded-full border border-info/30 bg-info/20 px-2.5 py-1 text-xs font-bold text-info">
+                      <Sparkles className="h-3.5 w-3.5" /> Período de Testes
+                      (Trial)
                     </span>
                   ) : (
-                    <span className="bg-destructive/20 text-destructive text-xs font-bold px-2.5 py-1 rounded-full">
+                    <span className="rounded-full bg-destructive/20 px-2.5 py-1 text-xs font-bold text-destructive">
                       Pendente de Pagamento
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Comprovantes e registros de renovação da mensalidade da barbearia processados via Pix Mercado Pago.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Comprovantes e registros de renovação da mensalidade da
+                  barbearia processados via Pix Mercado Pago.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/30 p-2.5 rounded-xl">
-                <ShieldCheck className="w-4 h-4 text-success" />
+              <div className="flex items-center gap-2 rounded-xl bg-secondary/30 p-2.5 text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 text-success" />
                 <span>Checkout Transparente Seguro</span>
               </div>
             </div>
@@ -656,43 +509,55 @@ export default function FinanceiroTab({
                 {subscriptionPayments.map((p) => (
                   <div
                     key={p.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/15 border border-border/60 hover:border-success/40 transition-colors"
+                    className="flex flex-col justify-between gap-4 rounded-xl border border-border/60 bg-secondary/15 p-4 transition-colors hover:border-success/40 sm:flex-row sm:items-center"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-2.5 rounded-xl bg-success/10 text-success mt-0.5">
-                        <QrCode className="w-5 h-5" />
+                      <div className="mt-0.5 rounded-xl bg-success/10 p-2.5 text-success">
+                        <QrCode className="h-5 w-5" />
                       </div>
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <strong className="text-sm font-bold text-foreground">Mensalidade SaaS</strong>
-                          <span className="text-[10px] bg-success/20 text-success px-2 py-0.5 rounded-md font-bold">
+                          <strong className="text-sm font-bold text-foreground">
+                            Mensalidade SaaS
+                          </strong>
+                          <span className="rounded-md bg-success/20 px-2 py-0.5 text-[10px] font-bold text-success">
                             {p.status}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(p.paidAt), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                          {format(
+                            new Date(p.paidAt),
+                            "dd 'de' MMMM 'de' yyyy 'às' HH:mm",
+                            { locale: ptBR },
+                          )}
                         </p>
-                        <p className="text-[10px] text-muted-foreground font-mono">
-                          ID Transação: #{p.mercadopagoPaymentId} • Método: {p.paymentMethod}
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                          ID Transação: #{p.mercadopagoPaymentId} • Método:{" "}
+                          {p.paymentMethod}
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-border/40">
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Valor</span>
+                    <div className="border-t border-border/40 pt-2 text-left sm:border-t-0 sm:pt-0 sm:text-right">
+                      <span className="block text-[10px] font-bold uppercase text-muted-foreground">
+                        Valor
+                      </span>
                       <strong className="text-lg font-extrabold text-success">
-                        R$ {Number(p.amount).toFixed(2).replace(".", ",")}
+                        {formatBRL(p.amount)}
                       </strong>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 border border-dashed border-border rounded-xl">
-                <QrCode className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-semibold text-muted-foreground">Nenhum pagamento registrado ainda</p>
+              <div className="rounded-xl border border-dashed border-border py-10 text-center">
+                <QrCode className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-50" />
+                <p className="text-sm font-semibold text-muted-foreground">
+                  Nenhum pagamento registrado ainda
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Se você está no período de testes gratuitos, os comprovantes de mensalidade paga aparecerão aqui.
+                  Se você está no período de testes gratuitos, os comprovantes
+                  de mensalidade paga aparecerão aqui.
                 </p>
               </div>
             )}
@@ -700,15 +565,15 @@ export default function FinanceiroTab({
         </div>
       )}
 
-      {/* ➕ MODAL DE LANÇAMENTO MANUAL (DESPESA OU RECEITA) */}
       <Dialog open={isNewTxOpen} onOpenChange={setIsNewTxOpen}>
-        <DialogContent className="max-w-md bg-card border-border p-6 text-foreground">
+        <DialogContent className="max-w-md border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-success">
-              <PlusCircle className="w-5 h-5" /> Novo Lançamento Financeiro
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-success">
+              <PlusCircle className="h-5 w-5" /> Novo Lançamento Financeiro
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Cadastre despesas operacionais ou receitas avulsas para manter o fluxo de caixa atualizado.
+              Cadastre despesas operacionais ou receitas avulsas para manter o
+              fluxo de caixa atualizado.
             </DialogDescription>
           </DialogHeader>
 
@@ -717,7 +582,7 @@ export default function FinanceiroTab({
               <button
                 type="button"
                 onClick={() => setTxType("DESPESA")}
-                className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                className={`rounded-lg px-3 py-2 text-center font-bold transition-all ${
                   txType === "DESPESA"
                     ? "bg-destructive text-destructive-foreground shadow-sm"
                     : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
@@ -728,7 +593,7 @@ export default function FinanceiroTab({
               <button
                 type="button"
                 onClick={() => setTxType("RECEITA")}
-                className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                className={`rounded-lg px-3 py-2 text-center font-bold transition-all ${
                   txType === "RECEITA"
                     ? "bg-success/60 text-foreground shadow-sm"
                     : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
@@ -739,23 +604,31 @@ export default function FinanceiroTab({
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Categoria</label>
+              <label className="font-semibold text-muted-foreground">
+                Categoria
+              </label>
               <select
                 value={txCategory}
                 onChange={(e) => setTxCategory(e.target.value)}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 <option value="Lançamento Manual">Lançamento Manual</option>
                 <option value="Aluguel & Contas">Aluguel & Contas</option>
                 <option value="Produtos & Estoque">Produtos & Estoque</option>
-                <option value="Manutenção & Equipamentos">Manutenção & Equipamentos</option>
-                <option value="Marketing & Anúncios">Marketing & Anúncios</option>
+                <option value="Manutenção & Equipamentos">
+                  Manutenção & Equipamentos
+                </option>
+                <option value="Marketing & Anúncios">
+                  Marketing & Anúncios
+                </option>
                 <option value="Outros">Outros</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Descrição</label>
+              <label className="font-semibold text-muted-foreground">
+                Descrição
+              </label>
               <Input
                 value={txDescription}
                 onChange={(e) => setTxDescription(e.target.value)}
@@ -765,28 +638,43 @@ export default function FinanceiroTab({
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Valor (R$)</label>
+              <label htmlFor="transaction-date">Data do lançamento</label>
               <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={txAmount || ""}
-                onChange={(e) => setTxAmount(Number(e.target.value))}
+                id="transaction-date"
+                type="date"
+                value={txDate}
+                onChange={(event) => setTxDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-muted-foreground">
+                Valor (R$)
+              </label>
+              <MoneyInput
+                value={txAmount}
+                onValueChange={setTxAmount}
                 placeholder="0,00"
                 className="bg-secondary/40 font-bold"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsNewTxOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsNewTxOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
               onClick={handleCreateTransaction}
-              disabled={isSubmittingTx || !txDescription.trim() || txAmount <= 0}
-              className="bg-success/60 hover:bg-success/70 text-foreground font-bold text-xs"
+              disabled={
+                isSubmittingTx || !txDescription.trim() || txAmount <= 0
+              }
+              className="text-sm font-medium"
             >
               {isSubmittingTx ? "Salvando..." : "Registrar Lançamento"}
             </Button>

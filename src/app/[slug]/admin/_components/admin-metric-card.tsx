@@ -12,7 +12,10 @@ type AdminMetricCardProps = {
   tone?: MetricTone
 }
 
-const toneClasses: Record<MetricTone, { card: string; icon: string; text: string }> = {
+const toneClasses: Record<
+  MetricTone,
+  { card: string; icon: string; text: string }
+> = {
   primary: {
     card: "border-primary/20 bg-card",
     icon: "bg-primary/10 text-primary",
@@ -44,17 +47,31 @@ export function AdminMetricCard({
 }: AdminMetricCardProps) {
   const classes = toneClasses[tone]
   return (
-    <Card className={cn("min-h-40 justify-between border py-0 shadow-none transition-colors hover:bg-muted/60", classes.card)}>
-      <CardContent className="flex h-full flex-col justify-between p-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-semibold text-foreground">{label}</p>
-          <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", classes.icon)}>
+    <Card
+      className={cn(
+        "min-h-44 justify-between overflow-hidden border py-0 shadow-none transition-[border-color,background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/40 hover:shadow-[0_18px_50px_-32px_hsl(var(--foreground)/0.32)]",
+        classes.card,
+      )}
+    >
+      <CardContent className="flex h-full flex-col p-5 sm:p-6">
+        <div className="flex min-h-10 items-start justify-between gap-3">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-lg",
+              classes.icon,
+            )}
+          >
             <Icon className="size-4" aria-hidden="true" />
           </span>
         </div>
         <div className="mt-6">
-          <p className="text-2xl font-extrabold tracking-[-0.02em] tabular-nums">{value}</p>
-          <p className={cn("mt-2 text-xs leading-5", classes.text)}>{description}</p>
+          <p className="text-[1.75rem] font-semibold tabular-nums tracking-[-0.025em]">
+            {value}
+          </p>
+          <p className={cn("mt-2 text-sm leading-5", classes.text)}>
+            {description}
+          </p>
         </div>
       </CardContent>
     </Card>

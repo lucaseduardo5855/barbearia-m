@@ -1,16 +1,50 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { formatBRL } from "@/lib/formatters"
+
+import { useState, useMemo, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Booking, BarbershopService, Barber, User, Product, BlockedTime } from "@prisma/client"
+import {
+  Booking,
+  BarbershopService,
+  Barber,
+  User,
+  Product,
+  BlockedTime,
+} from "@prisma/client"
 import { Card, CardContent } from "@/app/_components/ui/card"
 import { Button } from "@/app/_components/ui/button"
 import { Input } from "@/app/_components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { format, addDays, subDays, isSameDay } from "date-fns"
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/app/_components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  format,
+  addDays,
+  subDays,
+  addWeeks,
+  addMonths,
+  isSameDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  isWithinInterval,
+} from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
-import { AdminPageHeader } from "./admin-page-header"
+import { AgendaCalendarView } from "./agenda-calendar-view"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -31,22 +65,19 @@ import {
   Receipt,
   PlusCircle,
   X,
-  Sparkles
+  Sparkles,
 } from "lucide-react"
 import {
   createAdminBookingAction,
   createBlockedTimeAction,
   deleteBlockedTimeAction,
   createProductSaleAction,
+  addBookingProductAction,
   updateBookingDetailsAction,
-  updateBookingStatusAction
+  updateBookingStatusAction,
 } from "@/app/_actions/admin-actions"
 
-type BookingWithDetails = Booking & {
-  service: BarbershopService
-  barber: Barber | null
-  user: User
-}
+import type { BookingWithDetails } from "@/lib/booking-types"
 
 interface AgendaTabProps {
   barbershop: {
@@ -62,35 +93,71 @@ interface AgendaTabProps {
   onUpdateStatus?: (
     bookingId: string,
     status: "CONFIRMED" | "CANCELLED" | "DONE",
-    paymentStatus?: "PENDING" | "PAID"
+    paymentStatus?: "PENDING" | "PAID",
   ) => Promise<void>
 }
 
 // Lista padrão de horários de 30 em 30 min (das 08:00 às 20:30)
 const TIME_SLOTS = [
-  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
 ]
 
-export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: AgendaTabProps) {
+export default function AgendaTab({
+  barbershop,
+  bookings,
+  onUpdateStatus,
+}: AgendaTabProps) {
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(
+    "day",
+  )
   // Controle de Data selecionada
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
-  const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("ALL")
-  const [statusFilter, setStatusFilter] = useState<"ALL" | Booking["status"]>("ALL")
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [selectedBarberFilter, setSelectedBarberFilter] =
+    useState<string>("ALL")
+  const [statusFilter, setStatusFilter] = useState<"ALL" | Booking["status"]>(
+    "ALL",
+  )
+  const [isRefreshing, startRefresh] = useTransition()
+  const router = useRouter()
 
   // Modais de Ação
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false)
   const [isBlockTimeOpen, setIsBlockTimeOpen] = useState(false)
   const [isNewProductSaleOpen, setIsNewProductSaleOpen] = useState(false)
-  const [selectedBookingForDetails, setSelectedBookingForDetails] = useState<BookingWithDetails | null>(null)
+  const [selectedBookingForDetails, setSelectedBookingForDetails] =
+    useState<BookingWithDetails | null>(null)
 
   // Estado do formulário de Novo Agendamento
   const [newBookingBarberId, setNewBookingBarberId] = useState<string>("")
   const [newBookingServiceId, setNewBookingServiceId] = useState<string>("")
-  const [newBookingType, setNewBookingType] = useState<"PADRAO" | "ENCAIXE">("PADRAO")
+  const [newBookingType, setNewBookingType] = useState<"PADRAO" | "ENCAIXE">(
+    "PADRAO",
+  )
   const [newBookingTime, setNewBookingTime] = useState<string>("09:00")
   const [newBookingClientName, setNewBookingClientName] = useState<string>("")
   const [newBookingClientPhone, setNewBookingClientPhone] = useState<string>("")
@@ -133,6 +200,31 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
     return dayBookings.filter((booking) => booking.status === statusFilter)
   }, [dayBookings, statusFilter])
 
+  const periodBookings = useMemo(
+    () =>
+      bookings.filter((booking) => {
+        if (
+          booking.status === "CANCELLED" ||
+          (selectedBarberFilter !== "ALL" &&
+            booking.barberId !== selectedBarberFilter)
+        )
+          return false
+        if (calendarView === "day")
+          return isSameDay(new Date(booking.date), selectedDate)
+        return isWithinInterval(new Date(booking.date), {
+          start:
+            calendarView === "month"
+              ? startOfMonth(selectedDate)
+              : startOfWeek(selectedDate, { weekStartsOn: 1 }),
+          end:
+            calendarView === "month"
+              ? endOfMonth(selectedDate)
+              : endOfWeek(selectedDate, { weekStartsOn: 1 }),
+        })
+      }),
+    [bookings, calendarView, selectedDate, selectedBarberFilter],
+  )
+
   // Horários bloqueados do dia
   const dayBlockedTimes = useMemo(() => {
     if (!barbershop.blockedTimes) return []
@@ -143,8 +235,22 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
   }, [barbershop.blockedTimes, selectedDate])
 
   // Navegação de datas
-  const handlePrevDay = () => setSelectedDate((prev) => subDays(prev, 1))
-  const handleNextDay = () => setSelectedDate((prev) => addDays(prev, 1))
+  const handlePrevDay = () =>
+    setSelectedDate((prev) =>
+      calendarView === "month"
+        ? addMonths(prev, -1)
+        : calendarView === "week"
+          ? addWeeks(prev, -1)
+          : subDays(prev, 1),
+    )
+  const handleNextDay = () =>
+    setSelectedDate((prev) =>
+      calendarView === "month"
+        ? addMonths(prev, 1)
+        : calendarView === "week"
+          ? addWeeks(prev, 1)
+          : addDays(prev, 1),
+    )
   const handleToday = () => setSelectedDate(new Date())
 
   // Handler: Criar Agendamento Manual
@@ -172,7 +278,7 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
         date: bookingDateTime,
         clientName: newBookingClientName.trim(),
         clientPhone: newBookingClientPhone.trim() || undefined,
-        bookingType: newBookingType
+        bookingType: newBookingType,
       })
 
       toast.success("Agendamento criado com sucesso!")
@@ -180,7 +286,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
       setNewBookingClientName("")
       setNewBookingClientPhone("")
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível criar o agendamento. Tente novamente.")
+      toast.error(
+        err.message || "Não foi possível criar o agendamento. Tente novamente.",
+      )
     } finally {
       setIsCreatingBooking(false)
     }
@@ -198,13 +306,15 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
         barbershopId: barbershop.id,
         barberId: blockBarberId || null,
         date: blockDateTime,
-        reason: blockReason.trim() || "Horário Bloqueado"
+        reason: blockReason.trim() || "Horário Bloqueado",
       })
 
       toast.success("Horário bloqueado com sucesso!")
       setIsBlockTimeOpen(false)
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível bloquear o horário. Tente novamente.")
+      toast.error(
+        err.message || "Não foi possível bloquear o horário. Tente novamente.",
+      )
     } finally {
       setIsCreatingBlock(false)
     }
@@ -215,11 +325,13 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
     try {
       await deleteBlockedTimeAction({
         barbershopId: barbershop.id,
-        blockedTimeId
+        blockedTimeId,
       })
       toast.success("Horário desbloqueado!")
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível liberar o horário. Tente novamente.")
+      toast.error(
+        err.message || "Não foi possível liberar o horário. Tente novamente.",
+      )
     }
   }
 
@@ -246,7 +358,7 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
         clientName: saleClientName.trim() || "Cliente Balcão",
         quantity: saleQuantity,
         unitPrice: Number(product.price),
-        date: selectedDate
+        date: selectedDate,
       })
 
       toast.success("Venda de produto registrada com sucesso!")
@@ -254,7 +366,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
       setSaleClientName("")
       setSaleQuantity(1)
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível registrar a venda. Tente novamente.")
+      toast.error(
+        err.message || "Não foi possível registrar a venda. Tente novamente.",
+      )
     } finally {
       setIsCreatingSale(false)
     }
@@ -274,17 +388,26 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
       const updatedExtras = [
         ...existingExtras,
-        { id: service.id, name: service.name, price: Number(service.price) }
+        { id: service.id, name: service.name, price: Number(service.price) },
       ]
 
       const mainPrice = Number(selectedBookingForDetails.service.price)
-      const extrasTotal = updatedExtras.reduce((acc: number, item: any) => acc + Number(item.price), 0)
+      const extrasTotal = updatedExtras.reduce(
+        (acc: number, item: any) => acc + Number(item.price),
+        0,
+      )
       const productsTotal = selectedBookingForDetails.extraProducts
-        ? JSON.parse(selectedBookingForDetails.extraProducts).reduce((acc: number, item: any) => acc + (Number(item.price) * item.quantity), 0)
+        ? JSON.parse(selectedBookingForDetails.extraProducts).reduce(
+            (acc: number, item: any) =>
+              acc + Number(item.price) * item.quantity,
+            0,
+          )
         : 0
 
       const newTotalPrice = mainPrice + extrasTotal + productsTotal
-      const barberRate = selectedBookingForDetails.barber?.commissionRate ? Number(selectedBookingForDetails.barber.commissionRate) : 50
+      const barberRate = selectedBookingForDetails.barber?.commissionRate
+        ? Number(selectedBookingForDetails.barber.commissionRate)
+        : 0
       const newCommission = (newTotalPrice * barberRate) / 100
 
       const updated = await updateBookingDetailsAction({
@@ -292,20 +415,48 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
         bookingId: selectedBookingForDetails.id,
         extraServices: updatedExtras,
         totalPrice: newTotalPrice,
-        barberCommissionAmount: newCommission
+        barberCommissionAmount: newCommission,
       })
 
       setSelectedBookingForDetails({
         ...selectedBookingForDetails,
         extraServices: updated.extraServices,
         totalPrice: updated.totalPrice,
-        barberCommissionAmount: updated.barberCommissionAmount
+        barberCommissionAmount: updated.barberCommissionAmount,
       })
 
       toast.success(`Serviço extra "${service.name}" adicionado à comanda!`)
       setExtraServiceToAdd("")
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível adicionar o serviço extra. Tente novamente.")
+      toast.error(
+        err.message ||
+          "Não foi possível adicionar o serviço extra. Tente novamente.",
+      )
+    } finally {
+      setIsUpdatingComanda(false)
+    }
+  }
+
+  const handleAssignBarber = async (barberId: string) => {
+    if (!selectedBookingForDetails) return
+    setIsUpdatingComanda(true)
+    try {
+      const updated = await updateBookingDetailsAction({
+        barbershopId: barbershop.id,
+        bookingId: selectedBookingForDetails.id,
+        barberId: barberId || null,
+      })
+      setSelectedBookingForDetails({
+        ...selectedBookingForDetails,
+        barberId: updated.barberId,
+        barber: updated.barber,
+        barberCommissionAmount: updated.barberCommissionAmount,
+      })
+      toast.success("Profissional atualizado.")
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível atualizar.",
+      )
     } finally {
       setIsUpdatingComanda(false)
     }
@@ -319,57 +470,26 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
     try {
       setIsUpdatingComanda(true)
-      const existingProducts = selectedBookingForDetails.extraProducts
-        ? JSON.parse(selectedBookingForDetails.extraProducts)
-        : []
-
-      const updatedProducts = [
-        ...existingProducts,
-        { id: product.id, name: product.name, price: Number(product.price), quantity: 1 }
-      ]
-
-      const mainPrice = Number(selectedBookingForDetails.service.price)
-      const extrasTotal = selectedBookingForDetails.extraServices
-        ? JSON.parse(selectedBookingForDetails.extraServices).reduce((acc: number, item: any) => acc + Number(item.price), 0)
-        : 0
-      const productsTotal = updatedProducts.reduce((acc: number, item: any) => acc + (Number(item.price) * item.quantity), 0)
-
-      const newTotalPrice = mainPrice + extrasTotal + productsTotal
-      const barberRate = selectedBookingForDetails.barber?.commissionRate ? Number(selectedBookingForDetails.barber.commissionRate) : 50
-      const newCommission = (newTotalPrice * barberRate) / 100
-
-      const updated = await updateBookingDetailsAction({
+      const updated = await addBookingProductAction({
         barbershopId: barbershop.id,
         bookingId: selectedBookingForDetails.id,
-        extraProducts: updatedProducts,
-        totalPrice: newTotalPrice,
-        barberCommissionAmount: newCommission
+        productId: product.id,
       })
-
-      // Também registra na tabela de vendas de produtos
-      if (selectedBookingForDetails.barberId) {
-        await createProductSaleAction({
-          barbershopId: barbershop.id,
-          productId: product.id,
-          barberId: selectedBookingForDetails.barberId,
-          clientName: selectedBookingForDetails.user.name || "Cliente",
-          quantity: 1,
-          unitPrice: Number(product.price),
-          bookingId: selectedBookingForDetails.id
-        })
-      }
 
       setSelectedBookingForDetails({
         ...selectedBookingForDetails,
         extraProducts: updated.extraProducts,
         totalPrice: updated.totalPrice,
-        barberCommissionAmount: updated.barberCommissionAmount
+        barberCommissionAmount: updated.barberCommissionAmount,
       })
 
       toast.success(`Produto "${product.name}" adicionado à comanda!`)
       setExtraProductToAdd("")
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível adicionar o produto à comanda. Tente novamente.")
+      toast.error(
+        err.message ||
+          "Não foi possível adicionar o produto à comanda. Tente novamente.",
+      )
     } finally {
       setIsUpdatingComanda(false)
     }
@@ -385,49 +505,120 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
           barbershopId: barbershop.id,
           bookingId,
           status: "DONE",
-          paymentStatus: "PAID"
+          paymentStatus: "PAID",
         })
       }
       toast.success("Atendimento concluído e comanda fechada com sucesso!")
       setSelectedBookingForDetails(null)
     } catch (err: any) {
-      toast.error(err.message || "Não foi possível concluir o atendimento. Tente novamente.")
+      toast.error(
+        err.message ||
+          "Não foi possível concluir o atendimento. Tente novamente.",
+      )
     }
   }
 
   const calendarGridStyle = {
-    gridTemplateColumns: `3.25rem repeat(${Math.max(visibleBarbers.length, 1)}, minmax(12.5rem, 1fr))`,
+    gridTemplateColumns: `4.5rem repeat(${Math.max(visibleBarbers.length, 1)}, minmax(12.5rem, 1fr))`,
   }
 
   const bookingTone = (booking: BookingWithDetails) => {
-    if (booking.status === "DONE") return "border-success/30 bg-success/10 hover:bg-success/15"
-    if (booking.status === "PENDING") return "border-warning/35 bg-warning/10 hover:bg-warning/15"
-    if (booking.bookingType === "ENCAIXE") return "border-warning/45 bg-warning/10 hover:bg-warning/15"
+    if (booking.status === "DONE")
+      return "border-success/30 bg-success/10 hover:bg-success/15"
+    if (booking.status === "PENDING")
+      return "border-warning/35 bg-warning/10 hover:bg-warning/15"
+    if (booking.bookingType === "ENCAIXE")
+      return "border-warning/45 bg-warning/10 hover:bg-warning/15"
     return "border-info/30 bg-info/10 hover:bg-info/15"
   }
 
-  const statusFilters: { value: "ALL" | Booking["status"]; label: string; className: string }[] = [
-    { value: "ALL", label: "Todos", className: "bg-secondary text-secondary-foreground" },
-    { value: "PENDING", label: "Pendentes", className: "bg-warning/15 text-warning" },
-    { value: "CONFIRMED", label: "Confirmados", className: "bg-info/15 text-info" },
-    { value: "DONE", label: "Concluídos", className: "bg-success/15 text-success" },
+  const statusFilters: {
+    value: "ALL" | Booking["status"]
+    label: string
+    className: string
+  }[] = [
+    {
+      value: "ALL",
+      label: "Todos",
+      className: "bg-secondary text-secondary-foreground",
+    },
+    {
+      value: "PENDING",
+      label: "Pendentes",
+      className: "bg-warning/15 text-warning",
+    },
+    {
+      value: "CONFIRMED",
+      label: "Confirmados",
+      className: "bg-info/15 text-info",
+    },
+    {
+      value: "DONE",
+      label: "Concluídos",
+      className: "bg-success/15 text-success",
+    },
   ]
-  const selectedProductForSale = barbershop.products?.find((product) => product.id === saleProductId)
+  const selectedProductForSale = barbershop.products?.find(
+    (product) => product.id === saleProductId,
+  )
 
   return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        icon={CalendarIcon}
-        title="Agenda"
-        description={format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-        actions={<>
+    <div className="space-y-2">
+      <h1 className="sr-only">Agenda</h1>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1 rounded-lg border border-border p-1">
+            {(
+              [
+                ["day", "Dia"],
+                ["week", "Semana"],
+                ["month", "Mês"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                variant={calendarView === value ? "secondary" : "ghost"}
+                aria-pressed={calendarView === value}
+                onClick={() => setCalendarView(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePrevDay}
+            className="h-10 w-10 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <DatePicker
+            value={selectedDate}
+            onChange={setSelectedDate}
+            label="Data da agenda"
+          />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNextDay}
+            className="h-10 w-10 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsBlockTimeOpen(true)}
             className="gap-2 font-semibold text-destructive hover:bg-destructive/10"
           >
-            <Ban className="w-3.5 h-3.5" />
+            <Ban className="h-3.5 w-3.5" />
             Bloquear horário
           </Button>
 
@@ -437,7 +628,7 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             onClick={() => setIsNewProductSaleOpen(true)}
             className="gap-2 font-semibold"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className="h-3.5 w-3.5" />
             Venda de produto
           </Button>
 
@@ -450,49 +641,20 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             }}
             className="gap-2 px-4 font-semibold"
           >
-            <CalendarIcon className="w-3.5 h-3.5" />
+            <CalendarIcon className="h-3.5 w-3.5" />
             Novo agendamento
           </Button>
-        </>}
-      />
-
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePrevDay}
-            className="h-10 w-10 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-
-          <button
-            onClick={handleToday}
-            className="flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-            title="Voltar para Hoje"
-          >
-            <CalendarIcon className="w-3.5 h-3.5 text-warning" />
-            <span>{format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}</span>
-          </button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleNextDay}
-            className="h-10 w-10 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
         </div>
+      </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span>Exibir horários bloqueados:</span>
+            <span>Bloqueios:</span>
             <select
               value={showBlockedTimes ? "sim" : "nao"}
               onChange={(e) => setShowBlockedTimes(e.target.value === "sim")}
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="outline-hidden h-10 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="sim">Sim</option>
               <option value="nao">Não</option>
@@ -500,11 +662,11 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
           </div>
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span>Barbeiro:</span>
+            <span className="sr-only">Profissional</span>
             <select
               value={selectedBarberFilter}
               onChange={(e) => setSelectedBarberFilter(e.target.value)}
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="outline-hidden h-10 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="ALL">Todos os visíveis</option>
               {barbershop.barbers.map((b) => (
@@ -519,277 +681,404 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             variant="ghost"
             size="sm"
             onClick={() => {
-              setIsRefreshing(true)
-              setTimeout(() => {
-                setIsRefreshing(false)
-                toast.success("Agenda atualizada!")
-              }, 400)
+              startRefresh(() => router.refresh())
             }}
-            className="h-10 gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"
+            disabled={isRefreshing}
+            className="h-10 gap-1.5 text-sm font-normal text-muted-foreground hover:text-foreground"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             Atualizar
           </Button>
         </div>
+
+        <div
+          className="flex flex-wrap gap-2"
+          aria-label="Filtrar agendamentos por status"
+        >
+          {statusFilters.map((filter) => {
+            const count =
+              filter.value === "ALL"
+                ? periodBookings.length
+                : periodBookings.filter(
+                    (booking) => booking.status === filter.value,
+                  ).length
+
+            return (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setStatusFilter(filter.value)}
+                aria-pressed={statusFilter === filter.value}
+                className={`rounded-full px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  statusFilter === filter.value
+                    ? filter.className
+                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {filter.label} ({count})
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2" aria-label="Filtrar agendamentos por status">
-        {statusFilters.map((filter) => {
-          const count = filter.value === "ALL"
-            ? dayBookings.length
-            : dayBookings.filter((booking) => booking.status === filter.value).length
-
-          return (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => setStatusFilter(filter.value)}
-              aria-pressed={statusFilter === filter.value}
-              className={`rounded-full px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                statusFilter === filter.value
-                  ? filter.className
-                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {filter.label} ({count})
-            </button>
-          )
-        })}
-      </div>
-
-      {/* 📅 GRID VISUAL DA AGENDA (Horários x Colaboradores) */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="overflow-x-auto">
-          <div className="min-w-[920px]">
-            <div style={calendarGridStyle} className="grid border-b border-border bg-card">
-              <div className="flex items-center justify-center border-r border-border p-4 text-center text-xs font-semibold text-muted-foreground">
-                Horário
+      {calendarView !== "day" && (
+        <AgendaCalendarView
+          date={selectedDate}
+          view={calendarView}
+          bookings={bookings.filter(
+            (b) =>
+              b.status !== "CANCELLED" &&
+              (statusFilter === "ALL" || b.status === statusFilter) &&
+              (selectedBarberFilter === "ALL" ||
+                b.barberId === selectedBarberFilter),
+          )}
+          onOpen={setSelectedBookingForDetails}
+          onSelectDay={(date) => {
+            setSelectedDate(date)
+            setCalendarView("day")
+          }}
+        />
+      )}
+      {calendarView === "day" && (
+        <>
+          {visibleDayBookings.some(
+            (b) => !b.barberId && b.status !== "DONE",
+          ) && (
+            <section className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
+              <h2 className="text-base">Aguardando profissional</h2>
+              <div className="flex flex-wrap gap-2">
+                {visibleDayBookings
+                  .filter((b) => !b.barberId && b.status !== "DONE")
+                  .map((b) => (
+                    <Button
+                      key={b.id}
+                      variant="outline"
+                      onClick={() => setSelectedBookingForDetails(b)}
+                    >
+                      {format(new Date(b.date), "HH:mm")} ·{" "}
+                      {b.user.name || "Cliente"} · {b.service.name}
+                    </Button>
+                  ))}
               </div>
-
-              {visibleBarbers.length > 0 ? (
-                visibleBarbers.map((barber) => {
-                  const barberBookings = visibleDayBookings.filter((booking) => booking.barberId === barber.id)
-                  const occupancy = Math.round((barberBookings.length / TIME_SLOTS.length) * 100)
-
-                  return (
-                  <div
-                    key={barber.id}
-                    className="border-r border-border p-4 last:border-r-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-xs font-bold text-foreground">
-                        {barber.imageUrl ? (
-                          <Image
-                            src={barber.imageUrl}
-                            alt={barber.name}
-                            fill
-                            sizes="40px"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <UserIcon className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div className="min-w-0 text-left">
-                        <span className="block truncate text-sm font-semibold text-foreground">{barber.name}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {barberBookings.length} agendamento{barberBookings.length === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                        <span className="block h-full rounded-full bg-info" style={{ width: `${occupancy}%` }} />
-                      </span>
-                      Ocupação {occupancy}%
-                    </div>
+            </section>
+          )}
+          {/* 📅 GRID VISUAL DA AGENDA (Horários x Colaboradores) */}
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="max-h-[calc(100dvh-13rem)] min-h-[28rem] overflow-auto">
+              <div className="w-full min-w-[760px]">
+                <div
+                  style={calendarGridStyle}
+                  className="sticky top-0 z-10 grid border-b border-border bg-card"
+                >
+                  <div className="flex items-center justify-center border-r border-border p-4 text-center text-xs font-semibold text-muted-foreground">
+                    Horário
                   </div>
-                  )
-                })
-              ) : (
-                <div className="p-3 text-xs text-muted-foreground italic col-span-3 text-center">
-                  Nenhum barbeiro cadastrado. Cadastre barbeiros na aba &quot;Equipe&quot;.
-                </div>
-              )}
-            </div>
 
-            <div className="divide-y divide-border/70">
-              {TIME_SLOTS.map((time) => {
-                return (
-                  <div
-                    key={time}
-                    style={calendarGridStyle}
-                    className="grid min-h-[76px] transition-colors hover:bg-muted/40"
-                  >
-                    <div className="flex items-center justify-center border-r border-border bg-muted/35 px-3 text-xs font-medium tabular-nums text-muted-foreground">
-                      {time}
-                    </div>
-
-                    {visibleBarbers.map((barber) => {
-                      const booking = visibleDayBookings.find((b) => {
-                        const bTime = format(new Date(b.date), "HH:mm")
-                        const matchesBarber = b.barberId === barber.id || (!b.barberId && visibleBarbers[0]?.id === barber.id)
-                        return bTime === time && matchesBarber
-                      })
-
-                      // Procura horário bloqueado
-                      const blocked = dayBlockedTimes.find((bt) => {
-                        const btTime = format(new Date(bt.date), "HH:mm")
-                        const matchesBarber = !bt.barberId || bt.barberId === barber.id
-                        return btTime === time && matchesBarber
-                      })
-
-                      const isBlocked = showBlockedTimes && !!blocked
+                  {visibleBarbers.length > 0 ? (
+                    visibleBarbers.map((barber) => {
+                      const barberBookings = visibleDayBookings.filter(
+                        (booking) => booking.barberId === barber.id,
+                      )
+                      const occupancy = Math.round(
+                        (barberBookings.length / TIME_SLOTS.length) * 100,
+                      )
 
                       return (
                         <div
                           key={barber.id}
-                          className="relative flex items-center justify-center border-r border-border p-2 last:border-r-0"
+                          className="border-r border-border p-4 last:border-r-0"
                         >
-                          {/* 🟢 CARD DE AGENDAMENTO (Idêntico ao da imagem 1) */}
-                          {booking ? (
-                            <div
-                              onClick={() => setSelectedBookingForDetails(booking)}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter" || event.key === " ") {
-                                  event.preventDefault()
-                                  setSelectedBookingForDetails(booking)
-                                }
-                              }}
-                              className={`flex h-full w-full cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${bookingTone(booking)}`}
-                            >
-                              <div className="flex items-start justify-between gap-1">
-                                <div className="space-y-0.5">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-sm font-semibold text-foreground">
-                                      {format(new Date(booking.date), "HH:mm")} ·{" "}
-                                      {booking.user.name || "Cliente"}
-                                    </span>
-                                    {booking.bookingType === "ENCAIXE" && <Star className="h-3 w-3 shrink-0 text-warning" />}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {booking.service.name}
-                                  </p>
-                                </div>
-
-                                {booking.bookingType === "ENCAIXE" && (
-                                  <span className="text-[9px] bg-warning/20 text-warning font-bold px-1.5 py-0.5 rounded-md uppercase">
-                                    Encaixe
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Extras ou Produtos */}
-                              {booking.extraServices && JSON.parse(booking.extraServices).length > 0 && (
-                                <p className="text-xs text-warning font-medium">
-                                  + {JSON.parse(booking.extraServices).length} serviço(s) extra
-                                </p>
-                              )}
-
-                              {booking.extraProducts && JSON.parse(booking.extraProducts).length > 0 && (
-                                <p className="text-xs text-info font-medium">
-                                  + {JSON.parse(booking.extraProducts).length} produto(s)
-                                </p>
-                              )}
-
-                              <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-xs text-muted-foreground">
-                                <span>{booking.user.phone || "(Sem tel)"}</span>
-                                <span className="font-semibold tabular-nums text-foreground">
-                                  R$ {Number(booking.totalPrice ?? booking.service.price).toFixed(2).replace(".", ",")}
-                                </span>
-                              </div>
-                            </div>
-                          ) : isBlocked ? (
-                            /* 🔴 HORÁRIO BLOQUEADO */
-                            <div className="w-full h-full p-2 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive flex items-center justify-between gap-2 text-xs">
-                              <div className="flex items-center gap-1.5 font-semibold text-[11px]">
-                                <Ban className="w-3.5 h-3.5 shrink-0" />
-                                <span className="line-clamp-1">{blocked?.reason || "Bloqueado"}</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteBlockedTime(blocked!.id)}
-                                aria-label="Desbloquear horario"
-                                className="min-h-11 min-w-11 p-2 md:min-h-0 md:min-w-0 md:p-1 hover:bg-destructive/20 rounded text-destructive transition-colors"
-                                title="Desbloquear este horário"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            /* ⚪ HORÁRIO VAZIO: Clique para agendar rápido */
-                            <button
-                              onClick={() => {
-                                setNewBookingTime(time)
-                                setNewBookingBarberId(barber.id)
-                                setIsNewBookingOpen(true)
-                              }}
-                              className="group flex h-full min-h-[66px] w-full items-center justify-center rounded-xl border border-dashed border-transparent transition-colors hover:border-info/35 hover:bg-info/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/50 transition-colors group-hover:text-info">
-                                <Plus className="w-3 h-3" /> Agendar
+                          <div className="flex items-center gap-3">
+                            <Avatar size="lg">
+                              <AvatarImage
+                                src={barber.imageUrl}
+                                alt={barber.name}
+                              />
+                              <AvatarFallback>
+                                {barber.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 text-left">
+                              <span className="block truncate text-sm font-semibold text-foreground">
+                                {barber.name}
                               </span>
-                            </button>
-                          )}
+                              <span className="block text-xs text-muted-foreground">
+                                {barberBookings.length} agendamento
+                                {barberBookings.length === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                              <span
+                                className="block h-full rounded-full bg-info"
+                                style={{ width: `${occupancy}%` }}
+                              />
+                            </span>
+                            Ocupação {occupancy}%
+                          </div>
                         </div>
                       )
-                    })}
-                  </div>
-                )
-              })}
+                    })
+                  ) : (
+                    <div className="col-span-3 p-3 text-center text-xs italic text-muted-foreground">
+                      Nenhum barbeiro cadastrado. Cadastre barbeiros na aba
+                      &quot;Equipe&quot;.
+                    </div>
+                  )}
+                </div>
+
+                <div className="divide-y divide-border/70">
+                  {TIME_SLOTS.map((time) => {
+                    return (
+                      <div
+                        key={time}
+                        style={calendarGridStyle}
+                        className="grid min-h-[76px] transition-colors hover:bg-muted/40"
+                      >
+                        <div className="flex items-center justify-center border-r border-border bg-muted/35 px-3 text-xs font-medium tabular-nums text-muted-foreground">
+                          {time}
+                        </div>
+
+                        {visibleBarbers.map((barber) => {
+                          const booking = visibleDayBookings.find((b) => {
+                            const bTime = format(new Date(b.date), "HH:mm")
+                            const matchesBarber = b.barberId === barber.id
+                            return bTime === time && matchesBarber
+                          })
+
+                          // Procura horário bloqueado
+                          const blocked = dayBlockedTimes.find((bt) => {
+                            const btTime = format(new Date(bt.date), "HH:mm")
+                            const matchesBarber =
+                              !bt.barberId || bt.barberId === barber.id
+                            return btTime === time && matchesBarber
+                          })
+
+                          const isBlocked = showBlockedTimes && !!blocked
+
+                          return (
+                            <div
+                              key={barber.id}
+                              className="relative flex items-center justify-center border-r border-border p-2 last:border-r-0"
+                            >
+                              {/* 🟢 CARD DE AGENDAMENTO (Idêntico ao da imagem 1) */}
+                              {booking ? (
+                                <div
+                                  onClick={() =>
+                                    setSelectedBookingForDetails(booking)
+                                  }
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(event) => {
+                                    if (
+                                      event.key === "Enter" ||
+                                      event.key === " "
+                                    ) {
+                                      event.preventDefault()
+                                      setSelectedBookingForDetails(booking)
+                                    }
+                                  }}
+                                  className={`flex h-full w-full cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${bookingTone(booking)}`}
+                                >
+                                  <div className="flex items-start justify-between gap-1">
+                                    <div className="space-y-0.5">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-sm font-semibold text-foreground">
+                                          {format(
+                                            new Date(booking.date),
+                                            "HH:mm",
+                                          )}{" "}
+                                          · {booking.user.name || "Cliente"}
+                                        </span>
+                                        {booking.bookingType === "ENCAIXE" && (
+                                          <Star className="h-3 w-3 shrink-0 text-warning" />
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">
+                                        {booking.service.name}
+                                      </p>
+                                    </div>
+
+                                    {booking.bookingType === "ENCAIXE" && (
+                                      <span className="rounded-md bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-warning">
+                                        Encaixe
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Extras ou Produtos */}
+                                  {booking.extraServices &&
+                                    JSON.parse(booking.extraServices).length >
+                                      0 && (
+                                      <p className="text-xs font-medium text-warning">
+                                        +{" "}
+                                        {
+                                          JSON.parse(booking.extraServices)
+                                            .length
+                                        }{" "}
+                                        serviço(s) extra
+                                      </p>
+                                    )}
+
+                                  {booking.extraProducts &&
+                                    JSON.parse(booking.extraProducts).length >
+                                      0 && (
+                                      <p className="text-xs font-medium text-info">
+                                        +{" "}
+                                        {
+                                          JSON.parse(booking.extraProducts)
+                                            .length
+                                        }{" "}
+                                        produto(s)
+                                      </p>
+                                    )}
+
+                                  <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-xs text-muted-foreground">
+                                    <span>
+                                      {booking.user.phone || "(Sem tel)"}
+                                    </span>
+                                    <span className="font-semibold tabular-nums text-foreground">
+                                      {formatBRL(
+                                        Number(
+                                          booking.totalPrice ??
+                                            booking.service.price,
+                                        ),
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : isBlocked ? (
+                                /* 🔴 HORÁRIO BLOQUEADO */
+                                <div className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                                  <div className="flex items-center gap-1.5 text-[11px] font-semibold">
+                                    <Ban className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="line-clamp-1">
+                                      {blocked?.reason || "Bloqueado"}
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeleteBlockedTime(blocked!.id)
+                                    }
+                                    aria-label="Desbloquear horario"
+                                    className="min-h-11 min-w-11 rounded p-2 text-destructive transition-colors hover:bg-destructive/20 md:min-h-0 md:min-w-0 md:p-1"
+                                    title="Desbloquear este horário"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                /* ⚪ HORÁRIO VAZIO: Clique para agendar rápido */
+                                <button
+                                  onClick={() => {
+                                    setNewBookingTime(time)
+                                    setNewBookingBarberId(barber.id)
+                                    setIsNewBookingOpen(true)
+                                  }}
+                                  className="group flex h-full min-h-[66px] w-full items-center justify-center rounded-xl border border-dashed border-transparent transition-colors hover:border-info/35 hover:bg-info/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors group-hover:text-info">
+                                    <Plus className="h-3 w-3" /> Agendar
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
+        </>
+      )}
       {/* 🧾 MODAL: DETALHES DA COMANDA / ATENDIMENTO */}
       {selectedBookingForDetails && (
         <Dialog
           open={!!selectedBookingForDetails}
           onOpenChange={(open) => !open && setSelectedBookingForDetails(null)}
         >
-          <DialogContent className="max-w-2xl bg-card border-border p-6 text-foreground max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-3 border-b border-border/50">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-border bg-card p-6 text-foreground">
+            <DialogHeader className="border-b border-border/50 pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                    <Receipt className="w-5 h-5 text-warning" />
-                    Comanda Nº {selectedBookingForDetails.orderNumber || selectedBookingForDetails.id.substring(0, 7)}
+                  <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                    <Receipt className="h-5 w-5 text-warning" />
+                    Comanda Nº{" "}
+                    {selectedBookingForDetails.orderNumber ||
+                      selectedBookingForDetails.id.substring(0, 7)}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground">
-                    Cliente: <strong>{selectedBookingForDetails.user.name || "Cliente"}</strong> •{" "}
-                    {selectedBookingForDetails.user.phone || "Sem telefone"}
+                    Cliente:{" "}
+                    <strong>
+                      {selectedBookingForDetails.user.name || "Cliente"}
+                    </strong>{" "}
+                    • {selectedBookingForDetails.user.phone || "Sem telefone"}
                   </DialogDescription>
                 </div>
                 <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase ${
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
                     selectedBookingForDetails.status === "DONE"
                       ? "bg-success/20 text-success"
                       : "bg-warning/20 text-warning"
                   }`}
                 >
-                  {selectedBookingForDetails.status === "DONE" ? "Concluído" : "Em Aberto"}
+                  {selectedBookingForDetails.status === "DONE"
+                    ? "Concluído"
+                    : "Em Aberto"}
                 </span>
               </div>
             </DialogHeader>
 
             <div className="space-y-4 py-3">
               {/* Informações Básicas */}
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-secondary/20 border border-border/50 text-xs">
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/50 bg-secondary/20 p-3 text-xs">
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold">Serviço Principal</span>
-                  <p className="font-bold text-foreground mt-0.5">{selectedBookingForDetails.service.name}</p>
-                  <span className="text-success font-semibold">
-                    R$ {Number(selectedBookingForDetails.service.price).toFixed(2).replace(".", ",")}
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Serviço Principal
+                  </span>
+                  <p className="mt-0.5 font-bold text-foreground">
+                    {selectedBookingForDetails.service.name}
+                  </p>
+                  <span className="font-semibold text-success">
+                    {formatBRL(Number(selectedBookingForDetails.service.price))}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold">Profissional / Barbeiro</span>
-                  <p className="font-bold text-foreground mt-0.5">{selectedBookingForDetails.barber?.name || "Geral"}</p>
-                  <span className="text-warning font-semibold">
-                    Taxa: {selectedBookingForDetails.barber?.commissionRate ? Number(selectedBookingForDetails.barber.commissionRate) : 50}%
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Profissional / Barbeiro
+                  </span>
+                  <select
+                    aria-label="Profissional responsável"
+                    value={selectedBookingForDetails.barberId || ""}
+                    disabled={
+                      isUpdatingComanda ||
+                      selectedBookingForDetails.status === "DONE"
+                    }
+                    onChange={(event) =>
+                      void handleAssignBarber(event.target.value)
+                    }
+                    className="mt-2 w-full"
+                  >
+                    <option value="">Não atribuído</option>
+                    {barbershop.barbers.map((barber) => (
+                      <option key={barber.id} value={barber.id}>
+                        {barber.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span className="font-semibold text-warning">
+                    {selectedBookingForDetails.barber?.commissionRate
+                      ? `Taxa: ${Number(selectedBookingForDetails.barber.commissionRate)}%`
+                      : "Comissão definida após atribuir"}
                   </span>
                 </div>
               </div>
@@ -797,28 +1086,36 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               {/* SERVIÇOS EXTRAS ADICIONADOS */}
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wide">
-                    <Scissors className="w-3.5 h-3.5 text-warning" /> Serviços Extras Realizados
+                  <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-foreground">
+                    <Scissors className="h-3.5 w-3.5 text-primary" /> Serviços
+                    Extras Realizados
                   </h4>
                 </div>
 
                 {selectedBookingForDetails.extraServices &&
-                JSON.parse(selectedBookingForDetails.extraServices).length > 0 ? (
+                JSON.parse(selectedBookingForDetails.extraServices).length >
+                  0 ? (
                   <div className="space-y-1.5">
-                    {JSON.parse(selectedBookingForDetails.extraServices).map((s: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 text-xs"
-                      >
-                        <span className="text-foreground font-medium">{s.name}</span>
-                        <strong className="text-success">
-                          R$ {Number(s.price).toFixed(2).replace(".", ",")}
-                        </strong>
-                      </div>
-                    ))}
+                    {JSON.parse(selectedBookingForDetails.extraServices).map(
+                      (s: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between rounded-lg bg-secondary/30 p-2 text-xs"
+                        >
+                          <span className="font-medium text-foreground">
+                            {s.name}
+                          </span>
+                          <strong className="text-success">
+                            {formatBRL(s.price)}
+                          </strong>
+                        </div>
+                      ),
+                    )}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground italic">Nenhum serviço extra adicionado.</p>
+                  <p className="text-xs italic text-muted-foreground">
+                    Nenhum serviço extra adicionado.
+                  </p>
                 )}
 
                 {/* Adicionar Serviço Extra */}
@@ -826,14 +1123,16 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                   <select
                     value={extraServiceToAdd}
                     onChange={(e) => setExtraServiceToAdd(e.target.value)}
-                    className="flex-1 bg-secondary/40 text-xs text-foreground p-2 rounded-lg border border-border"
+                    className="flex-1 rounded-lg border border-border bg-secondary/40 p-2 text-xs text-foreground"
                   >
                     <option value="">Selecione um serviço extra...</option>
                     {barbershop.services
-                      .filter((s) => s.id !== selectedBookingForDetails.serviceId)
+                      .filter(
+                        (s) => s.id !== selectedBookingForDetails.serviceId,
+                      )
                       .map((s) => (
                         <option key={s.id} value={s.id}>
-                          {s.name} - R$ {Number(s.price).toFixed(2).replace(".", ",")}
+                          {s.name} - {formatBRL(Number(s.price))}
                         </option>
                       ))}
                   </select>
@@ -841,40 +1140,46 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                     size="sm"
                     onClick={handleAddExtraService}
                     disabled={!extraServiceToAdd || isUpdatingComanda}
-                    className="bg-warning hover:bg-warning/85 text-warning-foreground font-bold text-xs gap-1"
+                    className="gap-1 bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Adicionar
+                    <Plus className="h-3.5 w-3.5" /> Adicionar
                   </Button>
                 </div>
               </div>
 
               {/* PRODUTOS VENDIDOS DURANTE O ATENDIMENTO */}
-              <div className="space-y-2 pt-2 border-t border-border/40">
+              <div className="space-y-2 border-t border-border/40 pt-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wide">
-                    <ShoppingBag className="w-3.5 h-3.5 text-info" /> Produtos Vendidos no Atendimento
+                  <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-foreground">
+                    <ShoppingBag className="h-3.5 w-3.5 text-info" /> Produtos
+                    Vendidos no Atendimento
                   </h4>
                 </div>
 
                 {selectedBookingForDetails.extraProducts &&
-                JSON.parse(selectedBookingForDetails.extraProducts).length > 0 ? (
+                JSON.parse(selectedBookingForDetails.extraProducts).length >
+                  0 ? (
                   <div className="space-y-1.5">
-                    {JSON.parse(selectedBookingForDetails.extraProducts).map((p: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 text-xs"
-                      >
-                        <span className="text-foreground font-medium">
-                          {p.name} {p.quantity > 1 ? `(${p.quantity}x)` : ""}
-                        </span>
-                        <strong className="text-success">
-                          R$ {(Number(p.price) * (p.quantity || 1)).toFixed(2).replace(".", ",")}
-                        </strong>
-                      </div>
-                    ))}
+                    {JSON.parse(selectedBookingForDetails.extraProducts).map(
+                      (p: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between rounded-lg bg-secondary/30 p-2 text-xs"
+                        >
+                          <span className="font-medium text-foreground">
+                            {p.name} {p.quantity > 1 ? `(${p.quantity}x)` : ""}
+                          </span>
+                          <strong className="text-success">
+                            {formatBRL(Number(p.price) * (p.quantity || 1))}
+                          </strong>
+                        </div>
+                      ),
+                    )}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground italic">Nenhum produto vendido neste atendimento.</p>
+                  <p className="text-xs italic text-muted-foreground">
+                    Nenhum produto vendido neste atendimento.
+                  </p>
                 )}
 
                 {/* Adicionar Produto */}
@@ -882,63 +1187,79 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                   <select
                     value={extraProductToAdd}
                     onChange={(e) => setExtraProductToAdd(e.target.value)}
-                    className="flex-1 bg-secondary/40 text-xs text-foreground p-2 rounded-lg border border-border"
+                    className="flex-1 rounded-lg border border-border bg-secondary/40 p-2 text-xs text-foreground"
                   >
                     <option value="">Selecione um produto vendido...</option>
                     {barbershop.products && barbershop.products.length > 0 ? (
                       barbershop.products.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} - R$ {Number(p.price).toFixed(2).replace(".", ",")} (Estoque: {p.stock})
+                          {p.name} - {formatBRL(Number(p.price))} (Estoque:{" "}
+                          {p.stock})
                         </option>
                       ))
                     ) : (
-                      <option disabled>Nenhum produto cadastrado no estoque</option>
+                      <option disabled>
+                        Nenhum produto cadastrado no estoque
+                      </option>
                     )}
                   </select>
                   <Button
                     size="sm"
                     onClick={handleAddExtraProduct}
                     disabled={!extraProductToAdd || isUpdatingComanda}
-                    className="bg-info hover:bg-info/85 text-info-foreground font-bold text-xs gap-1"
+                    className="gap-1 bg-info text-xs font-bold text-info-foreground hover:bg-info/85"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Adicionar
+                    <Plus className="h-3.5 w-3.5" /> Adicionar
                   </Button>
                 </div>
               </div>
 
               {/* TOTAIS E COMISSÃO DO COLABORADOR */}
               {(() => {
-                const mainPrice = Number(selectedBookingForDetails.service.price)
+                const mainPrice = Number(
+                  selectedBookingForDetails.service.price,
+                )
                 const extrasTotal = selectedBookingForDetails.extraServices
-                  ? JSON.parse(selectedBookingForDetails.extraServices).reduce((acc: number, item: any) => acc + Number(item.price), 0)
+                  ? JSON.parse(selectedBookingForDetails.extraServices).reduce(
+                      (acc: number, item: any) => acc + Number(item.price),
+                      0,
+                    )
                   : 0
                 const productsTotal = selectedBookingForDetails.extraProducts
-                  ? JSON.parse(selectedBookingForDetails.extraProducts).reduce((acc: number, item: any) => acc + (Number(item.price) * (item.quantity || 1)), 0)
+                  ? JSON.parse(selectedBookingForDetails.extraProducts).reduce(
+                      (acc: number, item: any) =>
+                        acc + Number(item.price) * (item.quantity || 1),
+                      0,
+                    )
                   : 0
                 const totalFinal = mainPrice + extrasTotal + productsTotal
 
-                const barberRate = selectedBookingForDetails.barber?.commissionRate
+                const barberRate = selectedBookingForDetails.barber
+                  ?.commissionRate
                   ? Number(selectedBookingForDetails.barber.commissionRate)
-                  : 50
-                const comissaoFinal = selectedBookingForDetails.barberCommissionAmount
-                  ? Number(selectedBookingForDetails.barberCommissionAmount)
-                  : (totalFinal * barberRate) / 100
+                  : 0
+                const comissaoFinal =
+                  selectedBookingForDetails.barberCommissionAmount
+                    ? Number(selectedBookingForDetails.barberCommissionAmount)
+                    : (totalFinal * barberRate) / 100
 
                 return (
-                  <div className="p-4 rounded-xl bg-warning/10 border border-warning/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-muted/35 p-4 sm:flex-row sm:items-center">
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Total da Comanda</span>
-                      <p className="text-2xl font-extrabold text-success">
-                        R$ {totalFinal.toFixed(2).replace(".", ",")}
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                        Total da Comanda
+                      </span>
+                      <p className="text-2xl font-medium text-foreground">
+                        {formatBRL(totalFinal)}
                       </p>
                     </div>
 
-                    <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-border/40">
-                      <span className="text-[10px] text-warning uppercase font-bold">
+                    <div className="border-t border-border/40 pt-2 text-left sm:border-t-0 sm:pt-0 sm:text-right">
+                      <span className="text-[10px] font-bold uppercase text-warning">
                         Comissão do Colaborador ({barberRate}%)
                       </span>
-                      <p className="text-xl font-bold text-warning">
-                        R$ {comissaoFinal.toFixed(2).replace(".", ",")}
+                      <p className="text-xl font-medium text-foreground">
+                        {formatBRL(comissaoFinal)}
                       </p>
                     </div>
                   </div>
@@ -946,21 +1267,29 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               })()}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border/50">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3">
               {/* Botão WhatsApp */}
               {selectedBookingForDetails.user.phone && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs text-success border-success/40 hover:bg-success/10 gap-1.5"
+                  className="gap-1.5 border-success/40 text-xs text-success hover:bg-success/10"
                   onClick={() => {
-                    const phone = selectedBookingForDetails.user.phone!.replace(/\D/g, "")
-                    const cleanPhone = phone.startsWith("55") ? phone : "55" + phone
+                    const phone = selectedBookingForDetails.user.phone!.replace(
+                      /\D/g,
+                      "",
+                    )
+                    const cleanPhone = phone.startsWith("55")
+                      ? phone
+                      : "55" + phone
                     const msg = `Olá ${selectedBookingForDetails.user.name || "Cliente"}! Tudo bem? Passando para confirmar seu atendimento na Barbearia às ${format(new Date(selectedBookingForDetails.date), "HH:mm")}. Aguardamos você!`
-                    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank")
+                    window.open(
+                      `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`,
+                      "_blank",
+                    )
                   }}
                 >
-                  <Share2 className="w-3.5 h-3.5" /> Lembrar no WhatsApp
+                  <Share2 className="h-3.5 w-3.5" /> Lembrar no WhatsApp
                 </Button>
               )}
 
@@ -977,10 +1306,12 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                 {selectedBookingForDetails.status !== "DONE" && (
                   <Button
                     size="sm"
-                    onClick={() => handleFinishBooking(selectedBookingForDetails.id)}
-                    className="bg-success/60 hover:bg-success/70 text-foreground font-bold text-xs gap-1.5"
+                    onClick={() =>
+                      handleFinishBooking(selectedBookingForDetails.id)
+                    }
+                    className="gap-1.5 bg-success/60 text-xs font-bold text-foreground hover:bg-success/70"
                   >
-                    <CheckCircle2 className="w-4 h-4" /> Concluir Atendimento
+                    <CheckCircle2 className="h-4 w-4" /> Concluir Atendimento
                   </Button>
                 )}
               </div>
@@ -991,10 +1322,10 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
       {/* 🔴 MODAL: BLOQUEAR HORÁRIO */}
       <Dialog open={isBlockTimeOpen} onOpenChange={setIsBlockTimeOpen}>
-        <DialogContent className="max-w-md bg-card border-border p-6 text-foreground">
+        <DialogContent className="max-w-md border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
-              <Ban className="w-5 h-5" /> Bloquear Horário na Agenda
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-destructive">
+              <Ban className="h-5 w-5" /> Bloquear Horário na Agenda
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Bloqueie intervalos para almoço, folga ou ausência de barbeiro.
@@ -1003,11 +1334,13 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
           <div className="space-y-3.5 py-3 text-xs">
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Colaborador / Barbeiro</label>
+              <label className="font-semibold text-muted-foreground">
+                Colaborador / Barbeiro
+              </label>
               <select
                 value={blockBarberId}
                 onChange={(e) => setBlockBarberId(e.target.value)}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 <option value="">Todos os barbeiros (Bloqueio geral)</option>
                 {barbershop.barbers.map((b) => (
@@ -1019,11 +1352,13 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Horário</label>
+              <label className="font-semibold text-muted-foreground">
+                Horário
+              </label>
               <select
                 value={blockTime}
                 onChange={(e) => setBlockTime(e.target.value)}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 {TIME_SLOTS.map((slot) => (
                   <option key={slot} value={slot}>
@@ -1034,7 +1369,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Motivo do Bloqueio</label>
+              <label className="font-semibold text-muted-foreground">
+                Motivo do Bloqueio
+              </label>
               <Input
                 value={blockReason}
                 onChange={(e) => setBlockReason(e.target.value)}
@@ -1044,15 +1381,20 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsBlockTimeOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsBlockTimeOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
               onClick={handleCreateBlockedTime}
               disabled={isCreatingBlock}
-              className="bg-destructive hover:bg-destructive/85 text-destructive-foreground font-bold text-xs"
+              className="bg-destructive text-xs font-bold text-destructive-foreground hover:bg-destructive/85"
             >
               {isCreatingBlock ? "Bloqueando..." : "Confirmar Bloqueio"}
             </Button>
@@ -1061,11 +1403,15 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
       </Dialog>
 
       {/* 🟡 MODAL: NOVA VENDA DE PRODUTOS */}
-      <Dialog open={isNewProductSaleOpen} onOpenChange={setIsNewProductSaleOpen}>
+      <Dialog
+        open={isNewProductSaleOpen}
+        onOpenChange={setIsNewProductSaleOpen}
+      >
         <DialogContent className="max-w-xl bg-card p-6 text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-extrabold text-foreground">
-              <ShoppingBag className="size-5 text-primary" /> Nova venda de produto
+              <ShoppingBag className="size-5 text-primary" /> Nova venda de
+              produto
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Venda produtos diretamente no balcão com comissão para o barbeiro.
@@ -1074,7 +1420,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
           <div className="space-y-4 py-3 text-xs">
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Selecione o Produto</label>
+              <label className="font-semibold text-muted-foreground">
+                Selecione o Produto
+              </label>
               <select
                 value={saleProductId}
                 onChange={(e) => setSaleProductId(e.target.value)}
@@ -1084,7 +1432,8 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                 {barbershop.products && barbershop.products.length > 0 ? (
                   barbershop.products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} - R$ {Number(p.price).toFixed(2).replace(".", ",")} (Estoque: {p.stock})
+                      {p.name} - {formatBRL(Number(p.price))} (Estoque:{" "}
+                      {p.stock})
                     </option>
                   ))
                 ) : (
@@ -1095,19 +1444,37 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
             {selectedProductForSale && (
               <div className="flex items-center justify-between rounded-xl bg-muted p-4">
-                <div><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Produto selecionado</p><p className="mt-1 text-sm font-extrabold text-foreground">{selectedProductForSale.name}</p></div>
-                <div className="text-right"><p className="text-sm font-extrabold text-success">R$ {Number(selectedProductForSale.price).toFixed(2).replace(".", ",")}</p><p className="mt-1 text-[10px] font-medium text-muted-foreground">{selectedProductForSale.stock} em estoque</p></div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Produto selecionado
+                  </p>
+                  <p className="mt-1 text-sm font-extrabold text-foreground">
+                    {selectedProductForSale.name}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-extrabold text-success">
+                    {formatBRL(Number(selectedProductForSale.price))}
+                  </p>
+                  <p className="mt-1 text-[10px] font-medium text-muted-foreground">
+                    {selectedProductForSale.stock} em estoque
+                  </p>
+                </div>
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Barbeiro / Vendedor (gera comissão)</label>
+              <label className="font-semibold text-muted-foreground">
+                Barbeiro / Vendedor (gera comissão)
+              </label>
               <select
                 value={saleBarberId}
                 onChange={(e) => setSaleBarberId(e.target.value)}
                 className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="">Venda direta da Barbearia (Sem barbeiro)</option>
+                <option value="">
+                  Venda direta da Barbearia (Sem barbeiro)
+                </option>
                 {barbershop.barbers.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -1118,18 +1485,24 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Quantidade</label>
+                <label className="font-semibold text-muted-foreground">
+                  Quantidade
+                </label>
                 <Input
                   type="number"
                   min="1"
                   value={saleQuantity}
-                  onChange={(e) => setSaleQuantity(Math.max(1, Number(e.target.value)))}
+                  onChange={(e) =>
+                    setSaleQuantity(Math.max(1, Number(e.target.value)))
+                  }
                   className="bg-secondary/40"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Nome do Cliente</label>
+                <label className="font-semibold text-muted-foreground">
+                  Nome do Cliente
+                </label>
                 <Input
                   value={saleClientName}
                   onChange={(e) => setSaleClientName(e.target.value)}
@@ -1140,8 +1513,13 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsNewProductSaleOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsNewProductSaleOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
@@ -1157,24 +1535,27 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
       {/* 🟡 MODAL: NOVO AGENDAMENTO (Colaborador, Serviço, Padrão ou Encaixe, Data e Horário) */}
       <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogContent className="max-w-lg bg-card border-border p-6 text-foreground">
+        <DialogContent className="max-w-2xl border-border bg-card p-6 text-foreground sm:p-8">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-warning">
-              <CalendarIcon className="w-5 h-5" /> Novo Agendamento
+            <DialogTitle className="flex items-center gap-2 text-xl font-medium text-foreground">
+              <CalendarIcon className="h-5 w-5" /> Novo Agendamento
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Agende um atendimento selecionando o colaborador, serviço e horário.
+              Agende um atendimento selecionando o colaborador, serviço e
+              horário.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3.5 py-3 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Colaborador / Barbeiro</label>
+                <label className="font-semibold text-muted-foreground">
+                  Colaborador / Barbeiro
+                </label>
                 <select
                   value={newBookingBarberId}
                   onChange={(e) => setNewBookingBarberId(e.target.value)}
-                  className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                  className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
                 >
                   <option value="">Qualquer Profissional</option>
                   {barbershop.barbers.map((b) => (
@@ -1186,14 +1567,16 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Tipo de Agendamento</label>
+                <label className="font-semibold text-muted-foreground">
+                  Tipo de Agendamento
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setNewBookingType("PADRAO")}
-                    className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                    className={`min-h-11 rounded-lg px-3 py-2 text-center text-sm font-normal transition-colors ${
                       newBookingType === "PADRAO"
-                        ? "bg-warning text-warning-foreground shadow-sm"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
                     }`}
                   >
@@ -1202,9 +1585,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
                   <button
                     type="button"
                     onClick={() => setNewBookingType("ENCAIXE")}
-                    className={`py-2 px-3 rounded-lg font-bold transition-all text-center ${
+                    className={`min-h-11 rounded-lg px-3 py-2 text-center text-sm font-normal transition-colors ${
                       newBookingType === "ENCAIXE"
-                        ? "bg-warning text-warning-foreground shadow-sm"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-secondary/40 text-muted-foreground hover:bg-secondary"
                     }`}
                   >
@@ -1215,16 +1598,18 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-muted-foreground">Serviço Principal</label>
+              <label className="font-semibold text-muted-foreground">
+                Serviço Principal
+              </label>
               <select
                 value={newBookingServiceId}
                 onChange={(e) => setNewBookingServiceId(e.target.value)}
-                className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
               >
                 <option value="">Selecione o serviço...</option>
                 {barbershop.services.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} - R$ {Number(s.price).toFixed(2).replace(".", ",")}
+                    {s.name} - {formatBRL(s.price)}
                   </option>
                 ))}
               </select>
@@ -1232,7 +1617,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Data</label>
+                <label className="font-semibold text-muted-foreground">
+                  Data
+                </label>
                 <Input
                   type="date"
                   value={format(selectedDate, "yyyy-MM-dd")}
@@ -1245,11 +1632,13 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Horário</label>
+                <label className="font-semibold text-muted-foreground">
+                  Horário
+                </label>
                 <select
                   value={newBookingTime}
                   onChange={(e) => setNewBookingTime(e.target.value)}
-                  className="w-full bg-secondary/40 text-foreground p-2 rounded-lg border border-border"
+                  className="w-full rounded-lg border border-border bg-secondary/40 p-2 text-foreground"
                 >
                   {TIME_SLOTS.map((slot) => (
                     <option key={slot} value={slot}>
@@ -1260,9 +1649,11 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/40">
+            <div className="grid grid-cols-1 gap-3 border-t border-border/40 pt-1 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Nome do Cliente</label>
+                <label className="font-semibold text-muted-foreground">
+                  Nome do Cliente
+                </label>
                 <Input
                   value={newBookingClientName}
                   onChange={(e) => setNewBookingClientName(e.target.value)}
@@ -1272,7 +1663,9 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">WhatsApp / Telefone</label>
+                <label className="font-semibold text-muted-foreground">
+                  WhatsApp / Telefone
+                </label>
                 <Input
                   value={newBookingClientPhone}
                   onChange={(e) => setNewBookingClientPhone(e.target.value)}
@@ -1283,15 +1676,24 @@ export default function AgendaTab({ barbershop, bookings, onUpdateStatus }: Agen
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-            <Button variant="ghost" size="sm" onClick={() => setIsNewBookingOpen(false)} className="text-xs">
+          <div className="flex justify-end gap-2 border-t border-border/50 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsNewBookingOpen(false)}
+              className="text-xs"
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
               onClick={handleCreateBooking}
-              disabled={isCreatingBooking || !newBookingServiceId || !newBookingClientName.trim()}
-              className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold text-xs"
+              disabled={
+                isCreatingBooking ||
+                !newBookingServiceId ||
+                !newBookingClientName.trim()
+              }
+              className="bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               {isCreatingBooking ? "Agendando..." : "Confirmar Agendamento"}
             </Button>
