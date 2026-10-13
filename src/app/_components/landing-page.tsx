@@ -1129,14 +1129,48 @@ export default function LandingPage() {
               {activeHighlights.map(([Icon, title, copy], index) => (
                 <div
                   key={title}
-                  className={`group flex h-full min-h-36 flex-col rounded-xl border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-0.5 ${index === 0 ? "border-primary/15 bg-card shadow-[0_12px_28px_hsl(var(--primary)/0.08)] hover:border-primary/30 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.16)]" : index === 1 ? "border-info/20 bg-info/[0.035] shadow-[0_12px_28px_hsl(var(--info)/0.08)] hover:border-info/35 hover:shadow-[0_18px_34px_hsl(var(--info)/0.16)]" : "border-success/20 bg-success/[0.035] shadow-[0_12px_28px_hsl(var(--success)/0.08)] hover:border-success/35 hover:shadow-[0_18px_34px_hsl(var(--success)/0.16)]"}`}
+                  className={`group relative flex h-full min-h-[12.5rem] flex-col overflow-hidden border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-1 ${index === 0 ? "rounded-2xl rounded-bl-md border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card shadow-[0_14px_30px_hsl(var(--primary)/0.1)] hover:border-primary/40 hover:shadow-[0_22px_40px_hsl(var(--primary)/0.18)]" : index === 1 ? "rounded-xl border-info/25 bg-info/[0.045] shadow-[0_12px_28px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_20px_36px_hsl(var(--info)/0.2)]" : "rounded-2xl rounded-tr-md border-success/25 bg-gradient-to-b from-success/[0.09] to-card shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]"}`}
                 >
-                  <span
-                    className={`flex size-8 items-center justify-center rounded-lg transition-[background-color,transform] duration-700 group-hover:rotate-[-5deg] group-hover:text-primary-foreground ${index === 0 ? "bg-primary/10 text-primary group-hover:bg-primary" : index === 1 ? "bg-info/10 text-info group-hover:bg-info" : "bg-success/10 text-success group-hover:bg-success"}`}
+                  {index === 0 && (
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(var(--primary)/0.25)] transition-transform duration-700 group-hover:rotate-[-8deg] group-hover:scale-105">
+                        <Icon className="size-4" />
+                      </span>
+                      <span className="rounded-full border border-primary/20 bg-background/70 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
+                        fluxo
+                      </span>
+                    </div>
+                  )}
+                  {index === 1 && (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex size-8 items-center justify-center rounded-full bg-info text-info-foreground shadow-[0_6px_14px_hsl(var(--info)/0.22)] transition-transform duration-700 group-hover:scale-110">
+                          <Icon className="size-4" />
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.13em] text-info">
+                          visão rápida
+                        </span>
+                      </div>
+                      <span className="text-lg font-extrabold text-info/80">
+                        04
+                      </span>
+                    </div>
+                  )}
+                  {index === 2 && (
+                    <div className="flex flex-row-reverse items-start justify-between gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-2xl border border-success/20 bg-success/15 text-success shadow-[0_8px_18px_hsl(var(--success)/0.16)] transition-transform duration-700 group-hover:translate-y-[-3px] group-hover:rotate-[6deg]">
+                        <Icon className="size-5" />
+                      </span>
+                      <span className="pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-success">
+                        conectado
+                      </span>
+                    </div>
+                  )}
+                  <p
+                    className={`${index === 1 ? "mt-4" : index === 2 ? "mt-7" : "mt-6"} text-sm font-bold`}
                   >
-                    <Icon className="size-4" />
-                  </span>
-                  <p className="mt-5 text-sm font-bold">{title}</p>
+                    {title}
+                  </p>
                   <p className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
                     {copy}
                   </p>
@@ -1154,19 +1188,21 @@ export default function LandingPage() {
                   )}
                   {index === 1 && (
                     <div
-                      className="mt-4 flex h-6 items-end gap-1"
+                      className="mt-4 flex h-7 items-end gap-1.5 rounded-lg border border-info/15 bg-background/35 px-2 py-1"
                       aria-hidden="true"
                     >
-                      <span className="h-2 flex-1 rounded-sm bg-info/35" />
-                      <span className="h-4 flex-1 rounded-sm bg-info/50" />
-                      <span className="h-3 flex-1 rounded-sm bg-info/65" />
-                      <span className="h-6 flex-1 rounded-sm bg-info" />
+                      <span className="h-2 flex-1 rounded-full bg-info/30" />
+                      <span className="h-4 flex-1 rounded-full bg-info/50" />
+                      <span className="h-3 flex-1 rounded-full bg-info/70" />
+                      <span className="h-6 flex-1 rounded-full bg-info" />
                     </div>
                   )}
                   {index === 2 && (
-                    <div className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-success">
-                      Acompanhar no painel{" "}
-                      <ChevronRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1" />
+                    <div className="mt-4 flex items-center justify-between border-t border-success/20 pt-3 text-[11px] font-semibold text-success">
+                      <span>Ver no painel</span>
+                      <span className="flex size-6 items-center justify-center rounded-full bg-success text-success-foreground transition-transform duration-700 group-hover:translate-x-1">
+                        <ChevronRight className="size-3.5" />
+                      </span>
                     </div>
                   )}
                 </div>
