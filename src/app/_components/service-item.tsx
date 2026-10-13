@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import SignInDiaLog from "./sign-in-dialong"
+import { formatBRL } from "@/lib/formatters"
 
 interface ServiceItemProps {
   service: BarbershopService
@@ -52,10 +53,7 @@ const ServiceItem = ({ service, barberShop }: ServiceItemProps) => {
             {/* PREÇO E BOTÃO */}
             <div className="flex items-center justify-between gap-1 font-semibold text-primary">
               <p>
-                {Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(Number(service.price))}
+                {formatBRL(service.price.toString())}
               </p>
 
               <Button

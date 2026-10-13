@@ -2,6 +2,7 @@ import { format } from "date-fns/format"
 import { Card, CardContent } from "./ui/card"
 import { ptBR } from "date-fns/locale/pt-BR"
 import { Barber, Barbershop, BarbershopService } from "@prisma/client"
+import { formatBRL } from "@/lib/formatters"
 
 interface BookingSummaryProps {
   service: Pick<BarbershopService, "name" | "price">
@@ -24,10 +25,7 @@ const BookingSummary = ({
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold">{service.name}</h2>
             <p className="text-base font-semibold text-foreground">
-              {Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(Number(service.price))}
+              {formatBRL(service.price.toString())}
             </p>
           </div>
 

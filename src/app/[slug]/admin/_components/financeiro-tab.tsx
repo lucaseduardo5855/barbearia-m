@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { createFinancialTransactionAction } from "@/app/_actions/admin-actions"
 import { AdminPageHeader } from "./admin-page-header"
+import { formatBRL } from "@/lib/formatters"
 
 type BookingWithDetails = Booking & {
   service: BarbershopService
@@ -52,8 +53,6 @@ type FinancePeriodSummaryProps = {
   comissoesPagas: number
   totalSaidas: number
 }
-
-const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`
 
 function FinancePeriodSummary({
   currentDate,
@@ -88,7 +87,7 @@ function FinancePeriodSummary({
           return (
             <div key={item.label} className={`min-w-0 px-5 py-4 ${index < items.length - 1 ? "border-b border-border lg:border-b-0 lg:border-r" : ""}`}>
               <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground"><Icon className={`size-3.5 ${iconClass}`} aria-hidden="true" />{item.label}</div>
-              <p className={`mt-2 truncate text-xl font-extrabold tracking-[-0.02em] tabular-nums ${valueClass}`}>{formatCurrency(item.value)}</p>
+              <p className={`mt-2 truncate text-xl font-extrabold tracking-[-0.02em] tabular-nums ${valueClass}`}>{formatBRL(item.value)}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">{item.detail}</p>
             </div>
           )
