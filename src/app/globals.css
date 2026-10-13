@@ -3,190 +3,206 @@
 @tailwind utilities;
 
 @layer base {
+  :root,
   .dark {
-    /* Documentação de cores: nomes aproximados e uso */
-    /* Use este arquivo para documentar o propósito das variáveis de cor */
-
-    --background: 225 9% 9%; /* azul escuro / fundo */
-    --foreground: 210 40% 98%; /* texto claro (quase branco) */
-
-    --card: 228 9% 11%; /* fundo do card (muito escuro) */
-    --card-foreground: 210 40% 98%; /* texto do card */
-
-    --popover: 228 9% 11%; /* fundo de popover (escuro) */
-    --popover-foreground: 210 40% 98%; /* texto do popover */
-
-    --primary: 252 80% 58%; /* roxo / cor primária, contraste AA com texto branco */
-    --primary-foreground: 0 0% 100%; /* texto primário (branco) */
-
-    --secondary: 228 6% 16%; /* cinza escuro / secundária */
-    --secondary-foreground: 210 40% 98%; /* texto secundário */
-
-    --muted: 228 6% 16%; /* tom muted para elementos menos importantes */
-    --muted-foreground: 215 20.2% 65.1%; /* texto muted (cinza claro) */
-
-    --accent: 228 6% 16%; /* cor de destaque (similar ao secondary) */
-    --accent-foreground: 210 40% 98%; /* texto do accent */
-
-    --destructive: 0 72% 43%; /* vermelho / ações destrutivas, contraste AA com texto claro */
-    --destructive-foreground: 210 40% 98%; /* texto sobre destructive */
-
-    --border: 228 6% 16%; /* cor das bordas */
-    --input: 228 6% 16%; /* fundo de inputs */
-    --ring: 212.7 26.8% 83.9%; /* ring / foco (claro) */
-
-    --radius: 0.5rem; /* radius global */
+    color-scheme: dark;
+    --background: 222 18% 8%;
+    --foreground: 220 14% 93%;
+    --card: 222 16% 11%;
+    --card-foreground: 220 14% 93%;
+    --popover: 222 16% 11%;
+    --popover-foreground: 220 14% 93%;
+    --primary: 213 78% 58%;
+    --primary-foreground: 222 18% 8%;
+    --secondary: 222 13% 17%;
+    --secondary-foreground: 220 14% 93%;
+    --muted: 222 13% 15%;
+    --muted-foreground: 218 10% 70%;
+    --accent: 215 18% 18%;
+    --accent-foreground: 220 14% 93%;
+    --destructive: 0 60% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 151 28% 65%;
+    --success-foreground: 0 0% 100%;
+    --warning: 36 65% 65%;
+    --warning-foreground: 30 40% 10%;
+    --info: 213 70% 65%;
+    --info-foreground: 0 0% 100%;
+    --border: 222 11% 23%;
+    --input: 222 11% 25%;
+    --ring: 213 78% 58%;
+    --radius: 0.625rem;
+    --sidebar: 222 16% 10%;
+    --sidebar-foreground: 220 14% 93%;
+    --sidebar-accent: 222 13% 17%;
+    --sidebar-border: 222 11% 23%;
   }
-}
 
-@layer base {
   * {
     @apply border-border antialiased;
   }
-
   html {
     @apply min-h-full;
-    color-scheme: dark;
   }
-
   body {
     @apply min-h-full overflow-x-hidden bg-background text-foreground;
     padding-bottom: max(0px, env(safe-area-inset-bottom));
     -webkit-tap-highlight-color: transparent;
+    font-family:
+      var(--font-geist-sans), "Geist", "Geist Fallback", ui-serif, Georgia,
+      Cambria, "Times New Roman", Times, serif;
+    font-weight: 400;
+    font-synthesis: none;
   }
 }
 
-/* Paleta do modo escuro: superfícies azul-noite, violeta de ação e estados explícitos. */
-.dark {
-  --background: 228 29% 7%;
-  --foreground: 220 25% 96%;
-  --card: 226 24% 11%;
-  --card-foreground: 220 25% 96%;
-  --popover: 226 25% 12%;
-  --popover-foreground: 220 25% 96%;
-  --primary: 262 83% 58%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 226 20% 17%;
-  --secondary-foreground: 220 25% 96%;
-  --muted: 227 20% 14%;
-  --muted-foreground: 218 16% 72%;
-  --accent: 260 34% 18%;
-  --accent-foreground: 255 100% 92%;
-  --destructive: 0 74% 52%;
-  --destructive-foreground: 0 0% 100%;
-  --success: 152 64% 46%;
-  --success-foreground: 152 64% 94%;
-  --warning: 38 92% 50%;
-  --warning-foreground: 25 30% 10%;
-  --info: 197 85% 48%;
-  --info-foreground: 197 85% 94%;
-  --border: 225 18% 23%;
-  --input: 225 18% 23%;
-  --ring: 263 72% 74%;
-  --radius: 0.625rem;
-}
-
-/* Espaço operacional claro: mantém a identidade noturna do site público,
-   mas reduz o esforço visual no painel usado o dia inteiro. */
-.admin-light {
-  color-scheme: light;
-  --background: 0 0% 100%;
-  --foreground: 0 0% 9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --primary: 0 0% 13%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 97%;
-  --secondary-foreground: 0 0% 13%;
-  --muted: 0 0% 97%;
-  --muted-foreground: 0 0% 42%;
-  --accent: 0 0% 97%;
-  --accent-foreground: 0 0% 13%;
-  --destructive: 0 67% 45%;
-  --destructive-foreground: 0 0% 100%;
-  --success: 172 62% 31%;
-  --success-foreground: 0 0% 100%;
-  --warning: 34 92% 34%;
-  --warning-foreground: 27 45% 12%;
-  --info: 205 78% 38%;
-  --info-foreground: 0 0% 100%;
-  --border: 0 0% 92%;
-  --input: 0 0% 92%;
-  --ring: 0 0% 60%;
-  --sidebar: 0 0% 98.5%;
-  --sidebar-foreground: 0 0% 9%;
-  --sidebar-accent: 0 0% 96%;
-  --sidebar-border: 0 0% 92%;
-  --radius: 0.625rem;
-}
-
-/* Variante noturna do painel: preserva o mesmo azul de ação e os estados
-   sem transformar os dados em uma interface de alto contraste cansativa. */
 .admin-dark {
   color-scheme: dark;
-  --background: 222 27% 8%;
-  --foreground: 220 25% 96%;
-  --card: 222 23% 12%;
-  --card-foreground: 220 25% 96%;
-  --popover: 222 23% 12%;
-  --popover-foreground: 220 25% 96%;
-  --primary: 216 80% 61%;
-  --primary-foreground: 222 35% 9%;
-  --secondary: 222 18% 18%;
-  --secondary-foreground: 220 25% 96%;
-  --muted: 222 18% 16%;
-  --muted-foreground: 218 16% 72%;
-  --accent: 222 18% 20%;
-  --accent-foreground: 220 25% 96%;
-  --destructive: 0 70% 58%;
-  --destructive-foreground: 0 0% 100%;
-  --success: 158 64% 48%;
-  --success-foreground: 158 64% 94%;
-  --warning: 39 92% 58%;
-  --warning-foreground: 30 40% 10%;
-  --info: 203 84% 59%;
-  --info-foreground: 203 84% 95%;
-  --border: 222 16% 25%;
-  --input: 222 16% 25%;
-  --ring: 216 80% 66%;
-  --radius: 0.75rem;
-  --sidebar: 0 0% 13%;
-  --sidebar-foreground: 0 0% 96%;
-  --sidebar-accent: 0 0% 18%;
-  --sidebar-border: 0 0% 23%;
+}
+.admin-light {
+  color-scheme: light;
+  --background: 220 18% 98%;
+  --foreground: 222 18% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 18% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 18% 16%;
+  --primary: 213 75% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 94%;
+  --secondary-foreground: 222 18% 16%;
+  --muted: 220 14% 95%;
+  --muted-foreground: 222 10% 42%;
+  --accent: 215 30% 94%;
+  --accent-foreground: 222 18% 16%;
+  --destructive: 0 58% 44%;
+  --success: 151 32% 32%;
+  --warning: 34 68% 34%;
+  --info: 213 70% 44%;
+  --border: 220 14% 87%;
+  --input: 220 14% 85%;
+  --ring: 213 75% 44%;
+  --sidebar: 220 18% 97%;
+  --sidebar-foreground: 222 18% 16%;
+  --sidebar-accent: 220 14% 93%;
+  --sidebar-border: 220 14% 87%;
 }
 
-/* Sistema visual do AdminCN aplicado somente ao painel administrativo. */
-.admin-template [data-slot="card"] {
-  border: 1px solid hsl(var(--border));
+/* One typography and control system, including components rendered in portals. */
+.app-ui,
+.admin-shell {
+  font-family:
+    var(--font-geist-sans), "Geist", "Geist Fallback", ui-serif, Georgia,
+    Cambria, "Times New Roman", Times, serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.55;
+}
+.app-ui h1,
+.app-ui h2,
+.app-ui h3,
+.app-ui h4,
+.app-ui [data-slot="dialog-title"],
+.app-ui [data-slot="card-title"] {
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.app-ui strong,
+.app-ui b,
+.app-ui .font-bold,
+.app-ui .font-extrabold,
+.app-ui .font-black,
+.app-ui .font-medium,
+.app-ui .font-semibold {
+  font-weight: 450;
+}
+.app-ui [class~="text-[8px]"],
+.app-ui [class~="text-[9px]"],
+.app-ui [class~="text-[10px]"],
+.app-ui [class~="text-[11px]"] {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.app-ui [data-slot="card"] {
   box-shadow: none;
+  border: 1px solid hsl(var(--border));
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease;
 }
-
-.admin-template [data-slot="card"] [data-slot="card-header"] {
-  gap: 0.625rem;
+.app-ui [data-slot="button"] {
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  font-weight: 450;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    border-color 220ms ease;
 }
-
-.admin-template table th {
-  font-weight: 500;
+.app-ui [data-slot="input"],
+.app-ui select,
+.app-ui textarea {
+  min-height: 2.75rem;
+  border-radius: 0.5rem;
+  background-color: hsl(var(--background));
+  font-size: 0.9375rem;
+  font-weight: 400;
 }
-
-.admin-template input,
-.admin-template textarea,
-.admin-template select {
-  border-color: hsl(var(--input));
+.app-ui select {
+  padding-inline: 0.75rem 2rem;
+  border: 1px solid hsl(var(--input));
 }
-
-.admin-template main {
-  background: hsl(var(--background));
+.app-ui label {
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-transform: none;
+}
+.app-ui table {
+  font-size: 0.875rem;
+}
+.app-ui table th {
+  font-size: 0.8125rem;
+  font-weight: 450;
+  text-transform: none;
+}
+.app-ui input {
+  caret-color: hsl(var(--primary));
+}
+.app-ui [data-ut-element="button"] {
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  min-height: 2.75rem;
+  font-weight: 450;
+}
+.app-ui input[type="search"] {
+  padding-left: 2.75rem;
+}
+.app-ui [data-slot="calendar"] [data-slot="button"] {
+  min-height: 2.5rem;
+  padding: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }
 
 /* Landing: um ambiente claro e focado em conversão, separado do tema noturno
    usado nas áreas públicas existentes e do painel administrativo. */
 .landing-opero {
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    var(--font-geist-sans), "Geist", "Geist Fallback", ui-serif, Georgia,
+    Cambria, "Times New Roman", Times, serif;
   --background: 218 48% 98%;
   --foreground: 222 43% 11%;
   --card: 0 0% 100%;
@@ -219,14 +235,22 @@
 .landing-opero h2,
 .landing-opero h3,
 .landing-opero h4 {
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.032em;
 }
 
 .landing-opero__hero {
   background:
-    radial-gradient(ellipse 43rem 32rem at 92% 24%, hsl(var(--primary) / 0.15), transparent 68%),
-    radial-gradient(ellipse 32rem 26rem at 56% 88%, hsl(var(--info) / 0.08), transparent 72%);
+    radial-gradient(
+      ellipse 43rem 32rem at 92% 24%,
+      hsl(var(--primary) / 0.15),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 32rem 26rem at 56% 88%,
+      hsl(var(--info) / 0.08),
+      transparent 72%
+    );
 }
 
 .landing-opero__cta::after {
@@ -258,14 +282,25 @@
 
   .landing-flow__line {
     animation: landing-flow-trace 2.8s linear infinite;
+    animation-play-state: paused;
   }
 
   .landing-flow__node {
     animation: landing-flow-pulse 2.8s ease-in-out infinite;
+    animation-play-state: paused;
+  }
+
+  .landing-flow[data-running="true"] .landing-flow__line,
+  .landing-flow[data-running="true"] .landing-flow__node {
+    animation-play-state: running;
+  }
+
+  .landing-opero [data-slot="button"] {
+    transition-duration: 450ms;
   }
 
   .landing-mode-preview__content {
-    animation: landing-mode-change 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: landing-mode-change 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
@@ -282,21 +317,36 @@
 }
 
 @keyframes landing-flow-trace {
-  to { stroke-dashoffset: -26; }
+  to {
+    stroke-dashoffset: -26;
+  }
 }
 
 @keyframes landing-flow-pulse {
-  50% { transform: scale(1.35); opacity: 0.72; }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.72;
+  }
 }
 
 @keyframes landing-mode-change {
-  from { opacity: 0.4; transform: translateY(0.5rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0.4;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes landing-feature-progress {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @layer base {
