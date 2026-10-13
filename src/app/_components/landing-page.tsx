@@ -524,7 +524,7 @@ function CustomerFlowPreview() {
             return (
               <div
                 key={step.title}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-background p-5 transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-within:border-primary/30 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.025] hover:shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)]"
+                className="group relative rounded-2xl border border-border bg-background p-5 transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-within:border-primary/30 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.025] hover:shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)]"
               >
                 <span
                   className="pointer-events-none absolute inset-x-5 top-0 h-px origin-left scale-x-0 bg-primary/70 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
@@ -789,13 +789,9 @@ export default function LandingPage() {
       <section className="landing-opero__hero border-b border-border/70 px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:px-10">
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
           <div data-gsap="hero-copy" className="max-w-xl">
-            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">
-              Agenda + marketplace para barbearias
-            </span>
-            <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-[1.02] tracking-[-0.038em] sm:text-5xl lg:text-[4.2rem]">
-              Da agenda ao caixa,{" "}
-              <span className="text-muted-foreground">sua barbearia</span> em
-              sintonia.
+            <h1 className="max-w-2xl text-4xl font-bold leading-[1.02] tracking-[-0.038em] sm:text-5xl lg:text-[4.2rem]">
+              Sua barbearia em sintonia,{" "}
+              <span className="text-muted-foreground">da agenda ao caixa.</span>
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               Agenda da equipe, atendimentos, financeiro e comissões no mesmo
@@ -842,9 +838,6 @@ export default function LandingPage() {
             <div className="relative z-10 mt-4 lg:absolute lg:-bottom-8 lg:-right-8 lg:mt-0 lg:origin-bottom-right lg:scale-[0.78]">
               <MarketplacePreview />
             </div>
-            <span className="absolute right-3 top-3 hidden rounded-full border border-border bg-background/90 px-3 py-1.5 text-[10px] font-bold text-muted-foreground shadow-sm sm:inline-flex">
-              Duas experiências, um produto
-            </span>
           </div>
         </div>
       </section>
