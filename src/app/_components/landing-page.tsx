@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import {
   ArrowRight,
+  BadgeDollarSign,
   CalendarDays,
   Check,
   ChevronDown,
@@ -97,6 +98,77 @@ const featureVisuals = {
       ["Barba clássica", "30 min", "R$ 35"],
     ],
   },
+} as const
+
+const featureHighlights = {
+  agenda: [
+    [
+      Clock3,
+      "Horários visíveis",
+      "O que já foi e o que vem a seguir em uma só leitura.",
+    ],
+    [
+      CalendarDays,
+      "Encaixes organizados",
+      "Encontre espaço sem interromper quem já está atendendo.",
+    ],
+    [
+      Users,
+      "Dia compartilhado",
+      "Cada profissional acompanha a mesma agenda atualizada.",
+    ],
+  ],
+  financeiro: [
+    [
+      CircleDollarSign,
+      "Recebimentos do dia",
+      "Veja o que entrou sem separar atendimento de caixa.",
+    ],
+    [
+      BadgeDollarSign,
+      "Comissões calculadas",
+      "Os repasses ficam ligados ao atendimento concluído.",
+    ],
+    [
+      Wallet,
+      "Saldo previsto",
+      "Antecipe o fechamento com entradas e saídas no contexto.",
+    ],
+  ],
+  equipe: [
+    [
+      Users,
+      "Ocupação por pessoa",
+      "Compare a rotina da equipe e distribua os próximos horários.",
+    ],
+    [
+      CalendarDays,
+      "Agenda compartilhada",
+      "Todos trabalham olhando o mesmo dia, sem versões desencontradas.",
+    ],
+    [
+      BadgeDollarSign,
+      "Repasse alinhado",
+      "A comissão acompanha o profissional responsável pelo atendimento.",
+    ],
+  ],
+  clientes: [
+    [
+      Store,
+      "Link público",
+      "Seu cliente encontra a barbearia sem precisar chamar no WhatsApp.",
+    ],
+    [
+      Scissors,
+      "Serviço bem descrito",
+      "Preços e opções ficam claros antes da escolha do horário.",
+    ],
+    [
+      Clock3,
+      "Horários disponíveis",
+      "A página mostra apenas o que a equipe consegue atender.",
+    ],
+  ],
 } as const
 
 const appointments = [
@@ -566,6 +638,7 @@ export default function LandingPage() {
     features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
   const activeVisual = featureVisuals[active.id]
+  const activeHighlights = featureHighlights[active.id]
 
   useEffect(() => {
     if (
@@ -983,27 +1056,18 @@ export default function LandingPage() {
               ))}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <Clock3 className="size-4 text-primary" />
-                <p className="mt-5 text-sm font-bold">Rotina visível</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  O que já foi e o que vem a seguir, sem procurar informação.
-                </p>
-              </div>
-              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <Users className="size-4 text-primary" />
-                <p className="mt-5 text-sm font-bold">Equipe conectada</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  As atualizações relevantes chegam à pessoa certa.
-                </p>
-              </div>
-              <div className="rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <CircleDollarSign className="size-4 text-primary" />
-                <p className="mt-5 text-sm font-bold">Fechamento claro</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Cada atendimento ajuda a compor a leitura financeira do dia.
-                </p>
-              </div>
+              {activeHighlights.map(([Icon, title, copy]) => (
+                <div
+                  key={title}
+                  className="group rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)] transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_hsl(var(--primary)/0.12)]"
+                >
+                  <Icon className="size-4 text-primary transition-transform duration-500 group-hover:scale-110" />
+                  <p className="mt-5 text-sm font-bold">{title}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {copy}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
