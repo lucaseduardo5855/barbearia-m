@@ -1007,14 +1007,9 @@ export default function LandingPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Image
-                  src="/illustrations/barber-at-work.webp"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="size-16 rounded-xl object-cover"
-                />
-                <ActiveIcon className="size-6 text-primary" />
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-[0_10px_24px_hsl(var(--primary)/0.12)] transition-transform duration-700 group-hover:scale-105">
+                  <ActiveIcon className="size-6" />
+                </span>
               </div>
               <button
                 type="button"
@@ -1130,15 +1125,17 @@ export default function LandingPage() {
                 ))}
               </div>
             )}
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid auto-rows-fr gap-3 sm:grid-cols-3">
               {activeHighlights.map(([Icon, title, copy]) => (
                 <div
                   key={title}
-                  className="group rounded-xl bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)] transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_hsl(var(--primary)/0.12)]"
+                  className="group flex h-full min-h-36 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)] transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/[0.025] hover:shadow-[0_16px_30px_hsl(var(--primary)/0.12)]"
                 >
-                  <Icon className="size-4 text-primary transition-transform duration-500 group-hover:scale-110" />
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-[background-color,transform] duration-700 group-hover:rotate-[-5deg] group-hover:bg-primary group-hover:text-primary-foreground">
+                    <Icon className="size-4" />
+                  </span>
                   <p className="mt-5 text-sm font-bold">{title}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <p className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
                     {copy}
                   </p>
                 </div>
