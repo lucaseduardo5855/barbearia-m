@@ -111,8 +111,8 @@ export function LandingBookingMotion() {
           </p>
           <div className="mt-6 flex items-center gap-3">
             <Image
-              src="/illustrations/barber-at-work.webp"
-              alt="Barbeiro aparando o cabelo de um cliente"
+              src="/avatar.png"
+              alt="Profissional da barbearia"
               width={88}
               height={88}
               className="size-20 rounded-xl object-cover"

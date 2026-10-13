@@ -65,41 +65,6 @@ const features = [
   },
 ] as const
 
-const featureVisuals = {
-  agenda: {
-    eyebrow: "Agenda de hoje",
-    rows: [
-      ["09:00", "Thiago Moura", "Corte + barba"],
-      ["10:30", "Rafael Mendes", "Corte masculino"],
-      ["13:00", "Camila Freitas", "Barba clássica"],
-    ],
-  },
-  financeiro: {
-    eyebrow: "Caixa de hoje",
-    rows: [
-      ["Entradas", "R$ 1.080,00", "12 atendimentos"],
-      ["Comissões", "R$ 324,00", "3 profissionais"],
-      ["Saldo previsto", "R$ 756,00", "Fechamento do dia"],
-    ],
-  },
-  equipe: {
-    eyebrow: "Equipe ativa",
-    rows: [
-      ["Lucas", "5 agendamentos", "37% ocupado"],
-      ["Vinícius", "4 agendamentos", "53% ocupado"],
-      ["Marcos", "3 agendamentos", "27% ocupado"],
-    ],
-  },
-  clientes: {
-    eyebrow: "Página pública",
-    rows: [
-      ["Corte + barba", "45 min", "R$ 70"],
-      ["Corte masculino", "30 min", "R$ 45"],
-      ["Barba clássica", "30 min", "R$ 35"],
-    ],
-  },
-} as const
-
 const featureHighlights = {
   agenda: [
     [
@@ -418,7 +383,9 @@ function FeatureModeDetail({
 
   if (featureId === "agenda") {
     return (
-      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+      <div
+        className={`group relative mt-4 flex h-auto min-h-[22rem] flex-col overflow-hidden border p-4 transition-[transform,box-shadow,border-color] duration-700 hover:-translate-y-1 sm:h-[22rem] ${detailClass}`}
+      >
         <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-3">
           <div className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(var(--primary)/0.2)]">
@@ -493,7 +460,9 @@ function FeatureModeDetail({
 
   if (featureId === "financeiro") {
     return (
-      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+      <div
+        className={`group relative mt-4 flex h-auto min-h-[22rem] flex-col overflow-hidden border p-4 transition-[transform,box-shadow,border-color] duration-700 hover:-translate-y-1 sm:h-[22rem] ${detailClass}`}
+      >
         <div className="flex items-center justify-between border-b border-warning/20 pb-3">
           <div className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-xl bg-warning text-warning-foreground">
@@ -543,8 +512,11 @@ function FeatureModeDetail({
             {[38, 55, 44, 72, 62, 86, 100].map((height, index) => (
               <span
                 key={height}
-                className={`flex-1 rounded-t-md ${index === 6 ? "bg-warning" : "bg-warning/35"}`}
-                style={{ height: `${height}%` }}
+                className={`flex-1 origin-bottom rounded-t-md transition-transform duration-700 group-hover:scale-y-110 ${index === 6 ? "bg-warning" : "bg-warning/35"}`}
+                style={{
+                  height: `${height}%`,
+                  animationDelay: `${index * 80}ms`,
+                }}
               />
             ))}
           </div>
@@ -555,7 +527,9 @@ function FeatureModeDetail({
 
   if (featureId === "equipe") {
     return (
-      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+      <div
+        className={`group relative mt-4 flex h-auto min-h-[22rem] flex-col overflow-hidden border p-4 transition-[transform,box-shadow,border-color] duration-700 hover:-translate-y-1 sm:h-[22rem] ${detailClass}`}
+      >
         <div className="flex items-center justify-between border-b border-info/20 pb-3">
           <div className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-xl bg-info text-info-foreground">
@@ -591,7 +565,7 @@ function FeatureModeDetail({
                 </div>
                 <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-info/15">
                   <span
-                    className={`block h-full rounded-full ${tone} ${width}`}
+                    className={`block h-full origin-left rounded-full transition-transform duration-700 group-hover:scale-x-105 ${tone} ${width}`}
                   />
                 </span>
               </div>
@@ -607,7 +581,9 @@ function FeatureModeDetail({
   }
 
   return (
-    <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+    <div
+      className={`group relative mt-4 flex h-auto min-h-[22rem] flex-col overflow-hidden border p-4 transition-[transform,box-shadow,border-color] duration-700 hover:-translate-y-1 sm:h-[22rem] ${detailClass}`}
+    >
       <div className="flex items-center justify-between border-b border-success/20 pb-3">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-xl bg-success text-success-foreground">
@@ -629,7 +605,7 @@ function FeatureModeDetail({
           (service, index) => (
             <div
               key={service}
-              className="flex items-center gap-3 border-b border-border/70 px-3 py-3 last:border-b-0"
+              className="group/service flex items-center gap-3 border-b border-border/70 px-3 py-3 transition-colors duration-500 last:border-b-0 hover:bg-success/[0.04]"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold">{service}</p>
@@ -641,7 +617,7 @@ function FeatureModeDetail({
                       : "30 min · R$ 35"}
                 </p>
               </div>
-              <span className="rounded-full bg-success px-2.5 py-1 text-[10px] font-bold text-success-foreground">
+              <span className="rounded-full bg-success px-2.5 py-1 text-[10px] font-bold text-success-foreground transition-transform duration-500 group-hover/service:scale-105">
                 Agendar
               </span>
             </div>
@@ -1064,7 +1040,7 @@ function CustomerFlowPreview() {
       return
     const timer = window.setInterval(() => {
       setActiveStep((current) => (current + 1) % steps.length)
-    }, 3200)
+    }, 2600)
     return () => window.clearInterval(timer)
   }, [flowPaused, steps.length])
 
@@ -1156,7 +1132,6 @@ export default function LandingPage() {
   const active =
     features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
-  const activeVisual = featureVisuals[active.id]
 
   useEffect(() => {
     if (
@@ -1545,104 +1520,6 @@ export default function LandingPage() {
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
               {active.copy}
             </p>
-            {active.id === "agenda" && (
-              <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <div className="border-b border-border bg-muted/55 px-4 py-3 text-xs font-bold text-foreground">
-                  {activeVisual.eyebrow}
-                </div>
-                {activeVisual.rows.map(([label, value, meta]) => (
-                  <div
-                    key={label}
-                    className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[0.8fr_1fr_auto]"
-                  >
-                    <span className="text-xs font-bold text-foreground">
-                      {label}
-                    </span>
-                    <span className="text-xs font-semibold text-primary sm:text-right">
-                      {value}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {meta}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {active.id === "financeiro" && (
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                {activeVisual.rows.map(([label, value, meta], index) => (
-                  <div
-                    key={label}
-                    className={`rounded-xl border border-border p-4 ${index === 2 ? "bg-primary/[0.08]" : "bg-card"}`}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                      {label}
-                    </p>
-                    <p className="mt-3 text-xl font-bold tracking-tight text-primary">
-                      {value}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {meta}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {active.id === "equipe" && (
-              <div className="mt-10 rounded-xl border border-border bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <div className="flex items-center justify-between border-b border-border pb-3 text-xs font-bold">
-                  <span>{activeVisual.eyebrow}</span>
-                  <span className="text-primary">Ocupação hoje</span>
-                </div>
-                <div className="mt-2 divide-y divide-border">
-                  {activeVisual.rows.map(([label, value, meta], index) => (
-                    <div
-                      key={label}
-                      className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 py-3"
-                    >
-                      <span className="text-xs font-bold">{label}</span>
-                      <div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                          <span
-                            className="block h-full rounded-full bg-primary transition-[width] duration-700"
-                            style={{ width: `${[37, 53, 27][index]}%` }}
-                          />
-                        </div>
-                        <span className="mt-1 block text-[10px] text-muted-foreground">
-                          {meta}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-semibold text-primary">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {active.id === "clientes" && (
-              <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-                <div className="border-b border-border bg-muted/55 px-4 py-3 text-xs font-bold text-foreground">
-                  {activeVisual.eyebrow}
-                </div>
-                {activeVisual.rows.map(([label, value, meta]) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold">{label}</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">
-                        {value} · {meta}
-                      </p>
-                    </div>
-                    <span className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-bold text-primary-foreground">
-                      Agendar
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
             <FeatureModeDetail featureId={active.id} />
           </div>
         </div>
