@@ -272,12 +272,12 @@ export default function QuickSetupModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto border-border bg-card p-6 text-foreground">
         <DialogHeader className="border-b border-border/50 pb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <span className="rounded-xl bg-primary/20 p-2 text-primary">
               <Store className="h-5 w-5" />
             </span>
-            <div>
-              <DialogTitle className="text-xl font-bold text-foreground">
+            <div className="min-w-0">
+              <DialogTitle className="break-words text-lg font-medium text-foreground sm:text-xl">
                 Configuração Rápida da Unidade
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
@@ -511,7 +511,7 @@ export default function QuickSetupModal({
                     </div>
 
                     {day.active ? (
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
                         <Input
                           type="time"
                           value={day.start}
@@ -521,7 +521,7 @@ export default function QuickSetupModal({
                               [key]: { ...day, start: e.target.value },
                             }))
                           }
-                          className="h-11 w-36 min-w-0 bg-background text-center text-sm"
+                          className="h-11 w-full min-w-0 bg-background px-1 text-center text-sm sm:w-36 sm:px-3"
                         />
                         <span className="text-xs font-semibold text-muted-foreground">
                           até
@@ -535,7 +535,7 @@ export default function QuickSetupModal({
                               [key]: { ...day, end: e.target.value },
                             }))
                           }
-                          className="h-11 w-36 min-w-0 bg-background text-center text-sm"
+                          className="h-11 w-full min-w-0 bg-background px-1 text-center text-sm sm:w-36 sm:px-3"
                         />
                       </div>
                     ) : (

@@ -28,6 +28,8 @@ npm run build
 
 Separar fundação visual/controles, operações do admin/cliente e cadastro, notificações, e landing/marketplace. Usar mensagens convencionais que indiquem o resultado. Não incluir `.env`, capturas, arquivos locais de agentes ou alterações não relacionadas do usuário. Não fazer push ou reescrever histórico como parte da refatoração.
 
+O hook Git local existente referencia `commit-msg-linter`, ausente em `node_modules`, e imprime um aviso sem impedir os commits. A configuração local do hook foi preservada; as mensagens desta rodada seguem o formato convencional.
+
 ## Limites conhecidos
 
 - BoardUI completo exige uma migração separada de React 18/Tailwind 3 para React 19/Tailwind 4. A integração atual usa os componentes compatíveis do projeto.
