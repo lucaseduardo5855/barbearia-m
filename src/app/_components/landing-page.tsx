@@ -406,6 +406,256 @@ function FeatureHighlightPreview({
   )
 }
 
+function FeatureModeDetail({
+  featureId,
+}: {
+  featureId: FeatureHighlightId
+}): ReactNode {
+  const [FeatureIcon] = featureHighlights[featureId][0]
+  const detailClass = featureHighlightStyles[featureId][0]
+  const tags = featureHighlightTags[featureId]
+  const stats = featureHighlightStats[featureId]
+
+  if (featureId === "agenda") {
+    return (
+      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+        <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(var(--primary)/0.2)]">
+              <FeatureIcon className="size-4" />
+            </span>
+            <div>
+              <p className="text-sm font-bold">Agenda da equipe</p>
+              <p className="text-[10px] text-muted-foreground">
+                Terça-feira, 13 de outubro · {stats[0]}
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+            {tags[0]}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-xl border border-primary/15 bg-background/60 p-3">
+            <div className="flex items-center justify-between text-[10px] font-bold">
+              <span>Outubro 2026</span>
+              <span className="text-primary">‹ ›</span>
+            </div>
+            <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[9px] text-muted-foreground">
+              {["D", "S", "T", "Q", "Q", "S", "S"].map((day, index) => (
+                <span key={`${day}-${index}`}>{day}</span>
+              ))}
+            </div>
+            <div className="mt-1 grid grid-cols-7 gap-1 text-center text-[9px]">
+              {Array.from({ length: 28 }, (_, index) => index + 1).map(
+                (day) => (
+                  <span
+                    key={day}
+                    className={`flex size-6 items-center justify-center rounded-lg ${day === 13 ? "bg-primary font-bold text-primary-foreground shadow-[0_5px_12px_hsl(var(--primary)/0.25)]" : day === 15 || day === 21 ? "bg-success/15 font-semibold text-success" : "text-muted-foreground"}`}
+                  >
+                    {day}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
+          <div>
+            <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              <span>Agenda de hoje</span>
+              <span className="text-primary">{stats[1]}</span>
+            </div>
+            {[
+              "09:00 · Thiago Moura",
+              "10:30 · Rafael Mendes",
+              "13:00 · Camila Freitas",
+            ].map((item, index) => (
+              <div
+                key={item}
+                className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-b-0"
+              >
+                <span className="w-10 text-[10px] font-bold text-primary">
+                  {item.slice(0, 5)}
+                </span>
+                <span className="flex-1 truncate text-xs font-semibold">
+                  {item.slice(8)}
+                </span>
+                <span
+                  className={`size-2 rounded-full ${index === 0 ? "bg-success" : index === 1 ? "bg-info" : "bg-warning"}`}
+                />
+              </div>
+            ))}
+            <FeatureHighlightPreview featureId={featureId} index={0} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (featureId === "financeiro") {
+    return (
+      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+        <div className="flex items-center justify-between border-b border-warning/20 pb-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-warning text-warning-foreground">
+              <CircleDollarSign className="size-4" />
+            </span>
+            <div>
+              <p className="text-sm font-bold">Dashboard financeiro</p>
+              <p className="text-[10px] text-muted-foreground">
+                Resumo do caixa em tempo real
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[10px] font-bold text-warning">
+            {tags[0]}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {[
+            ["Entradas", "R$ 1.080", "text-primary"],
+            ["Comissões", "R$ 324", "text-warning"],
+            ["Saldo previsto", "R$ 756", "text-success"],
+          ].map(([label, value, tone]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-border/70 bg-background/65 p-3"
+            >
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-lg font-extrabold ${tone}`}>{value}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {label === "Entradas"
+                  ? "12 atendimentos"
+                  : label === "Comissões"
+                    ? "3 profissionais"
+                    : "fechamento do dia"}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 rounded-xl border border-warning/20 bg-background/45 p-3">
+          <div className="flex items-center justify-between text-[10px] font-bold">
+            <span>Movimento da semana</span>
+            <span className="text-success">+18,4%</span>
+          </div>
+          <div className="mt-3 flex h-12 items-end gap-1.5">
+            {[38, 55, 44, 72, 62, 86, 100].map((height, index) => (
+              <span
+                key={height}
+                className={`flex-1 rounded-t-md ${index === 6 ? "bg-warning" : "bg-warning/35"}`}
+                style={{ height: `${height}%` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (featureId === "equipe") {
+    return (
+      <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+        <div className="flex items-center justify-between border-b border-info/20 pb-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-info text-info-foreground">
+              <Users className="size-4" />
+            </span>
+            <div>
+              <p className="text-sm font-bold">Equipe alinhada</p>
+              <p className="text-[10px] text-muted-foreground">
+                Todos olhando o mesmo dia
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-info">3 ativos</span>
+        </div>
+        <div className="mt-4 space-y-3">
+          {[
+            ["LM", "Lucas", "5 agendamentos", "w-3/5", "bg-primary"],
+            ["VM", "Vinícius", "4 agendamentos", "w-1/2", "bg-info"],
+            ["MS", "Marcos", "3 agendamentos", "w-2/5", "bg-success"],
+          ].map(([initials, name, meta, width, tone]) => (
+            <div key={name} className="flex items-center gap-3">
+              <span
+                className={`flex size-8 items-center justify-center rounded-full text-[10px] font-bold text-white ${tone}`}
+              >
+                {initials}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold">{name}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {meta}
+                  </span>
+                </div>
+                <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-info/15">
+                  <span
+                    className={`block h-full rounded-full ${tone} ${width}`}
+                  />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-info/10 px-3 py-2 text-[10px]">
+          <span className="text-muted-foreground">Próximo encaixe</span>
+          <span className="font-bold text-info">15:00 · Rafael</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`mt-4 overflow-hidden border p-4 ${detailClass}`}>
+      <div className="flex items-center justify-between border-b border-success/20 pb-3">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-success text-success-foreground">
+            <Store className="size-4" />
+          </span>
+          <div>
+            <p className="text-sm font-bold">Página de agendamento</p>
+            <p className="text-[10px] text-muted-foreground">
+              barber-m.com/minha-barbearia
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full bg-success/15 px-2.5 py-1 text-[10px] font-bold text-success">
+          {tags[0]}
+        </span>
+      </div>
+      <div className="mt-4 rounded-xl border border-border/70 bg-background/65">
+        {["Corte + barba", "Corte masculino", "Barba clássica"].map(
+          (service, index) => (
+            <div
+              key={service}
+              className="flex items-center gap-3 border-b border-border/70 px-3 py-3 last:border-b-0"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold">{service}</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {index === 0
+                    ? "45 min · R$ 70"
+                    : index === 1
+                      ? "30 min · R$ 45"
+                      : "30 min · R$ 35"}
+                </p>
+              </div>
+              <span className="rounded-full bg-success px-2.5 py-1 text-[10px] font-bold text-success-foreground">
+                Agendar
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+      <div className="mt-3 flex items-center justify-between rounded-lg border border-info/20 bg-info/10 px-3 py-2 text-[10px]">
+        <span className="text-muted-foreground">Próximo horário livre</span>
+        <span className="font-bold text-info">Hoje, 15:00</span>
+      </div>
+    </div>
+  )
+}
+
 const appointments = [
   {
     time: "09:00",
@@ -803,6 +1053,20 @@ function CustomerFlowPreview() {
       copy: "Tudo entra na agenda e no caixa.",
     },
   ]
+  const [activeStep, setActiveStep] = useState(0)
+  const [flowPaused, setFlowPaused] = useState(false)
+
+  useEffect(() => {
+    if (
+      flowPaused ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return
+    const timer = window.setInterval(() => {
+      setActiveStep((current) => (current + 1) % steps.length)
+    }, 3200)
+    return () => window.clearInterval(timer)
+  }, [flowPaused, steps.length])
 
   return (
     <section
@@ -825,24 +1089,44 @@ function CustomerFlowPreview() {
         <div className="mt-9 grid gap-3 md:grid-cols-3">
           {steps.map((step, index) => {
             const Icon = step.icon
+            const selected = activeStep === index
             return (
               <div
                 key={step.title}
-                className="group relative rounded-2xl border border-border bg-background p-5 transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-within:border-primary/30 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.025] hover:shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)]"
+                role="button"
+                tabIndex={0}
+                aria-current={selected ? "step" : undefined}
+                onMouseEnter={() => {
+                  setActiveStep(index)
+                  setFlowPaused(true)
+                }}
+                onMouseLeave={() => setFlowPaused(false)}
+                onFocus={() => {
+                  setActiveStep(index)
+                  setFlowPaused(true)
+                }}
+                onBlur={() => setFlowPaused(false)}
+                className={`group relative rounded-2xl border bg-background p-5 transition-[transform,box-shadow,border-color,background-color] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.025] hover:shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)] ${selected ? "-translate-y-1 border-primary/35 bg-primary/[0.035] shadow-[0_18px_36px_-22px_hsl(var(--primary)/0.45)]" : "border-border"}`}
               >
                 <span
-                  className="pointer-events-none absolute inset-x-5 top-0 h-px origin-left scale-x-0 bg-primary/70 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
+                  className={`pointer-events-none absolute inset-x-5 top-0 h-px origin-left bg-primary/70 transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100 ${selected ? "scale-x-100" : "scale-x-0"}`}
                   aria-hidden="true"
                 />
                 <div className="flex items-center justify-between">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-[-5deg] group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
+                  <span
+                    className={`flex size-10 items-center justify-center rounded-xl text-primary transition-[transform,background-color,color] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-[-5deg] group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground ${selected ? "rotate-[-5deg] scale-105 bg-primary text-primary-foreground" : "bg-primary/10"}`}
+                  >
                     <Icon className="size-5 transition-transform duration-500 group-hover:scale-105" />
                   </span>
-                  <span className="text-xs font-extrabold text-muted-foreground transition-colors duration-500 group-hover:text-primary">
+                  <span
+                    className={`text-xs font-extrabold transition-colors duration-1000 group-hover:text-primary ${selected ? "text-primary" : "text-muted-foreground"}`}
+                  >
                     0{index + 1}
                   </span>
                 </div>
-                <h3 className="mt-6 text-lg font-extrabold transition-colors duration-500 group-hover:text-primary">
+                <h3
+                  className={`mt-6 text-lg font-extrabold transition-colors duration-1000 group-hover:text-primary ${selected ? "text-primary" : "text-foreground"}`}
+                >
                   {step.title}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -873,7 +1157,6 @@ export default function LandingPage() {
     features.find((feature) => feature.id === activeFeature) ?? features[0]
   const ActiveIcon = active.icon
   const activeVisual = featureVisuals[active.id]
-  const activeHighlights = featureHighlights[active.id]
 
   useEffect(() => {
     if (
@@ -1360,62 +1643,7 @@ export default function LandingPage() {
                 ))}
               </div>
             )}
-            <div className="mt-4 grid auto-rows-fr gap-3 sm:grid-cols-3">
-              {activeHighlights.map(([Icon, title, copy], index) => (
-                <div
-                  key={title}
-                  className={`group relative flex h-full min-h-[12.5rem] flex-col overflow-hidden border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-1 ${featureHighlightStyles[active.id][index]}`}
-                >
-                  {index === 0 && (
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(var(--primary)/0.25)] transition-transform duration-700 group-hover:rotate-[-8deg] group-hover:scale-105">
-                        <Icon className="size-4" />
-                      </span>
-                      <span className="rounded-full border border-primary/20 bg-background/70 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                        {featureHighlightTags[active.id][0]}
-                      </span>
-                    </div>
-                  )}
-                  {index === 1 && (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="flex size-8 items-center justify-center rounded-full bg-info text-info-foreground shadow-[0_6px_14px_hsl(var(--info)/0.22)] transition-transform duration-700 group-hover:scale-110">
-                          <Icon className="size-4" />
-                        </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.13em] text-info">
-                          {featureHighlightTags[active.id][1]}
-                        </span>
-                      </div>
-                      <span className="text-lg font-extrabold text-info/80">
-                        {featureHighlightStats[active.id][1]}
-                      </span>
-                    </div>
-                  )}
-                  {index === 2 && (
-                    <div className="flex flex-row-reverse items-start justify-between gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-2xl border border-success/20 bg-success/15 text-success shadow-[0_8px_18px_hsl(var(--success)/0.16)] transition-transform duration-700 group-hover:translate-y-[-3px] group-hover:rotate-[6deg]">
-                        <Icon className="size-5" />
-                      </span>
-                      <span className="pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-success">
-                        {featureHighlightTags[active.id][2]}
-                      </span>
-                    </div>
-                  )}
-                  <p
-                    className={`${index === 1 ? "mt-4" : index === 2 ? "mt-7" : "mt-6"} text-sm font-bold`}
-                  >
-                    {title}
-                  </p>
-                  <p className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
-                    {copy}
-                  </p>
-                  <FeatureHighlightPreview
-                    featureId={active.id}
-                    index={index}
-                  />
-                </div>
-              ))}
-            </div>
+            <FeatureModeDetail featureId={active.id} />
           </div>
         </div>
       </section>
