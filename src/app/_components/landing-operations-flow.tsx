@@ -1,6 +1,5 @@
 "use client"
 import { useEffect, useRef } from "react"
-import Image from "next/image"
 import {
   BadgeDollarSign,
   CalendarCheck2,
@@ -15,7 +14,7 @@ type FlowCardProps = {
   label: string
   title: string
   copy: string
-  image?: string
+  visual?: "attendance" | "team"
   detail: string
 }
 
@@ -29,7 +28,7 @@ const entryPoints: FlowCardProps[] = [
   },
   {
     icon: Scissors,
-    image: "/illustrations/barber-at-work.webp",
+    visual: "attendance",
     label: "Atendimento",
     title: "O serviço realizado organiza o restante",
     copy: "O status do agendamento acompanha a rotina da cadeira.",
@@ -37,7 +36,7 @@ const entryPoints: FlowCardProps[] = [
   },
   {
     icon: UsersRound,
-    image: "/illustrations/barbershop-team.svg",
+    visual: "team",
     label: "Equipe",
     title: "Cada profissional trabalha olhando o mesmo dia",
     copy: "A agenda mostra o que vem a seguir para cada pessoa.",
@@ -75,7 +74,7 @@ function FlowCard({
   title,
   copy,
   detail,
-  image,
+  visual,
 }: FlowCardProps) {
   return (
     <article className="landing-flow__card group min-h-44 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_24px_hsl(var(--foreground)/0.05)] transition-all duration-500 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.03] hover:shadow-[0_18px_34px_hsl(var(--primary)/0.12)]">
@@ -85,14 +84,37 @@ function FlowCard({
         </span>
         {label}
       </div>
-      {image && (
-        <Image
-          src={image}
-          alt=""
-          width={360}
-          height={140}
-          className="mt-3 h-24 w-full rounded-xl object-cover"
-        />
+      {visual === "attendance" && (
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/[0.07] px-3 py-3 ring-1 ring-primary/10">
+          <div className="flex items-center gap-2">
+            <CalendarCheck2
+              className="size-4 text-primary"
+              aria-hidden="true"
+            />
+            <span className="text-xs font-semibold text-foreground">
+              15:00 · Corte + barba
+            </span>
+          </div>
+          <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-bold text-success">
+            Concluído
+          </span>
+        </div>
+      )}
+      {visual === "team" && (
+        <div className="mt-3 rounded-xl bg-muted px-3 py-3 ring-1 ring-border/70">
+          <div className="flex items-center justify-between text-xs">
+            <span className="inline-flex items-center gap-2 font-semibold text-foreground">
+              <UsersRound className="size-4 text-primary" aria-hidden="true" />{" "}
+              Equipe ativa
+            </span>
+            <span className="font-bold text-primary">3 profissionais</span>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-1.5" aria-hidden="true">
+            <span className="h-1.5 rounded-full bg-primary" />
+            <span className="h-1.5 rounded-full bg-info" />
+            <span className="h-1.5 rounded-full bg-success" />
+          </div>
+        </div>
       )}
       <h3 className="mt-3 text-sm font-extrabold tracking-[-0.015em] text-foreground">
         {title}
