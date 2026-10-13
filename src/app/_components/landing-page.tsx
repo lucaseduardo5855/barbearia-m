@@ -151,7 +151,7 @@ function AgendaPreview() {
   return (
     <div
       data-gsap="hero-preview"
-      className="landing-showcase relative mx-auto w-full max-w-[44rem]"
+      className="landing-showcase relative mx-auto w-full max-w-[44rem] transition-[transform,filter] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:drop-shadow-[0_24px_45px_hsl(var(--primary)/0.12)]"
       aria-label="Prévia ilustrativa da agenda do BARBER-M"
     >
       <div
@@ -169,9 +169,6 @@ function AgendaPreview() {
               Painel administrativo
             </span>
           </div>
-          <span className="rounded-full bg-success/15 px-2.5 py-1 text-[10px] font-semibold text-success">
-            Dados ilustrativos
-          </span>
         </div>
 
         <div className="grid min-h-[25rem] grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[8.75rem_minmax(0,1fr)]">
@@ -801,7 +798,7 @@ export default function LandingPage() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)]"
+                className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-[background-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:bg-primary/90 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
               >
                 <Link href="/admin/register">
                   Criar minha barbearia <ArrowRight className="size-4" />
@@ -811,7 +808,7 @@ export default function LandingPage() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-all duration-500 hover:-translate-y-0.5 hover:bg-card hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)]"
+                className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-[background-color,border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
               >
                 <Link href="/?view=marketplace">
                   Encontrar barbearias <Search className="ml-2 size-4" />
@@ -833,7 +830,10 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
-          <div data-gsap="hero-showcase" className="relative pb-10 lg:pb-0">
+          <div
+            data-gsap="hero-showcase"
+            className="group relative pb-10 lg:pb-0"
+          >
             <AgendaPreview />
             <div className="relative z-10 mt-4 lg:absolute lg:-bottom-8 lg:-right-8 lg:mt-0 lg:origin-bottom-right lg:scale-[0.78]">
               <MarketplacePreview />
@@ -963,9 +963,6 @@ export default function LandingPage() {
               <div className="flex items-center justify-between border-b border-border bg-muted/55 px-4 py-3">
                 <span className="text-xs font-bold text-foreground">
                   {activeVisual.eyebrow}
-                </span>
-                <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
-                  Dados ilustrativos
                 </span>
               </div>
               {activeVisual.rows.map(([label, value, meta]) => (
