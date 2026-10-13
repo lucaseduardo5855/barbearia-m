@@ -30,17 +30,23 @@ export function TrialPlanCard({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      <div className="mt-4 border-y border-primary/15 py-3">
-        <p className="text-xs text-muted-foreground">
-          Depois do período de teste
+      {compact ? (
+        <p className="mt-3 rounded-lg bg-background/70 px-3 py-2 text-xs leading-5 text-muted-foreground">
+          Sem cobrança agora. Você conhece o painel antes de decidir.
         </p>
-        <p className="mt-1 text-lg font-medium tracking-tight">
-          {SUBSCRIPTION_PLAN_LABEL}
-        </p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Pagamento por Pix para manter o acesso ao painel.
-        </p>
-      </div>
+      ) : (
+        <div className="mt-4 border-y border-primary/15 py-3">
+          <p className="text-xs text-muted-foreground">
+            Depois do período de teste
+          </p>
+          <p className="mt-1 text-lg font-medium tracking-tight">
+            {SUBSCRIPTION_PLAN_LABEL}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Pagamento por Pix para manter o acesso ao painel.
+          </p>
+        </div>
+      )}
 
       {!compact && (
         <ul className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground">
@@ -56,14 +62,16 @@ export function TrialPlanCard({ compact = false }: { compact?: boolean }) {
         </ul>
       )}
 
-      <p className="mt-4 flex gap-2 rounded-lg bg-background/70 p-2.5 text-xs leading-5 text-muted-foreground">
-        <Info
-          className="mt-0.5 size-3.5 shrink-0 text-primary"
-          aria-hidden="true"
-        />
-        Sem assinatura ao fim do teste, o painel fica pausado até a ativação.
-        Seus dados permanecem salvos.
-      </p>
+      {!compact && (
+        <p className="mt-4 flex gap-2 rounded-lg bg-background/70 p-2.5 text-xs leading-5 text-muted-foreground">
+          <Info
+            className="mt-0.5 size-3.5 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          Sem assinatura ao fim do teste, o painel fica pausado até a ativação.
+          Seus dados permanecem salvos.
+        </p>
+      )}
     </aside>
   )
 }
