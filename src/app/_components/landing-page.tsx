@@ -798,7 +798,7 @@ export default function LandingPage() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-[background-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:bg-primary/90 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
+                className="h-14 min-w-[13.25rem] rounded-full px-6 text-[15px] font-bold shadow-[0_14px_30px_hsl(var(--primary)/0.24)] transition-[background-color,box-shadow,transform] duration-[750ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:bg-primary/90 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
               >
                 <Link href="/admin/register">
                   Criar minha barbearia <ArrowRight className="size-4" />
@@ -808,7 +808,7 @@ export default function LandingPage() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-[background-color,border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
+                className="h-14 rounded-full border-border bg-card px-3 pr-6 text-[15px] font-bold shadow-[0_5px_12px_hsl(var(--foreground)/0.05)] transition-[background-color,border-color,box-shadow,transform] duration-[750ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-[0_10px_18px_hsl(var(--foreground)/0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:scale-[0.98]"
               >
                 <Link href="/?view=marketplace">
                   Encontrar barbearias <Search className="ml-2 size-4" />
