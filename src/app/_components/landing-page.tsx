@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -170,6 +170,241 @@ const featureHighlights = {
     ],
   ],
 } as const
+
+type FeatureHighlightId = keyof typeof featureHighlights
+
+const featureHighlightTags: Record<
+  FeatureHighlightId,
+  readonly [string, string, string]
+> = {
+  agenda: ["agenda", "horários", "equipe"],
+  financeiro: ["entrada", "comissão", "saldo"],
+  equipe: ["ocupação", "agenda", "repasse"],
+  clientes: ["público", "serviço", "horário"],
+}
+
+const featureHighlightStats: Record<
+  FeatureHighlightId,
+  readonly [string, string, string]
+> = {
+  agenda: ["09:00", "3 horários", "3 pessoas"],
+  financeiro: ["hoje", "32%", "R$ 756"],
+  equipe: ["37%", "3 agendas", "50%"],
+  clientes: ["link ativo", "3 opções", "30 min"],
+}
+
+const featureHighlightStyles: Record<
+  FeatureHighlightId,
+  readonly [string, string, string]
+> = {
+  agenda: [
+    "rounded-2xl rounded-bl-md border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card shadow-[0_14px_30px_hsl(var(--primary)/0.1)] hover:border-primary/40 hover:shadow-[0_22px_40px_hsl(var(--primary)/0.18)]",
+    "rounded-xl border-info/25 bg-info/[0.045] shadow-[0_12px_28px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_20px_36px_hsl(var(--info)/0.2)]",
+    "rounded-2xl rounded-tr-md border-success/25 bg-gradient-to-b from-success/[0.09] to-card shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]",
+  ],
+  financeiro: [
+    "rounded-xl rounded-bl-md border-warning/25 bg-warning/[0.07] shadow-[0_14px_30px_hsl(var(--warning)/0.1)] hover:border-warning/45 hover:shadow-[0_22px_40px_hsl(var(--warning)/0.18)]",
+    "rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.08] to-card shadow-[0_12px_28px_hsl(var(--primary)/0.1)] hover:border-primary/45 hover:shadow-[0_20px_36px_hsl(var(--primary)/0.2)]",
+    "rounded-2xl rounded-tr-md border-success/25 bg-success/[0.07] shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]",
+  ],
+  equipe: [
+    "rounded-2xl border-info/25 bg-info/[0.07] shadow-[0_14px_30px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_22px_40px_hsl(var(--info)/0.18)]",
+    "rounded-xl rounded-bl-md border-primary/25 bg-primary/[0.045] shadow-[0_12px_28px_hsl(var(--primary)/0.1)] hover:border-primary/45 hover:shadow-[0_20px_36px_hsl(var(--primary)/0.2)]",
+    "rounded-2xl rounded-tr-md border-warning/25 bg-gradient-to-b from-warning/[0.1] to-card shadow-[0_14px_30px_hsl(var(--warning)/0.1)] hover:border-warning/45 hover:shadow-[0_22px_40px_hsl(var(--warning)/0.18)]",
+  ],
+  clientes: [
+    "rounded-2xl rounded-bl-md border-success/25 bg-success/[0.07] shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]",
+    "rounded-xl border-warning/25 bg-warning/[0.06] shadow-[0_12px_28px_hsl(var(--warning)/0.1)] hover:border-warning/45 hover:shadow-[0_20px_36px_hsl(var(--warning)/0.2)]",
+    "rounded-2xl rounded-tr-md border-info/25 bg-gradient-to-b from-info/[0.09] to-card shadow-[0_14px_30px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_22px_40px_hsl(var(--info)/0.18)]",
+  ],
+}
+
+function FeatureHighlightPreview({
+  featureId,
+  index,
+}: {
+  featureId: FeatureHighlightId
+  index: number
+}): ReactNode {
+  if (featureId === "agenda") {
+    if (index === 0) {
+      return (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-primary/15 bg-background/55 px-2.5 py-2 text-[10px]">
+          <span className="font-bold text-primary">09:00</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-success" />
+          <span className="truncate text-muted-foreground">Corte + barba</span>
+        </div>
+      )
+    }
+    if (index === 1) {
+      return (
+        <div className="mt-4 grid grid-cols-7 gap-1" aria-hidden="true">
+          {["M", "T", "Q", "Q", "S", "S", "D"].map((day, dayIndex) => (
+            <span
+              key={`${day}-${dayIndex}`}
+              className={`flex h-5 items-center justify-center rounded text-[9px] font-bold ${dayIndex === 2 ? "bg-info text-info-foreground" : "bg-info/10 text-info"}`}
+            >
+              {day}
+            </span>
+          ))}
+        </div>
+      )
+    }
+    return (
+      <div
+        className="mt-4 flex items-center gap-1.5 text-[10px]"
+        aria-hidden="true"
+      >
+        {["LM", "VM", "MS"].map((initials, personIndex) => (
+          <span
+            key={initials}
+            className={`flex size-6 items-center justify-center rounded-full border-2 border-card text-[8px] font-bold text-white ${personIndex === 0 ? "bg-primary" : personIndex === 1 ? "bg-info" : "bg-success"}`}
+          >
+            {initials}
+          </span>
+        ))}
+        <span className="ml-1 text-muted-foreground">3 profissionais</span>
+      </div>
+    )
+  }
+
+  if (featureId === "financeiro") {
+    if (index === 0) {
+      return (
+        <div
+          className="mt-4 flex items-end justify-between gap-1 rounded-lg border border-warning/20 bg-background/35 px-2.5 py-2"
+          aria-hidden="true"
+        >
+          {["h-2", "h-4", "h-3", "h-6", "h-5"].map((height, barIndex) => (
+            <span
+              key={height}
+              className={`${height} flex-1 rounded-t ${barIndex === 4 ? "bg-warning/90" : barIndex === 3 ? "bg-warning/65" : "bg-warning/40"}`}
+            />
+          ))}
+          <span className="ml-2 text-[10px] font-bold text-warning">+R$</span>
+        </div>
+      )
+    }
+    if (index === 1) {
+      return (
+        <div className="mt-4 space-y-1.5" aria-hidden="true">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>Comissão média</span>
+            <span className="font-bold text-primary">32%</span>
+          </div>
+          <span className="block h-2 overflow-hidden rounded-full bg-primary/10">
+            <span className="block h-full w-1/3 rounded-full bg-primary" />
+          </span>
+        </div>
+      )
+    }
+    return (
+      <div className="mt-4 space-y-1 text-[10px]" aria-hidden="true">
+        <div className="flex justify-between text-success">
+          <span>Entradas</span>
+          <b>+ R$ 1.080</b>
+        </div>
+        <div className="flex justify-between text-warning">
+          <span>Comissões</span>
+          <b>- R$ 324</b>
+        </div>
+        <div className="flex justify-between border-t border-success/20 pt-1 font-bold text-foreground">
+          <span>Saldo</span>
+          <span>R$ 756</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (featureId === "equipe") {
+    if (index === 0) {
+      return (
+        <div className="mt-4 space-y-1.5" aria-hidden="true">
+          {["Lucas", "Vinícius", "Marcos"].map((name, personIndex) => (
+            <div key={name} className="flex items-center gap-2 text-[9px]">
+              <span className="w-12 text-muted-foreground">{name}</span>
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-info/15">
+                <span
+                  className={`block h-full rounded-full bg-info ${personIndex === 0 ? "w-2/5" : personIndex === 1 ? "w-3/5" : "w-1/4"}`}
+                />
+              </span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (index === 1) {
+      return (
+        <div className="mt-4 space-y-1 text-[10px]" aria-hidden="true">
+          <div className="flex items-center gap-2">
+            <span className="w-10 text-muted-foreground">09:00</span>
+            <span className="h-2 flex-1 rounded-full bg-primary" />
+            <span className="size-2 rounded-full bg-primary" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-10 text-muted-foreground">10:30</span>
+            <span className="h-2 flex-1 rounded-full bg-primary/35" />
+            <span className="size-2 rounded-full bg-primary/35" />
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div
+        className="mt-4 flex items-center justify-between rounded-lg border border-warning/20 bg-warning/10 px-2.5 py-2 text-[10px]"
+        aria-hidden="true"
+      >
+        <span className="text-muted-foreground">Comissão</span>
+        <b className="text-warning">50%</b>
+      </div>
+    )
+  }
+
+  if (index === 0) {
+    return (
+      <div
+        className="mt-4 flex items-center gap-2 rounded-lg border border-success/20 bg-background/45 px-2.5 py-2 text-[10px]"
+        aria-hidden="true"
+      >
+        <span className="truncate text-muted-foreground">
+          barber-m.com/agenda
+        </span>
+        <span className="ml-auto rounded bg-success px-1.5 py-0.5 font-bold text-success-foreground">
+          ABRIR
+        </span>
+      </div>
+    )
+  }
+  if (index === 1) {
+    return (
+      <div className="mt-4 flex flex-wrap gap-1.5" aria-hidden="true">
+        <span className="rounded-full bg-warning/15 px-2 py-1 text-[9px] font-semibold text-warning">
+          Corte + barba
+        </span>
+        <span className="rounded-full bg-warning/15 px-2 py-1 text-[9px] font-semibold text-warning">
+          45 min
+        </span>
+        <span className="rounded-full bg-warning/15 px-2 py-1 text-[9px] font-semibold text-warning">
+          R$ 70
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div
+      className="mt-4 flex items-center justify-between rounded-lg border border-info/20 bg-background/45 px-2.5 py-2 text-[10px]"
+      aria-hidden="true"
+    >
+      <span>
+        <b className="text-info">15:00</b>
+        <span className="ml-1 text-muted-foreground">disponível</span>
+      </span>
+      <span className="rounded-full bg-info px-2 py-1 font-bold text-info-foreground">
+        Agendar
+      </span>
+    </div>
+  )
+}
 
 const appointments = [
   {
@@ -1129,7 +1364,7 @@ export default function LandingPage() {
               {activeHighlights.map(([Icon, title, copy], index) => (
                 <div
                   key={title}
-                  className={`group relative flex h-full min-h-[12.5rem] flex-col overflow-hidden border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-1 ${index === 0 ? "rounded-2xl rounded-bl-md border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card to-card shadow-[0_14px_30px_hsl(var(--primary)/0.1)] hover:border-primary/40 hover:shadow-[0_22px_40px_hsl(var(--primary)/0.18)]" : index === 1 ? "rounded-xl border-info/25 bg-info/[0.045] shadow-[0_12px_28px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_20px_36px_hsl(var(--info)/0.2)]" : "rounded-2xl rounded-tr-md border-success/25 bg-gradient-to-b from-success/[0.09] to-card shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]"}`}
+                  className={`group relative flex h-full min-h-[12.5rem] flex-col overflow-hidden border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-1 ${featureHighlightStyles[active.id][index]}`}
                 >
                   {index === 0 && (
                     <div className="flex items-start justify-between gap-3">
@@ -1137,7 +1372,7 @@ export default function LandingPage() {
                         <Icon className="size-4" />
                       </span>
                       <span className="rounded-full border border-primary/20 bg-background/70 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                        fluxo
+                        {featureHighlightTags[active.id][0]}
                       </span>
                     </div>
                   )}
@@ -1148,11 +1383,11 @@ export default function LandingPage() {
                           <Icon className="size-4" />
                         </span>
                         <span className="text-[10px] font-semibold uppercase tracking-[0.13em] text-info">
-                          visão rápida
+                          {featureHighlightTags[active.id][1]}
                         </span>
                       </div>
                       <span className="text-lg font-extrabold text-info/80">
-                        04
+                        {featureHighlightStats[active.id][1]}
                       </span>
                     </div>
                   )}
@@ -1162,7 +1397,7 @@ export default function LandingPage() {
                         <Icon className="size-5" />
                       </span>
                       <span className="pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-success">
-                        conectado
+                        {featureHighlightTags[active.id][2]}
                       </span>
                     </div>
                   )}
@@ -1174,37 +1409,10 @@ export default function LandingPage() {
                   <p className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
                     {copy}
                   </p>
-                  {index === 0 && (
-                    <div
-                      className="mt-4 flex items-center gap-1.5"
-                      aria-hidden="true"
-                    >
-                      <span className="size-1.5 rounded-full bg-primary" />
-                      <span className="h-px flex-1 bg-primary/25" />
-                      <span className="size-1.5 rounded-full bg-primary/50" />
-                      <span className="h-px flex-1 bg-primary/25" />
-                      <span className="size-1.5 rounded-full bg-primary/25" />
-                    </div>
-                  )}
-                  {index === 1 && (
-                    <div
-                      className="mt-4 flex h-7 items-end gap-1.5 rounded-lg border border-info/15 bg-background/35 px-2 py-1"
-                      aria-hidden="true"
-                    >
-                      <span className="h-2 flex-1 rounded-full bg-info/30" />
-                      <span className="h-4 flex-1 rounded-full bg-info/50" />
-                      <span className="h-3 flex-1 rounded-full bg-info/70" />
-                      <span className="h-6 flex-1 rounded-full bg-info" />
-                    </div>
-                  )}
-                  {index === 2 && (
-                    <div className="mt-4 flex items-center justify-between border-t border-success/20 pt-3 text-[11px] font-semibold text-success">
-                      <span>Ver no painel</span>
-                      <span className="flex size-6 items-center justify-center rounded-full bg-success text-success-foreground transition-transform duration-700 group-hover:translate-x-1">
-                        <ChevronRight className="size-3.5" />
-                      </span>
-                    </div>
-                  )}
+                  <FeatureHighlightPreview
+                    featureId={active.id}
+                    index={index}
+                  />
                 </div>
               ))}
             </div>
