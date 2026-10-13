@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   Menu,
   Pause,
-  Play,
   Scissors,
   Search,
   Store,
@@ -817,20 +816,14 @@ export default function LandingPage() {
                 </Link>
               </Button>
             </div>
-            <a
-              href="#recursos"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-foreground underline decoration-primary/40 underline-offset-4 transition-colors hover:text-primary"
-            >
-              <Play className="size-3 fill-current text-primary" /> Ver o
-              sistema por dentro
-            </a>
-            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-semibold text-muted-foreground">
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-xs font-semibold text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <Check className="size-3.5 text-success" /> Agenda por
+                <CalendarDays className="size-3.5 text-primary" /> Agenda por
                 profissional
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Check className="size-3.5 text-success" /> Controle de caixa
+                <CircleDollarSign className="size-3.5 text-primary" /> Controle
+                de caixa
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Check className="size-3.5 text-success" /> Página de
