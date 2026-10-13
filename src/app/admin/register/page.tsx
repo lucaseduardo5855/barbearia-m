@@ -29,6 +29,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import SignInDialog from "@/app/_components/sign-in-dialong"
+import { TrialPlanCard } from "./_components/trial-plan-card"
 
 export default function RegisterBarbershopPage() {
   const router = useRouter()
@@ -271,8 +272,8 @@ export default function RegisterBarbershopPage() {
             </div>
           </div>
 
-          <div className="z-10 text-xs font-medium text-foreground/60">
-            © Barber-M • 7 dias para testar
+          <div className="z-10">
+            <TrialPlanCard compact />
           </div>
         </section>
 
@@ -288,6 +289,10 @@ export default function RegisterBarbershopPage() {
               <span className="mt-2 rounded-full bg-primary/20 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
                 Passo {step} de 6
               </span>
+            </div>
+
+            <div className="md:hidden">
+              <TrialPlanCard compact />
             </div>
 
             {/* Cabeçalho da Etapa Corrente */}
@@ -820,6 +825,7 @@ export default function RegisterBarbershopPage() {
               {/* ETAPA 6: CONVITE DE EQUIPE */}
               {step === 6 && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
+                  <TrialPlanCard />
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       Nome do Primeiro Barbeiro (Opcional)

@@ -1,6 +1,7 @@
 "use server"
 
 import { db } from "@/lib/prisma"
+import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plan"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../_lib/auth"
 import { revalidatePath } from "next/cache"
@@ -55,7 +56,7 @@ export async function registerBarbershop(params: RegistrationInput) {
       .replace(/\s+/g, "-") || "barbearia"
   const slug = baseSlug + "-" + randomUUID().slice(0, 8)
   const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + 7)
+  trialEndsAt.setDate(trialEndsAt.getDate() + SUBSCRIPTION_PLAN.trialDays)
   if (data.barberEmail) {
     const existingBarber = await db.barber.findUnique({
       where: { email: data.barberEmail.toLowerCase() },

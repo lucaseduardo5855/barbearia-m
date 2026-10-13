@@ -6,15 +6,25 @@ import Image from "next/image"
 import { LockIcon, Loader2, Copy, Check } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createPixPaymentAction, checkBarbershopSubscriptionAction } from "@/app/_actions/payment-actions"
+import {
+  createPixPaymentAction,
+  checkBarbershopSubscriptionAction,
+} from "@/app/_actions/payment-actions"
 import { toast } from "sonner"
+import {
+  SUBSCRIPTION_PLAN_LABEL,
+  SUBSCRIPTION_PLAN,
+} from "@/lib/subscription-plan"
 
 interface PixLockScreenProps {
   barbershopId: string
   barbershopName: string
 }
 
-export default function PixLockScreen({ barbershopId, barbershopName }: PixLockScreenProps) {
+export default function PixLockScreen({
+  barbershopId,
+  barbershopName,
+}: PixLockScreenProps) {
   const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(true)
@@ -67,38 +77,47 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md border-destructive/50 bg-card p-6 text-center space-y-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
+      <Card className="w-full max-w-md space-y-6 border-destructive/50 bg-card p-6 text-center">
         <div className="flex justify-center">
           <div className="rounded-full bg-destructive/10 p-4 text-destructive">
-            <LockIcon className="w-12 h-12" />
+            <LockIcon className="h-12 w-12" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-xl font-bold text-destructive">Período de Teste Expirou!</h1>
+          <h1 className="text-xl font-bold text-destructive">
+            Período de Teste Expirou!
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Os 7 dias grátis de teste da barbearia <strong>{barbershopName}</strong> terminaram.
-            Para continuar acessando o painel e recebendo agendamentos, ative sua assinatura.
+            Os {SUBSCRIPTION_PLAN.trialDays} dias grátis de teste da barbearia{" "}
+            <strong>{barbershopName}</strong> terminaram. Para continuar
+            acessando o painel e recebendo agendamentos, ative sua assinatura.
           </p>
         </div>
 
         {/* Informações de Pagamento */}
-        <div className="bg-secondary/40 p-4 rounded-xl text-left space-y-4 border border-secondary">
+        <div className="space-y-4 rounded-xl border border-secondary bg-secondary/40 p-4 text-left">
           <div className="flex justify-between border-b border-secondary/60 pb-2">
-            <span className="text-xs text-muted-foreground font-semibold uppercase">Valor Mensal (Teste)</span>
-            <span className="text-sm font-bold text-primary">R$ 49,99</span>
+            <span className="text-xs font-semibold uppercase text-muted-foreground">
+              Valor Mensal (Teste)
+            </span>
+            <span className="text-sm font-medium text-primary">
+              {SUBSCRIPTION_PLAN_LABEL}
+            </span>
           </div>
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-6 space-y-2">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground">Gerando Pix no Mercado Pago...</p>
+            <div className="flex flex-col items-center justify-center space-y-2 py-6">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">
+                Gerando Pix no Mercado Pago...
+              </p>
             </div>
           ) : paymentData ? (
             <div className="flex flex-col items-center space-y-4">
               {/* QR Code Container */}
-              <div className="bg-foreground p-3 rounded-lg flex items-center justify-center shadow-md">
+              <div className="flex items-center justify-center rounded-lg bg-foreground p-3 shadow-md">
                 <Image
                   src={`data:image/png;base64,${paymentData.qrCodeBase64}`}
                   alt="QR Code Pix"
@@ -111,9 +130,11 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
 
               {/* Copia e Cola Container */}
               <div className="w-full space-y-1">
-                <span className="text-xs text-muted-foreground font-semibold uppercase">Chave Copia e Cola</span>
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  Chave Copia e Cola
+                </span>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-black/30 p-2 rounded border border-secondary text-xs font-mono truncate select-all">
+                  <div className="flex-1 select-all truncate rounded border border-secondary bg-black/30 p-2 font-mono text-xs">
                     {paymentData.qrCode}
                   </div>
                   <Button
@@ -123,30 +144,38 @@ export default function PixLockScreen({ barbershopId, barbershopName }: PixLockS
                     className="shrink-0"
                     type="button"
                   >
-                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                    {copied ? (
+                      <Check className="h-4 w-4 text-success" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70">Selecione o botão para copiar o código Pix.</p>
+                <p className="text-[10px] text-muted-foreground/70">
+                  Selecione o botão para copiar o código Pix.
+                </p>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4 text-sm text-destructive font-medium">
-              Não foi possível carregar o Pix. Recarregue a página e tente novamente.
+            <div className="py-4 text-center text-sm font-medium text-destructive">
+              Não foi possível carregar o Pix. Recarregue a página e tente
+              novamente.
             </div>
           )}
         </div>
 
         {/* Status de Liberação Automática */}
-        <div className="space-y-2 pt-2 border-t border-secondary/40">
+        <div className="space-y-2 border-t border-secondary/40 pt-2">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success"></span>
             </span>
             <span>Aguardando pagamento Pix...</span>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Assim que você efetuar o Pix no seu banco, o sistema reconhecerá e liberará o seu acesso automaticamente em tempo real.
+            Assim que você efetuar o Pix no seu banco, o sistema reconhecerá e
+            liberará o seu acesso automaticamente em tempo real.
           </p>
         </div>
       </Card>

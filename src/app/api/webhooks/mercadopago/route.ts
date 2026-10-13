@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/prisma"
+import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plan"
 import { rateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
@@ -8,7 +9,10 @@ export async function POST(request: Request) {
     const ip = request.headers.get("x-forwarded-for") || "webhook-caller"
     const { success } = rateLimit(`webhook-${ip}`, 60, 60 * 1000)
     if (!success) {
-      return NextResponse.json({ error: "Limite de requisições excedido." }, { status: 429 })
+      return NextResponse.json(
+        { error: "Limite de requisições excedido." },
+        { status: 429 },
+      )
     }
 
     // 1. Captura os parâmetros enviados pelo Mercado Pago.
@@ -30,7 +34,12 @@ export async function POST(request: Request) {
     const action = topic || body?.action || body?.type
 
     // Se não houver ID ou se a ação não for relacionada a pagamentos, respondemos sucesso (200) para o Mercado Pago parar de reenviar
-    if (!paymentId || (action !== "payment" && action !== "payment.created" && action !== "payment.updated")) {
+    if (
+      !paymentId ||
+      (action !== "payment" &&
+        action !== "payment.created" &&
+        action !== "payment.updated")
+    ) {
       return NextResponse.json({ received: true })
     }
 
@@ -38,24 +47,36 @@ export async function POST(request: Request) {
     return await handlePaymentUpdate(paymentId)
   } catch (error: any) {
     console.error("Erro no Webhook do Mercado Pago:", error)
-    return NextResponse.json({ error: "Erro interno no servidor ao processar o webhook." }, { status: 500 })
+    return NextResponse.json(
+      { error: "Erro interno no servidor ao processar o webhook." },
+      { status: 500 },
+    )
   }
 }
 
 async function handlePaymentUpdate(paymentId: string) {
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN
-  
+
   // 2. Consulta o status real do pagamento diretamente no Mercado Pago.
   // Isso evita fraudes (evita que alguém envie dados falsos simulando um pagamento aprovado).
-  const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `https://api.mercadopago.com/v1/payments/${paymentId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  })
+  )
 
   if (!response.ok) {
-    console.error(`Erro ao consultar pagamento ${paymentId}:`, await response.text())
-    return NextResponse.json({ error: "Erro ao consultar pagamento no Mercado Pago" }, { status: 400 })
+    console.error(
+      `Erro ao consultar pagamento ${paymentId}:`,
+      await response.text(),
+    )
+    return NextResponse.json(
+      { error: "Erro ao consultar pagamento no Mercado Pago" },
+      { status: 400 },
+    )
   }
 
   const paymentData = await response.json()
@@ -66,7 +87,9 @@ async function handlePaymentUpdate(paymentId: string) {
 
     // Define uma validade de 30 dias para a assinatura a partir de hoje
     const nextExpiration = new Date()
-    nextExpiration.setDate(nextExpiration.getDate() + 30)
+    nextExpiration.setDate(
+      nextExpiration.getDate() + SUBSCRIPTION_PLAN.renewalDays,
+    )
 
     // 4. Atualiza a barbearia no banco de dados
     await db.barbershop.update({
@@ -83,24 +106,28 @@ async function handlePaymentUpdate(paymentId: string) {
         where: { mercadopagoPaymentId: String(paymentId) },
         update: {
           status: paymentData.status,
-          amount: paymentData.transaction_amount || 1.00,
+          amount: paymentData.transaction_amount || 1.0,
           paidAt: new Date(),
         },
         create: {
           barbershopId: barbershopId,
-          amount: paymentData.transaction_amount || 1.00,
+          amount: paymentData.transaction_amount || 1.0,
           paymentMethod: "PIX",
           mercadopagoPaymentId: String(paymentId),
           status: paymentData.status,
           paidAt: new Date(),
         },
       })
-      console.log(`[Webhook] Histórico financeiro registrado para o pagamento ID ${paymentId}!`)
+      console.log(
+        `[Webhook] Histórico financeiro registrado para o pagamento ID ${paymentId}!`,
+      )
     } catch (e: any) {
       console.error("[Webhook] Erro ao salvar histórico financeiro:", e.message)
     }
 
-    console.log(`[Webhook] Assinatura da barbearia ID ${barbershopId} ativada com sucesso!`)
+    console.log(
+      `[Webhook] Assinatura da barbearia ID ${barbershopId} ativada com sucesso!`,
+    )
   }
 
   return NextResponse.json({ received: true })
