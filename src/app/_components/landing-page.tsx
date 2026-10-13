@@ -168,7 +168,7 @@ const featureHighlightStyles: Record<
     "rounded-2xl rounded-tr-md border-success/25 bg-gradient-to-b from-success/[0.09] to-card shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]",
   ],
   financeiro: [
-    "rounded-xl rounded-bl-md border-warning/25 bg-warning/[0.07] shadow-[0_14px_30px_hsl(var(--warning)/0.1)] hover:border-warning/45 hover:shadow-[0_22px_40px_hsl(var(--warning)/0.18)]",
+    "rounded-xl rounded-bl-md border-info/25 bg-info/[0.065] shadow-[0_14px_30px_hsl(var(--info)/0.1)] hover:border-info/45 hover:shadow-[0_22px_40px_hsl(var(--info)/0.18)]",
     "rounded-2xl border-primary/25 bg-gradient-to-br from-primary/[0.08] to-card shadow-[0_12px_28px_hsl(var(--primary)/0.1)] hover:border-primary/45 hover:shadow-[0_20px_36px_hsl(var(--primary)/0.2)]",
     "rounded-2xl rounded-tr-md border-success/25 bg-success/[0.07] shadow-[0_14px_30px_hsl(var(--success)/0.1)] hover:border-success/45 hover:shadow-[0_22px_40px_hsl(var(--success)/0.18)]",
   ],
@@ -463,9 +463,9 @@ function FeatureModeDetail({
       <div
         className={`group relative mt-4 flex h-auto min-h-[22rem] flex-col overflow-hidden border p-4 transition-[transform,box-shadow,border-color] duration-700 hover:-translate-y-1 sm:h-[22rem] ${detailClass}`}
       >
-        <div className="flex items-center justify-between border-b border-warning/20 pb-3">
+        <div className="flex items-center justify-between border-b border-info/20 pb-3">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-warning text-warning-foreground">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-info text-info-foreground shadow-[0_8px_18px_hsl(var(--info)/0.2)]">
               <CircleDollarSign className="size-4" />
             </span>
             <div>
@@ -475,14 +475,14 @@ function FeatureModeDetail({
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[10px] font-bold text-warning">
+          <span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-bold text-info">
             {tags[0]}
           </span>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {[
             ["Entradas", "R$ 1.080", "text-primary"],
-            ["Comissões", "R$ 324", "text-warning"],
+            ["Comissões", "R$ 324", "text-info"],
             ["Saldo previsto", "R$ 756", "text-success"],
           ].map(([label, value, tone]) => (
             <div
@@ -503,7 +503,7 @@ function FeatureModeDetail({
             </div>
           ))}
         </div>
-        <div className="mt-3 rounded-xl border border-warning/20 bg-background/45 p-3">
+        <div className="mt-3 rounded-xl border border-info/20 bg-background/45 p-3">
           <div className="flex items-center justify-between text-[10px] font-bold">
             <span>Movimento da semana</span>
             <span className="text-success">+18,4%</span>
@@ -512,7 +512,7 @@ function FeatureModeDetail({
             {[38, 55, 44, 72, 62, 86, 100].map((height, index) => (
               <span
                 key={height}
-                className={`flex-1 origin-bottom rounded-t-md transition-transform duration-700 group-hover:scale-y-110 ${index === 6 ? "bg-warning" : "bg-warning/35"}`}
+                className={`flex-1 origin-bottom rounded-t-md transition-transform duration-700 group-hover:scale-y-110 ${index === 6 ? "bg-info" : "bg-info/35"}`}
                 style={{
                   height: `${height}%`,
                   animationDelay: `${index * 80}ms`,
@@ -922,7 +922,7 @@ const marketplaceBarbershops = [
   {
     name: "Corte & Estilo",
     meta: "Vila Madalena · 5,0 ★",
-    image: "/illustrations/barber-at-work.webp",
+    image: "/avatar.png",
   },
   {
     name: "Barba & Navalha",
@@ -1437,7 +1437,7 @@ export default function LandingPage() {
       >
         <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
           <div>
-            <h2 className="max-w-md text-3xl font-extrabold leading-tight tracking-[-0.035em] sm:text-5xl">
+            <h2 className="max-w-md font-sans text-3xl font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[3.45rem]">
               O que acontece na barbearia aparece onde você precisa.
             </h2>
             <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">
@@ -1514,7 +1514,10 @@ export default function LandingPage() {
                 {featurePaused ? "Retomar demo" : "Pausar demo"}
               </button>
             </div>
-            <h3 className="mt-8 max-w-xl text-2xl font-extrabold tracking-[-0.025em] sm:text-4xl">
+            <p className="mt-7 font-display text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+              {active.label}
+            </p>
+            <h3 className="mt-3 max-w-xl font-display text-[2rem] font-extrabold leading-[1.06] tracking-[-0.055em] transition-[letter-spacing,transform] duration-700 sm:text-[2.9rem]">
               {active.title}
             </h3>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
