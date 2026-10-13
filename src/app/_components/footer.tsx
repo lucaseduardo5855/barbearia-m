@@ -1,15 +1,13 @@
-import { Card, CardContent } from "./ui/card"
+"use client"
+
+import { usePathname } from "next/navigation"
 
 const Footer = () => {
+  const pathname = usePathname()
+  if (pathname.endsWith("/admin") || pathname === "/landing") return null
   return (
-    <footer>
-      <Card className="mt-10 px-2 py-6">
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            © 2026 Copyright <span className="font-bold">Barberia-M</span>
-          </p>
-        </CardContent>
-      </Card>
+    <footer className="border-t border-border px-5 py-5 text-sm text-muted-foreground sm:px-8">
+      © {new Date().getFullYear()} Barber-M
     </footer>
   )
 }

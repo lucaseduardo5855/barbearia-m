@@ -13,8 +13,9 @@ import BarbershopItem from "./_components/barbershop-item"
 import BookingItem from "./_components/booking-item"
 import { Button } from "./_components/ui/button"
 import quickSearchOptions from "./_constants/search"
-import LandingPage from "./_components/landing-page"
+import { redirect } from "next/navigation"
 import RegionBanner from "./_components/region-banner"
+import { HorizontalRail } from "./_components/horizontal-rail"
 
 interface HomeProps {
   searchParams?: { state?: string; city?: string; view?: string }
@@ -22,49 +23,60 @@ interface HomeProps {
 
 export default async function Home({ searchParams }: HomeProps) {
   if (searchParams?.view === "landing") {
-    return <LandingPage />
+    redirect("/landing")
   }
 
   const selectedState = searchParams?.state?.trim() || ""
   const selectedCity = searchParams?.city?.trim() || ""
   const locationWhere = {
-    ...(selectedState ? { state: { equals: selectedState, mode: "insensitive" as const } } : {}),
-    ...(selectedCity ? { city: { contains: selectedCity, mode: "insensitive" as const } } : {}),
+    ...(selectedState
+      ? { state: { equals: selectedState, mode: "insensitive" as const } }
+      : {}),
+    ...(selectedCity
+      ? { city: { contains: selectedCity, mode: "insensitive" as const } }
+      : {}),
   }
 
   let session: Session | null = null
   let barbershops: Awaited<ReturnType<typeof db.barbershop.findMany>> = []
-  let popularBarbershops: Awaited<ReturnType<typeof db.barbershop.findMany>> = []
+  let popularBarbershops: Awaited<ReturnType<typeof db.barbershop.findMany>> =
+    []
   let confirmedBookings: Awaited<ReturnType<typeof getConfirmedBookings>> = []
 
   try {
     const homeData = await Promise.race([
       (async () => {
-        const currentSession: Session | null = await getServerSession(authOptions)
-        const [shops, popularShops, bookings] = await Promise.all([
-          db.barbershop.findMany({ where: locationWhere }),
-          db.barbershop.findMany({ where: locationWhere, orderBy: { name: "desc" } }),
+        const currentSession: Session | null =
+          await getServerSession(authOptions)
+        const [shops, bookings] = await Promise.all([
+          db.barbershop.findMany({
+            where: locationWhere,
+            take: 24,
+            orderBy: { name: "asc" },
+          }),
           getConfirmedBookings(),
         ])
-        return { currentSession, shops, popularShops, bookings }
+        return { currentSession, shops, bookings }
       })(),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
     ])
 
     if (homeData) {
       session = homeData.currentSession
-      barbershops = homeData.shops
-      popularBarbershops = homeData.popularShops
+      barbershops = homeData.shops.slice(0, 6)
+      popularBarbershops = homeData.shops.slice(6)
       confirmedBookings = homeData.bookings
     }
   } catch {
     // A página continua navegável se o banco estiver reiniciando ou indisponível.
   }
 
-  const locationLabel = selectedCity ? `em ${selectedCity}${selectedState ? `, ${selectedState}` : ""}` : "perto de você"
+  const locationLabel = selectedCity
+    ? `em ${selectedCity}${selectedState ? `, ${selectedState}` : ""}`
+    : "perto de você"
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-w-0 bg-background text-foreground">
       <Header />
       <main className="mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
         <section className="mx-auto max-w-2xl text-center">
@@ -78,10 +90,20 @@ export default async function Home({ searchParams }: HomeProps) {
           <LocationFilter />
         </section>
 
-        <nav className="mt-6 flex justify-start sm:justify-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Buscar por serviço">
+        <nav
+          className="mt-6 flex justify-start gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden"
+          aria-label="Buscar por serviço"
+        >
           {quickSearchOptions.map((option, index) => (
-            <Button asChild className="shrink-0 gap-2 rounded-xl" variant="secondary" key={`${option.title}-${index}`}>
-              <a href={`/barbershops?service=${encodeURIComponent(option.title)}`}>
+            <Button
+              asChild
+              className="shrink-0 gap-2 rounded-xl"
+              variant="secondary"
+              key={`${option.title}-${index}`}
+            >
+              <a
+                href={`/barbershops?service=${encodeURIComponent(option.title)}`}
+              >
                 <Scissors className="size-3.5 text-primary" />
                 {option.title}
               </a>
@@ -92,48 +114,47 @@ export default async function Home({ searchParams }: HomeProps) {
         <RegionBanner />
 
         {confirmedBookings.length > 0 && (
-          <section className="mt-10" aria-labelledby="bookings-title">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <h2 id="bookings-title" className="text-lg font-bold tracking-tight">Seus próximos horários</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Toque em um agendamento para ver os detalhes.</p>
-              </div>
-            </div>
-            <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {confirmedBookings.map((booking) => (
-                <BookingItem key={booking.id} booking={JSON.parse(JSON.stringify(booking))} layout="rail" />
-              ))}
-            </div>
-          </section>
+          <HorizontalRail
+            title="Seus próximos horários"
+            description="Toque em um agendamento para ver os detalhes."
+          >
+            {confirmedBookings.map((booking) => (
+              <BookingItem
+                key={booking.id}
+                booking={JSON.parse(JSON.stringify(booking))}
+                layout="rail"
+              />
+            ))}
+          </HorizontalRail>
         )}
-
-        <section className="mt-10" aria-labelledby="recommended-title">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 id="recommended-title" className="text-lg font-bold tracking-tight">Barbearias {locationLabel}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Arraste para conhecer as opções.</p>
-            </div>
-            <Button asChild variant="ghost" size="sm" className="shrink-0 text-primary"><Link href="/barbershops">Ver todas</Link></Button>
-          </div>
-          {barbershops.length > 0 ? (
-            <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {barbershops.map((barberShopItem) => <BarbershopItem key={barberShopItem.id} barbershop={barberShopItem} layout="rail" />)}
-            </div>
+        <HorizontalRail
+          title={`Barbearias ${locationLabel}`}
+          description="Deslize ou use as setas para conhecer as opções."
+          action={
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/barbershops">Ver todas</Link>
+            </Button>
+          }
+        >
+          {barbershops.length ? (
+            barbershops.map((shop) => (
+              <BarbershopItem key={shop.id} barbershop={shop} layout="rail" />
+            ))
           ) : (
-            <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">Ainda não encontramos barbearias para esse filtro. Tente outra cidade.</p>
+            <p className="w-full rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              Nenhuma barbearia encontrada para este filtro.
+            </p>
           )}
-        </section>
-
+        </HorizontalRail>
         {popularBarbershops.length > 0 && (
-          <section className="mt-10" aria-labelledby="popular-title">
-            <div>
-              <h2 id="popular-title" className="text-lg font-bold tracking-tight">Mais opções para você</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Perfis disponíveis para explorar.</p>
-            </div>
-            <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {popularBarbershops.map((popularShopItem) => <BarbershopItem key={popularShopItem.id} barbershop={popularShopItem} layout="rail" />)}
-            </div>
-          </section>
+          <HorizontalRail
+            title="Mais opções para você"
+            description="Perfis disponíveis para explorar."
+          >
+            {popularBarbershops.map((shop) => (
+              <BarbershopItem key={shop.id} barbershop={shop} layout="rail" />
+            ))}
+          </HorizontalRail>
         )}
       </main>
     </div>

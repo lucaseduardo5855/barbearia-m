@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { BrandLogo } from "./brand-logo"
 import Link from "next/link"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import SidebarSheet from "./sidebar-sheet"
 import Search from "./search"
 import SignInDiaLog from "./sign-in-dialong"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 
 const Header = () => {
   const params = useParams()
+  const pathname = usePathname()
   const slug = params?.slug
   const homeUrl = slug ? `/${slug}` : "/?view=marketplace"
   const { data: session } = useSession()
@@ -24,33 +25,42 @@ const Header = () => {
       <Card className="mx-auto max-w-7xl rounded-none border-0 bg-transparent py-0 shadow-none ring-0">
         <CardContent className="safe-area-x flex h-14 flex-row items-center justify-between gap-3 p-4 sm:px-6">
           <Link href={homeUrl}>
-            <Image
-              src="/logo.png"
-              alt="Logo da barbearia"
-              height={18}
-              width={120}
-            />
+            <BrandLogo />
           </Link>
 
-          <div className="mx-2 hidden min-w-0 max-w-[680px] flex-1 md:mx-6 md:block">
-            <Search />
-          </div>
+          {pathname !== "/barbershops" && (
+            <div className="mx-2 hidden min-w-0 max-w-[680px] flex-1 md:mx-6 md:block">
+              <Search />
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             {!slug && (
-              <Link href="/landing" className="hidden rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex">
+              <Link
+                href="/landing"
+                className="hidden rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+              >
                 Para barbearias
               </Link>
             )}
 
             {session?.user ? (
-              <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden md:inline-flex"
+              >
                 <Link href="/bookings">Meus agendamentos</Link>
               </Button>
             ) : (
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hidden md:inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hidden md:inline-flex"
+                  >
                     Entrar
                   </Button>
                 </DialogTrigger>

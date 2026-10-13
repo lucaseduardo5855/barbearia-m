@@ -2,16 +2,17 @@ import { Barbershop } from "@prisma/client"
 import { Card, CardContent } from "./ui/card"
 import Image from "next/image"
 import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
-import { StarIcon } from "lucide-react"
 import Link from "next/link"
 
 interface BarbershopItemProps {
-  barbershop: Barbershop
+  barbershop: Pick<Barbershop, "id" | "name" | "address" | "imageUrl" | "slug">
   layout?: "grid" | "rail"
 }
 
-const BarbershopItem = ({ barbershop, layout = "grid" }: BarbershopItemProps) => {
+const BarbershopItem = ({
+  barbershop,
+  layout = "grid",
+}: BarbershopItemProps) => {
   return (
     <Card
       className={
@@ -30,14 +31,6 @@ const BarbershopItem = ({ barbershop, layout = "grid" }: BarbershopItemProps) =>
             src={barbershop.imageUrl}
             sizes="(min-width: 1024px) 220px, (min-width: 768px) 30vw, 78vw"
           />
-
-          <Badge
-            className="absolute left-2 top-2 space-x-1 rounded-md"
-            variant="secondary"
-          >
-            <StarIcon size={12} className="fill-primary text-primary" />
-            <p className="text-xs font-semibold">5,0</p>
-          </Badge>
         </div>
 
         {/* NOME e ENDEREÇO */}
@@ -54,8 +47,10 @@ const BarbershopItem = ({ barbershop, layout = "grid" }: BarbershopItemProps) =>
           >
             {barbershop.address}
           </a>
-          <Button variant="default" size="sm" asChild className="mt-3 w-full rounded-xl">
-            <Link href={`/${barbershop.slug}`}>Ver perfil</Link>
+          <Button variant="default" size="sm" asChild className="mt-3 w-full">
+            <Link prefetch href={`/${barbershop.slug}`}>
+              Ver perfil
+            </Link>
           </Button>
         </div>
       </CardContent>
