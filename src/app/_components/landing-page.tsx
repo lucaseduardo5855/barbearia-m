@@ -1126,18 +1126,49 @@ export default function LandingPage() {
               </div>
             )}
             <div className="mt-4 grid auto-rows-fr gap-3 sm:grid-cols-3">
-              {activeHighlights.map(([Icon, title, copy]) => (
+              {activeHighlights.map(([Icon, title, copy], index) => (
                 <div
                   key={title}
-                  className="group flex h-full min-h-36 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)] transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/[0.025] hover:shadow-[0_16px_30px_hsl(var(--primary)/0.12)]"
+                  className={`group flex h-full min-h-36 flex-col rounded-xl border p-4 transition-[background-color,border-color,transform,box-shadow] duration-700 hover:-translate-y-0.5 ${index === 0 ? "border-primary/15 bg-card shadow-[0_12px_28px_hsl(var(--primary)/0.08)] hover:border-primary/30 hover:shadow-[0_18px_34px_hsl(var(--primary)/0.16)]" : index === 1 ? "border-info/20 bg-info/[0.035] shadow-[0_12px_28px_hsl(var(--info)/0.08)] hover:border-info/35 hover:shadow-[0_18px_34px_hsl(var(--info)/0.16)]" : "border-success/20 bg-success/[0.035] shadow-[0_12px_28px_hsl(var(--success)/0.08)] hover:border-success/35 hover:shadow-[0_18px_34px_hsl(var(--success)/0.16)]"}`}
                 >
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-[background-color,transform] duration-700 group-hover:rotate-[-5deg] group-hover:bg-primary group-hover:text-primary-foreground">
+                  <span
+                    className={`flex size-8 items-center justify-center rounded-lg transition-[background-color,transform] duration-700 group-hover:rotate-[-5deg] group-hover:text-primary-foreground ${index === 0 ? "bg-primary/10 text-primary group-hover:bg-primary" : index === 1 ? "bg-info/10 text-info group-hover:bg-info" : "bg-success/10 text-success group-hover:bg-success"}`}
+                  >
                     <Icon className="size-4" />
                   </span>
                   <p className="mt-5 text-sm font-bold">{title}</p>
                   <p className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
                     {copy}
                   </p>
+                  {index === 0 && (
+                    <div
+                      className="mt-4 flex items-center gap-1.5"
+                      aria-hidden="true"
+                    >
+                      <span className="size-1.5 rounded-full bg-primary" />
+                      <span className="h-px flex-1 bg-primary/25" />
+                      <span className="size-1.5 rounded-full bg-primary/50" />
+                      <span className="h-px flex-1 bg-primary/25" />
+                      <span className="size-1.5 rounded-full bg-primary/25" />
+                    </div>
+                  )}
+                  {index === 1 && (
+                    <div
+                      className="mt-4 flex h-6 items-end gap-1"
+                      aria-hidden="true"
+                    >
+                      <span className="h-2 flex-1 rounded-sm bg-info/35" />
+                      <span className="h-4 flex-1 rounded-sm bg-info/50" />
+                      <span className="h-3 flex-1 rounded-sm bg-info/65" />
+                      <span className="h-6 flex-1 rounded-sm bg-info" />
+                    </div>
+                  )}
+                  {index === 2 && (
+                    <div className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-success">
+                      Acompanhar no painel{" "}
+                      <ChevronRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
