@@ -1032,29 +1032,104 @@ export default function LandingPage() {
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
               {active.copy}
             </p>
-            <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
-              <div className="flex items-center justify-between border-b border-border bg-muted/55 px-4 py-3">
-                <span className="text-xs font-bold text-foreground">
+            {active.id === "agenda" && (
+              <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <div className="border-b border-border bg-muted/55 px-4 py-3 text-xs font-bold text-foreground">
                   {activeVisual.eyebrow}
-                </span>
-              </div>
-              {activeVisual.rows.map(([label, value, meta]) => (
-                <div
-                  key={label}
-                  className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[0.8fr_1fr_auto]"
-                >
-                  <span className="text-xs font-bold text-foreground">
-                    {label}
-                  </span>
-                  <span className="text-xs font-semibold text-primary sm:text-right">
-                    {value}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {meta}
-                  </span>
                 </div>
-              ))}
-            </div>
+                {activeVisual.rows.map(([label, value, meta]) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[0.8fr_1fr_auto]"
+                  >
+                    <span className="text-xs font-bold text-foreground">
+                      {label}
+                    </span>
+                    <span className="text-xs font-semibold text-primary sm:text-right">
+                      {value}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {meta}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {active.id === "financeiro" && (
+              <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                {activeVisual.rows.map(([label, value, meta], index) => (
+                  <div
+                    key={label}
+                    className={`rounded-xl border border-border p-4 ${index === 2 ? "bg-primary/[0.08]" : "bg-card"}`}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-3 text-xl font-bold tracking-tight text-primary">
+                      {value}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {meta}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {active.id === "equipe" && (
+              <div className="mt-10 rounded-xl border border-border bg-card p-4 shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <div className="flex items-center justify-between border-b border-border pb-3 text-xs font-bold">
+                  <span>{activeVisual.eyebrow}</span>
+                  <span className="text-primary">Ocupação hoje</span>
+                </div>
+                <div className="mt-2 divide-y divide-border">
+                  {activeVisual.rows.map(([label, value, meta], index) => (
+                    <div
+                      key={label}
+                      className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 py-3"
+                    >
+                      <span className="text-xs font-bold">{label}</span>
+                      <div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className="block h-full rounded-full bg-primary transition-[width] duration-700"
+                            style={{ width: `${[37, 53, 27][index]}%` }}
+                          />
+                        </div>
+                        <span className="mt-1 block text-[10px] text-muted-foreground">
+                          {meta}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-primary">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {active.id === "clientes" && (
+              <div className="mt-10 overflow-hidden rounded-xl border border-border bg-card shadow-[0_10px_26px_hsl(var(--foreground)/0.08)]">
+                <div className="border-b border-border bg-muted/55 px-4 py-3 text-xs font-bold text-foreground">
+                  {activeVisual.eyebrow}
+                </div>
+                {activeVisual.rows.map(([label, value, meta]) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold">{label}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {value} · {meta}
+                      </p>
+                    </div>
+                    <span className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-bold text-primary-foreground">
+                      Agendar
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {activeHighlights.map(([Icon, title, copy]) => (
                 <div
