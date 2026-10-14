@@ -1,0 +1,17 @@
+Olá! Vamos retomar o projeto de integração do Pix do Mercado Pago. Aqui está o resumo do ponto onde paramos e o que precisamos fazer hoje:
+
+1. O que já está pronto:
+- Criamos a nova aplicação no Mercado Pago com a API de Pagamentos (Checkout Transparente) para liberar o Pix sem restrições.
+- Configuramos as chaves de teste (TEST-) no .env.
+- A tela de bloqueio (pix-lock-screen.tsx) já gera e exibe o QR Code Pix e o código Copia e Cola perfeitamente no ambiente local (http://localhost:3000/barbearia-do-minhoca-g5kg/admin).
+- Já criamos o arquivo de Webhook em src/app/api/webhooks/mercadopago/route.ts que escuta e processa a liberação no banco de dados.
+
+2. Onde paramos e o que vamos fazer hoje:
+- Precisamos testar o Webhook localmente. Para isso, precisamos expor a nossa porta 3000 na internet usando o ngrok ou a ferramenta de túnel do VS Code (devtunnels), para que o Mercado Pago consiga nos enviar as notificações de pagamento.
+- Faremos um teste prático de simulação de pagamento aprovado para ver a barbearia do Minhoca ser liberada no banco de dados (subscriptionActive = true) e a tela de bloqueio sumir automaticamente.
+
+Lembrete de estilo de trabalho:
+- Me explique tudo o que fizer de forma didática pois estou aprendendo.
+- Se fizermos commits, siga a regra de Commits Semânticos em Inglês e me explique a tradução em português no chat.
+
+Pode ler os arquivos modificados e propor o plano para testarmos o webhook localmente!

@@ -1,19 +1,17 @@
-"use server";
-import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../_lib/auth";
+"use server"
+import { db } from "@/lib/prisma"
+import { getServerSession } from "next-auth"
+import { authOptions } from "../_lib/auth"
 
 export const getConcluedBookings = async () => {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions)
   if (!session?.user) {
-    return [];
+    return []
   }
   return db.booking.findMany({
     where: {
       userId: (session?.user as any).id,
-      date: {
-        lt: new Date(),
-      },
+      status: "DONE",
     },
     include: {
       service: {
@@ -24,7 +22,7 @@ export const getConcluedBookings = async () => {
       barber: true,
     },
     orderBy: {
-      date: "asc",
+      date: "desc",
     },
-  });
-};
+  })
+}

@@ -32,7 +32,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "node_modules/.prisma/client/**/*.ts"
+    "node_modules/.prisma/client/**/*.ts",
+    ".next-dev/types/**/*.ts",
+    ".next-dev-local/types/**/*.ts",
+    ".next-landing/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -13,7 +13,12 @@ import Image from "next/image"
 import { toast } from "sonner"
 import { signUpAction } from "../_actions/auth-actions"
 
-const SignInDiaLog = () => {
+type SignInDialogProps = {
+  onLoginSuccess?: () => void
+  redirectAfterLogin?: boolean
+}
+
+const SignInDiaLog = ({ onLoginSuccess, redirectAfterLogin = true }: SignInDialogProps) => {
   // Estado para controlar se está na tela de "login" ou "cadastro"
   const [mode, setMode] = useState<"login" | "register">("login")
   
@@ -59,14 +64,14 @@ const SignInDiaLog = () => {
       })
 
       if (res.success) {
-        toast.success("Cadastro realizado com sucesso! Agora você pode fazer login.")
+        toast.success("Cadastro concluído. Agora entre com seu e-mail e senha.")
         // Limpa campos e muda para o modo login
         setPassword("")
         setMode("login")
       }
     } catch (error: any) {
       console.error(error)
-      toast.error(error.message || "Erro ao efetuar o cadastro. Verifique os dados.")
+      toast.error("Não foi possível criar sua conta. Verifique os dados e tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -77,7 +82,7 @@ const SignInDiaLog = () => {
     e.preventDefault()
 
     if (!email || !password) {
-      toast.error("Preencha o e-mail e a senha.")
+      toast.error("Informe seu e-mail e sua senha para entrar.")
       return
     }
 
@@ -90,15 +95,26 @@ const SignInDiaLog = () => {
       })
 
       if (res?.error) {
-        toast.error("Credenciais incorretas ou inválidas. Tente novamente.")
+        toast.error("E-mail ou senha incorretos. Confira os dados e tente novamente.")
         return
       }
 
       toast.success("Login efetuado com sucesso!")
-      window.location.reload()
+      if (onLoginSuccess) {
+        onLoginSuccess()
+        return
+      }
+
+      if (!redirectAfterLogin) {
+        return
+      }
+
+      const destinationResponse = await fetch("/api/auth/destination", { cache: "no-store" })
+      const destinationData = await destinationResponse.json().catch(() => ({ destination: "/" }))
+      window.location.assign(destinationData.destination || "/")
     } catch (error) {
       console.error(error)
-      toast.error("Erro inesperado ao realizar login.")
+      toast.error("Não foi possível entrar agora. Tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -111,12 +127,12 @@ const SignInDiaLog = () => {
     <div className="flex flex-col gap-4 py-2">
       <DialogHeader>
         <DialogTitle className="text-left font-bold text-xl">
-          {mode === "login" ? "Faça login na plataforma" : "Crie a sua conta"}
+          {mode === "login" ? "Entre na sua conta" : "Crie sua conta"}
         </DialogTitle>
         <DialogDescription className="text-left">
           {mode === "login"
-            ? "Conecte-se com e-mail e senha ou use redes sociais."
-            : "Insira seus dados abaixo para se cadastrar de forma simples."}
+            ? "Use seu e-mail e senha ou continue com uma rede social."
+            : "Cadastre-se para acompanhar seus agendamentos."}
         </DialogDescription>
       </DialogHeader>
 
@@ -125,7 +141,7 @@ const SignInDiaLog = () => {
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSignInSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-xs font-semibold text-gray-400">
+              <label htmlFor="email" className="text-xs font-semibold text-muted-foreground">
                 E-mail
               </label>
               <Input
@@ -141,13 +157,13 @@ const SignInDiaLog = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-semibold text-gray-400">
+              <label htmlFor="password" className="text-xs font-semibold text-muted-foreground">
                 Senha
               </label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Inserir Senha"
+                placeholder="Digite sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -164,14 +180,14 @@ const SignInDiaLog = () => {
           <div className="text-center">
             <button
               type="button"
-              className="text-xs text-gray-400 hover:text-white underline font-semibold transition"
+              className="text-xs text-muted-foreground hover:text-foreground underline font-semibold transition"
               onClick={() => {
                 setMode("register")
                 setPassword("")
               }}
               disabled={loading}
             >
-              Não possui conta? Cadastre-se gratuitamente
+              Ainda não tem conta? Criar conta
             </button>
           </div>
         </div>
@@ -180,8 +196,8 @@ const SignInDiaLog = () => {
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSignUpSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="name" className="text-xs font-semibold text-gray-400">
-                Nome Completo
+              <label htmlFor="name" className="text-xs font-semibold text-muted-foreground">
+                Nome completo
               </label>
               <Input
                 id="name"
@@ -196,7 +212,7 @@ const SignInDiaLog = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="emailReg" className="text-xs font-semibold text-gray-400">
+              <label htmlFor="emailReg" className="text-xs font-semibold text-muted-foreground">
                 E-mail
               </label>
               <Input
@@ -212,8 +228,8 @@ const SignInDiaLog = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="phone" className="text-xs font-semibold text-gray-400">
-                Número de Celular
+              <label htmlFor="phone" className="text-xs font-semibold text-muted-foreground">
+                Celular
               </label>
               <Input
                 id="phone"
@@ -228,8 +244,8 @@ const SignInDiaLog = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="passwordReg" className="text-xs font-semibold text-gray-400">
-                Crie uma Senha
+              <label htmlFor="passwordReg" className="text-xs font-semibold text-muted-foreground">
+                Senha
               </label>
               <Input
                 id="passwordReg"
@@ -244,21 +260,21 @@ const SignInDiaLog = () => {
             </div>
 
             <Button type="submit" disabled={loading} className="w-full font-bold">
-              {loading ? "Cadastrando..." : "Confirmar e Cadastrar"}
+              {loading ? "Criando conta..." : "Criar conta"}
             </Button>
           </form>
 
           <div className="text-center">
             <button
               type="button"
-              className="text-xs text-gray-400 hover:text-white underline font-semibold transition"
+              className="text-xs text-muted-foreground hover:text-foreground underline font-semibold transition"
               onClick={() => {
                 setMode("login")
                 setPassword("")
               }}
               disabled={loading}
             >
-              Já tem uma conta? Voltar ao login
+              Já tem uma conta? Entrar
             </button>
           </div>
         </div>
@@ -267,7 +283,7 @@ const SignInDiaLog = () => {
       {/* Divisor */}
       <div className="relative flex py-2 items-center">
         <div className="flex-grow border-t border-secondary"></div>
-        <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold">ou conecte-se com</span>
+        <span className="flex-shrink mx-4 text-muted-foreground text-xs font-semibold">ou continue com</span>
         <div className="flex-grow border-t border-secondary"></div>
       </div>
 
@@ -286,13 +302,13 @@ const SignInDiaLog = () => {
             width={18}
             height={18}
           />
-          Google
+          Continuar com Google
         </Button>
 
         <Button
           variant="outline"
           type="button"
-          className="gap-2 font-bold w-full bg-[#1877F2] text-white hover:bg-[#166fe5] border-none"
+          className="gap-2 font-bold w-full bg-info text-info-foreground hover:bg-info/85 border-none"
           onClick={handleLoginWithFacebookClick}
           disabled={loading}
         >
@@ -302,7 +318,7 @@ const SignInDiaLog = () => {
             width={18}
             height={18}
           />
-          Facebook
+          Continuar com Facebook
         </Button>
       </div>
     </div>

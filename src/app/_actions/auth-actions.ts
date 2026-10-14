@@ -3,22 +3,17 @@
 import { db } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
-/**
- * Server Action para cadastrar um novo usuário na plataforma.
- * Como seu professor:
- * 1. Recebemos os dados digitados no formulário.
- * 2. Criptografamos a senha usando bcrypt.hash antes de salvar no banco de dados.
- * 3. Garantimos que o e-mail ou telefone não estejam duplicados.
- */
+
 export async function signUpAction(formData: {
   name: string
   email: string
   phone: string
   password: string
 }) {
-  const { name, email, phone, password } = formData
+  const { name, phone, password } = formData
+  const normalizedEmail = formData.email.trim().toLowerCase()
 
-  if (!name || !email || !phone || !password) {
+  if (!name || !normalizedEmail || !phone || !password) {
     throw new Error("Todos os campos são obrigatórios para realizar o cadastro.")
   }
 
@@ -26,8 +21,8 @@ export async function signUpAction(formData: {
   const cleanPhone = phone.replace(/\D/g, "")
 
   // 1. Verificar se o e-mail já está em uso
-  const existingUserByEmail = await db.user.findUnique({
-    where: { email },
+  const existingUserByEmail = await db.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
   })
 
   if (existingUserByEmail) {
@@ -51,7 +46,7 @@ export async function signUpAction(formData: {
   const user = await db.user.create({
     data: {
       name,
-      email,
+      email: normalizedEmail,
       phone: cleanPhone,
       password: hashedPassword,
     },

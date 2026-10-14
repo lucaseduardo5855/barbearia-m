@@ -9,7 +9,6 @@ const quickSearchOptions: QuickSearchOption[] = [
   { imageUrl: "/navalha.png", title: "Acabamento" },
   { imageUrl: "/navalha.png", title: "Cabelo + Barba" },
   { imageUrl: "/sombrancelha.png", title: "Sobrancelha" },
-  { imageUrl: "/navalha.png", title: "Sombrancelha" },
   { imageUrl: "/navalha.png", title: "Platinado" },
 ]
 

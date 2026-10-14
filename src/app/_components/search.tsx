@@ -7,6 +7,7 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Form, FormField, FormItem, FormControl, FormMessage } from "./ui/form"
 import { useRouter } from "next/navigation"
+import { useTransition } from "react"
 
 import { z } from "zod"
 import { useForm } from "react-hook-form"
@@ -15,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 // Esquema de validação para os parâmetros de busca
 const forSchema = z.object({
   search: z.string().trim().min(1, {
-    message: "O campo de busca não pode estar vazio.",
+    message: "Digite o nome de uma barbearia ou serviço.",
   }),
 })
 
@@ -32,10 +33,11 @@ const Search = ({ initialValue = "" }: SearchProps) => {
   })
 
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
 
   const onSubmit = (data: z.infer<typeof forSchema>) => {
     const q = encodeURIComponent(data.search)
-    router.push(`/barbershops?search=${q}`)
+    startTransition(() => router.push(`/barbershops?search=${q}`))
   }
 
   return (
@@ -47,15 +49,27 @@ const Search = ({ initialValue = "" }: SearchProps) => {
           name="search"
           render={({ field, fieldState }: any) => (
             <FormItem className="w-full">
+              <label htmlFor="barbershop-search" className="sr-only">
+                Buscar por nome ou serviço
+              </label>
               <FormControl>
                 <Input
-                  className="w-full rounded-full bg-muted/60 px-4 py-2 text-sm placeholder:text-muted-foreground"
-                  placeholder="Faça sua busca..."
+                  id="barbershop-search"
+                  aria-label="Buscar barbearias por nome ou serviço"
+                  aria-invalid={fieldState?.invalid || undefined}
+                  aria-describedby={
+                    fieldState?.error ? "barbershop-search-error" : undefined
+                  }
+                  className="w-full rounded-md bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                  placeholder="Buscar por nome ou serviço"
                   {...field}
                 />
               </FormControl>
               {fieldState?.error && (
-                <FormMessage className="ml-2 mt-1 text-sm text-red-500">
+                <FormMessage
+                  id="barbershop-search-error"
+                  className="ml-2 mt-1 text-sm text-destructive"
+                >
                   {String(fieldState.error.message)}
                 </FormMessage>
               )}
@@ -65,8 +79,11 @@ const Search = ({ initialValue = "" }: SearchProps) => {
 
         <Button
           type="submit"
+          disabled={isPending}
+          aria-busy={isPending}
           size="icon"
-          className="rounded-full bg-violet-600 p-2 text-white hover:bg-violet-700"
+          aria-label="Buscar"
+          className="rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/85"
         >
           <SearchIcon />
         </Button>

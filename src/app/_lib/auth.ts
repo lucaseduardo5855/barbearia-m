@@ -36,9 +36,10 @@ export const authOptions: AuthOptions = {
         }
 
         // 1. Busca o usuário pelo e-mail
-        const user = await db.user.findUnique({
+        const email = credentials.email.trim()
+        const user = await db.user.findFirst({
           where: {
-            email: credentials.email,
+            email: { equals: email, mode: "insensitive" },
           },
         })
 

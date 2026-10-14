@@ -6,7 +6,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { CalendarIcon, HomeIcon, LogInIcon, LogOutIcon } from "lucide-react"
+import { CalendarIcon, HomeIcon, LogInIcon, LogOutIcon, StoreIcon } from "lucide-react"
 import { Button } from "./ui/button"
 import { AvatarImage, Avatar } from "./ui/avatar"
 import quickSearchOptions from "../_constants/search"
@@ -38,7 +38,7 @@ const SidebarSheet = () => {
 
             <div>
               <p className="font-bold">{data.user.name}</p>
-              <p className="text-sm text-gray-400">{data.user.email}</p>
+              <p className="text-sm text-muted-foreground">{data.user.email}</p>
             </div>
           </div>
         ) : (
@@ -46,7 +46,7 @@ const SidebarSheet = () => {
             <h2 className="text-lg font-bold">Olá, Realize seu Login!</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="icon">
+                <Button size="icon" aria-label="Entrar ou criar conta">
                   <LogInIcon />
                 </Button>
               </DialogTrigger>
@@ -62,9 +62,17 @@ const SidebarSheet = () => {
       <div className="flex flex-col gap-4 border-b border-solid py-5">
         <SheetClose asChild>
           <Button asChild className="justify-start gap-2" variant="ghost">
-            <Link href="/">
+            <Link href="/?view=marketplace">
               <HomeIcon size={18} />
               Início
+            </Link>
+          </Button>
+        </SheetClose>
+        <SheetClose asChild>
+          <Button asChild className="justify-start gap-2" variant="ghost">
+            <Link href="/landing">
+              <StoreIcon size={18} />
+              Para barbearias
             </Link>
           </Button>
         </SheetClose>

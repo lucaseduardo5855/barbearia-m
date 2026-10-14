@@ -1,103 +1,81 @@
-# 💈 Barber-M
+# BARBER-M
 
-Barber-M é um sistema moderno de agendamentos online para barbearias, construído com foco em alta performance, usabilidade premium e fluxos completos de pagamento integrados.
+Sistema de gestão e agendamento para barbearias. O BARBER-M reúne a agenda da equipe, página pública de reservas, serviços, produtos, estoque, caixa, comissões e relatórios em uma única operação.
 
-O sistema permite que clientes encontrem barbearias, visualizem serviços e preços, agendem horários de forma inteligente com verificação de disponibilidade em tempo real e realizem pagamentos online via cartão de crédito ou optem por pagar no local.
+## O que o produto entrega
 
----
+- Agenda por profissional com horários, encaixes, bloqueios e filtros de status.
+- Página pública para o cliente escolher serviço, profissional e horário.
+- Catálogo de serviços e produtos, controle de estoque e alerta de mínimo.
+- Financeiro, caixa diário, comissões, despesas e histórico de atendimentos.
+- Lembretes por e-mail e WhatsApp quando configurados e autorizados pelo cliente.
+- Teste grátis de 7 dias. Após o teste, o acesso ao painel custa **R$ 49,90/mês** via Pix.
 
-## 🚀 Funcionalidades Principais
+## Telas que valem aparecer no GitHub
 
-- **Visualização de Barbearias**: Pesquisa e listagem dinâmica de barbearias, seus endereços, fotos, descrições e contatos.
-- **Painel de Agendamentos**:
-  - Exibição organizada de agendamentos **Confirmados**.
-  - Seção inteligente e colapsável para agendamentos **Finalizados** (com botão interativo de expandir/ocultar para evitar listas muito longas).
-- **Agendamento Inteligente**:
-  - Seleção dinâmica de data e horários disponíveis.
-  - Prevenção de conflito de horários (bloqueando horários já reservados por outros usuários no banco de dados).
-- **Autenticação Segura**: Login social completo usando NextAuth.js (com suporte ao Google).
-- **Integração com Stripe**:
-  - Possibilidade de agendamento gratuito com pagamento no local ou pagamento online por cartão de crédito.
-  - Redirecionamento automático e seguro para a página de checkout do Stripe.
-  - **Webhook Seguro**: Atualização automática do status do agendamento (`Confirmado`) e pagamento (`Pago`) assim que a transação é processada no Stripe.
+Para o README e a página do repositório, as melhores imagens são:
 
----
+1. **Agenda da equipe** — mostra o valor principal do sistema: horários e profissionais no mesmo lugar.
+2. **Visão financeira** — mostra caixa, receita, despesas e comissões; é a melhor imagem para explicar o lado de gestão.
+3. **Serviços e produtos** — mostra o catálogo junto do estoque, útil para explicar vendas no balcão.
+4. **Página pública de agendamento** — mostra a experiência do cliente e deixa claro que existe marketplace/reserva online.
 
-## 🛠️ Tecnologias Utilizadas
+As telas da landing usam dados ilustrativos. Nunca publique no repositório capturas com dados reais de clientes, telefones, e-mails, QR Codes Pix ou tokens.
 
-- **Core**: [Next.js 14](https://nextjs.org/) (App Router) & [React 18](https://react.dev/)
-- **Estilização**: [Tailwind CSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/) (Componentes acessíveis com Radix)
-- **Banco de Dados & ORM**: [Prisma ORM](https://www.prisma.io/) & [PostgreSQL](https://www.postgresql.org/) (Neon DB)
-- **Autenticação**: [NextAuth.js](https://next-auth.js.org/)
-- **Pagamentos**: [Stripe SDK](https://stripe.com/) & Stripe Webhooks
-- **Datas**: [date-fns](https://date-fns.org/)
-- **Ferramentas de Qualidade**: Prettier, ESLint, Git Hooks com Husky
+## Tecnologias
 
----
+- Next.js 14 e React 18
+- TypeScript e Tailwind CSS
+- Prisma ORM e PostgreSQL
+- NextAuth para autenticação
+- Mercado Pago Pix para mensalidade
+- Resend e WhatsApp Cloud API para comunicações opcionais
 
-## ⚙️ Variáveis de Ambiente (`.env`)
+## Rodando localmente
 
-Crie um arquivo `.env` na raiz do seu projeto contendo as seguintes variáveis:
-
-```env
-# Conexão com o Banco de Dados (Direct URL para migrações no Neon DB)
-DATABASE_URL="sua_string_de_conexao_pooler_postgres"
-DIRECT_URL="sua_string_de_conexao_direta_postgres"
-
-# NextAuth Configuração
-NEXTAUTH_SECRET="seu_segredo_para_gerar_tokens"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Credenciais de Login Social (Google Cloud Console)
-GOOGLE_CLIENT_ID="seu_google_client_id"
-GOOGLE_CLIENT_SECRET="seu_google_client_secret"
-
-# Stripe Configurações
-STRIPE_SECRET_KEY="sua_chave_secreta_do_stripe"
-STRIPE_WEBHOOK_SECRET="seu_segredo_de_webhook_do_stripe"
-
-# URL Base da Aplicação
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
-
----
-
-## 💻 Como Iniciar o Projeto Localmente
-
-### 1. Clonar e Instalar Dependências
 ```bash
 git clone https://github.com/lucaseduardo5855/barbearia-m.git
 cd barbearia-m
 npm install
 ```
 
-### 2. Configurar o Banco de Dados (Prisma)
-Gere o cliente do Prisma e rode as migrações para criar as tabelas no seu PostgreSQL:
+Crie `.env` a partir das variáveis abaixo:
+
+```env
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="http://localhost:3000"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+MERCADO_PAGO_ACCESS_TOKEN="..."
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+Depois gere o Prisma e inicie o projeto:
+
 ```bash
 npx prisma generate
 npx prisma migrate dev
-```
-
-*(Opcional)* Se quiser popular seu banco de dados com barbearias e serviços fictícios para teste, rode o seed:
-```bash
-npx prisma db seed
-```
-
-### 3. Rodar o Servidor de Desenvolvimento
-```bash
 npm run dev
 ```
-Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-### 4. Rodar o Stripe Webhook Localmente (Para testar pagamentos)
-Instale a [Stripe CLI](https://stripe.com/docs/stripe-cli) e execute o comando abaixo para encaminhar os eventos do Stripe para a sua API local:
+Abra [http://localhost:3000](http://localhost:3000).
+
+## Pagamento e período de teste
+
+Ao concluir o cadastro de uma barbearia, o sistema cria um teste de 7 dias. Sem a assinatura após esse período, o painel administrativo fica pausado até o pagamento; os dados cadastrados permanecem guardados. A assinatura é de R$ 49,90 por 30 dias e é liberada após a confirmação do Pix pelo webhook do Mercado Pago.
+
+## Qualidade
+
 ```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+npm run lint
+npm run build
+node scripts/verify-money.cjs
+node scripts/verify-financial-summary.cjs
+node scripts/verify-notifications.cjs
 ```
-Copie a chave de webhook gerada no terminal (`whsec_...`) e salve-a na variável `STRIPE_WEBHOOK_SECRET` no seu arquivo `.env`.
 
----
+## Licença
 
-## 📄 Licença
-
-Este projeto é desenvolvido para fins de estudo e portfólio. Sinta-se livre para clonar e brincar!
+Projeto para estudo e portfólio. Consulte os créditos das ilustrações em `public/illustrations/SOURCES.md`.

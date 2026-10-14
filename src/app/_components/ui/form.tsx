@@ -9,7 +9,28 @@ type FormProps = React.HTMLAttributes<HTMLDivElement> & {
 }
 
 export function Form(props: FormProps & any) {
-  const { children, form, ...rest } = props
+  const { 
+    children, 
+    register, 
+    watch, 
+    handleSubmit, 
+    reset, 
+    unregister, 
+    formState, 
+    control, 
+    trigger, 
+    setValue, 
+    getValues, 
+    getFieldState, 
+    clearErrors, 
+    setError, 
+    setFocus, 
+    resetField, 
+    setValues,
+    resetDefaultValues,
+    subscribe,
+    ...rest 
+  } = props
   return <div {...rest}>{children}</div>
 }
 

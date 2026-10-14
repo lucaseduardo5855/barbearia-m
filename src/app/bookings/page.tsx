@@ -26,16 +26,16 @@ const Bookings = async () => {
   return (
     <>
       <Header />
-      <div className="space-y-3 p-5">
+      <main className="mx-auto w-full max-w-3xl space-y-3 px-4 py-5 sm:px-6 lg:px-8">
         <h1 className="text-xl font-bold">Agendamentos</h1>
         {confirmedBookings.length === 0 && (
-          <p className="text-gray-400">
+          <p className="text-muted-foreground">
             Você não tem agendamentos confirmados.
           </p>
         )}
         {confirmedBookings.length > 0 && (
           <>
-            <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-gray-400">
+            <h2 className="mb-3 mt-6 text-xs font-bold uppercase text-primary/80">
               Confirmados
             </h2>
             {confirmedBookings.map((booking) => (
@@ -49,7 +49,7 @@ const Bookings = async () => {
         <ConcluedBookingsList
           bookings={JSON.parse(JSON.stringify(concluedBookings))}
         />
-      </div>
+      </main>
     </>
   )
 }
